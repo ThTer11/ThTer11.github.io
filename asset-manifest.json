@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/static/css/main.38fa197b.css",
+    "main.js": "/static/js/main.da313e20.js",
+    "static/js/453.670e15c7.chunk.js": "/static/js/453.670e15c7.chunk.js",
+    "static/media/profile.png": "/static/media/profile.68f2b52a690a17e90700.png",
+    "static/media/Google_Scholar_logo.svg.png": "/static/media/Google_Scholar_logo.svg.bb097d9ba6a041ee325d.png",
+    "index.html": "/index.html",
+    "main.38fa197b.css.map": "/static/css/main.38fa197b.css.map",
+    "main.da313e20.js.map": "/static/js/main.da313e20.js.map",
+    "453.670e15c7.chunk.js.map": "/static/js/453.670e15c7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.38fa197b.css",
+    "static/js/main.da313e20.js"
+  ]
+}
