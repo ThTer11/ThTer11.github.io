@@ -138,7 +138,6 @@ export default function Recherches() {
                                     onClick={() => setShowModal(false)}
                                     className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 font-bold text-xl"
                                 >
-                                    ×
                                 </button>
                                 <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
                                     {bibText}
