@@ -1,0 +1,319 @@
+.gauss-page .showcase-shell{
+  max-width:1240px;
+}
+
+.gauss-layout{
+  display:grid;
+  gap:1.2rem;
+  margin-top:1.2rem;
+}
+
+.gauss-mode-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.7rem;
+  margin-top:1rem;
+}
+
+.gauss-mode{
+  border:1px solid rgba(148,163,184,.28);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:#334155;
+  padding:.72rem 1rem;
+  font-size:.94rem;
+  font-weight:700;
+  transition:transform .2s ease,background-color .2s ease,color .2s ease,border-color .2s ease;
+}
+
+.dark .gauss-mode{
+  border-color:rgba(148,163,184,.22);
+  background:rgba(15,23,42,.55);
+  color:#cbd5e1;
+}
+
+.gauss-mode:hover,
+.gauss-mode-active{
+  transform:translateY(-1px);
+  border-color:rgba(37,99,235,.42);
+  background:#2563eb;
+  color:#fff;
+}
+
+.gauss-help{
+  margin-top:1rem;
+  color:#64748b;
+  font-size:.96rem;
+  line-height:1.7;
+}
+
+.dark .gauss-help{
+  color:#cbd5e1;
+}
+
+.gauss-textarea{
+  width:100%;
+  min-height:14rem;
+  margin-top:1rem;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:1.1rem;
+  background:rgba(248,250,252,.88);
+  color:#0f172a;
+  font-family:"Fira Code","JetBrains Mono",monospace;
+  font-size:.95rem;
+  line-height:1.7;
+  padding:1rem;
+  resize:vertical;
+}
+
+.dark .gauss-textarea{
+  border-color:rgba(148,163,184,.18);
+  background:rgba(15,23,42,.72);
+  color:#e2e8f0;
+}
+
+.gauss-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.75rem;
+  margin-top:1rem;
+}
+
+.gauss-error{
+  display:grid;
+  gap:.35rem;
+  margin-top:1rem;
+  border:1px solid rgba(220,38,38,.22);
+  border-radius:1rem;
+  background:rgba(254,242,242,.92);
+  color:#991b1b;
+  padding:.95rem 1rem;
+}
+
+.dark .gauss-error{
+  border-color:rgba(248,113,113,.22);
+  background:rgba(127,29,29,.24);
+  color:#fecaca;
+}
+
+.gauss-summary{
+  margin-top:1rem;
+}
+
+.gauss-summary-label{
+  margin-bottom:.45rem;
+  color:#475569;
+  font-size:.92rem;
+  font-weight:700;
+}
+
+.dark .gauss-summary-label{
+  color:#cbd5e1;
+}
+
+.gauss-status{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:.48rem .82rem;
+  font-size:.83rem;
+  font-weight:800;
+}
+
+.gauss-status-success{
+  background:rgba(16,185,129,.15);
+  color:#047857;
+}
+
+.gauss-status-warning{
+  background:rgba(245,158,11,.18);
+  color:#b45309;
+}
+
+.gauss-status-danger{
+  background:rgba(244,63,94,.14);
+  color:#be123c;
+}
+
+.dark .gauss-status-success{
+  background:rgba(16,185,129,.2);
+  color:#86efac;
+}
+
+.dark .gauss-status-warning{
+  background:rgba(245,158,11,.2);
+  color:#fcd34d;
+}
+
+.dark .gauss-status-danger{
+  background:rgba(244,63,94,.18);
+  color:#fda4af;
+}
+
+.gauss-block{
+  margin-top:1.4rem;
+}
+
+.gauss-block-title{
+  color:#0f172a;
+  font-size:1.05rem;
+  font-weight:800;
+}
+
+.dark .gauss-block-title{
+  color:#f8fafc;
+}
+
+.gauss-step-views{
+  display:grid;
+  gap:1rem;
+  margin-top:.9rem;
+}
+
+.gauss-view-card,
+.gauss-step-card,
+.gauss-solution-card{
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:1.15rem;
+  background:rgba(248,250,252,.78);
+  color:#0f172a;
+  padding:1rem;
+}
+
+.dark .gauss-view-card,
+.dark .gauss-step-card,
+.dark .gauss-solution-card{
+  border-color:rgba(148,163,184,.4);
+  background:rgba(232,238,245,.9);
+  color:#0f172a;
+}
+
+.gauss-view-title{
+  color:#2563eb;
+  font-size:.82rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.dark .gauss-view-title{
+  color:#334155;
+}
+
+.gauss-math{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin-top:.6rem;
+  text-align:center;
+}
+
+.gauss-math .rich-content-math-display{
+  margin:0;
+}
+
+.gauss-math mjx-container,
+.gauss-step-formula mjx-container{
+  color:#0f172a !important;
+}
+
+.dark .gauss-math .rich-content-math-display,
+.dark .gauss-step-formula .rich-content-math-display{
+  border-color:rgba(148,163,184,.24);
+  background:rgba(226,232,240,.88);
+}
+
+.gauss-steps{
+  display:grid;
+  gap:1rem;
+  margin-top:.9rem;
+}
+
+.inverse-steps-grid{
+  grid-template-columns:1fr;
+}
+
+.inverse-steps-grid .gauss-step-views{
+  grid-template-columns:1fr;
+}
+
+.gauss-step-header{
+  display:flex;
+  align-items:center;
+  gap:.8rem;
+}
+
+.gauss-step-index{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:2rem;
+  height:2rem;
+  border-radius:999px;
+  background:#2563eb;
+  color:#fff;
+  font-size:.88rem;
+  font-weight:800;
+}
+
+.gauss-step-label{
+  color:#1e293b;
+  font-size:.98rem;
+  font-weight:700;
+}
+
+.gauss-step-formula{
+  display:flex;
+  flex:1;
+  align-items:center;
+}
+
+.gauss-step-formula .rich-content-math-display{
+  padding:.75rem .9rem;
+}
+
+.gauss-step-formula .rich-content-math{
+  width:100%;
+}
+
+.gauss-step-formula mjx-container{
+  font-size:.92em !important;
+}
+
+.gauss-step-formula .rich-content-math-display mjx-container{
+  margin:0;
+}
+
+.dark .gauss-step-label{
+  color:#0f172a;
+}
+
+@media (min-width:980px){
+  .gauss-layout{
+    grid-template-columns:minmax(320px,380px) minmax(0,1fr);
+    align-items:start;
+  }
+
+  .gauss-input-card{
+    position:sticky;
+    top:6.8rem;
+  }
+
+  .gauss-step-views{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .inverse-steps-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:640px){
+  .gauss-textarea{
+    min-height:12rem;
+  }
+
+  .gauss-step-header{
+    align-items:flex-start;
+  }
+}

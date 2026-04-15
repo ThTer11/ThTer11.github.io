@@ -1,0 +1,119 @@
+.rich-content-math{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:100%;
+  padding-inline-end:2.35rem;
+  vertical-align:middle;
+}
+
+.rich-content-math[data-copy-enabled="false"]{
+  padding-inline-end:0;
+}
+
+.rich-content-math mjx-container{
+  max-width:100%;
+}
+
+.rich-content-math mjx-container[jax="SVG"]{
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+
+.rich-content-math-display{
+  display:block;
+  width:100%;
+  margin:1.15rem 0;
+  padding:.95rem 1rem 1rem;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:1rem;
+  background:rgba(248,250,252,.78);
+}
+
+.dark .rich-content-math-display{
+  border-color:rgba(148,163,184,.16);
+  background:rgba(15,23,42,.52);
+}
+
+.rich-content-math-display mjx-container{
+  display:block;
+  margin:0 auto;
+}
+
+.rich-content-math-copy{
+  position:absolute;
+  top:.5rem;
+  right:.5rem;
+  z-index:2;
+  border:1px solid rgba(148,163,184,.3);
+  border-radius:999px;
+  background:rgba(255,255,255,.94);
+  color:#0f172a;
+  font-size:.72rem;
+  font-weight:700;
+  letter-spacing:.04em;
+  line-height:1;
+  padding:.32rem .6rem;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-4px);
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    background-color .18s ease,
+    color .18s ease,
+    border-color .18s ease;
+}
+
+.dark .rich-content-math-copy{
+  border-color:rgba(148,163,184,.22);
+  background:rgba(15,23,42,.92);
+  color:#e2e8f0;
+}
+
+.rich-content-math:not(.rich-content-math-display) .rich-content-math-copy{
+  top:50%;
+  right:0;
+  transform:translateY(-50%) translateX(.1rem);
+}
+
+.rich-content-math:hover .rich-content-math-copy,
+.rich-content-math:focus-within .rich-content-math-copy,
+.rich-content-math[data-copied="true"] .rich-content-math-copy{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.rich-content-math:hover .rich-content-math-copy,
+.rich-content-math:focus-within .rich-content-math-copy,
+.rich-content-math[data-copied="true"]:not(.rich-content-math-display) .rich-content-math-copy{
+  transform:translateY(-50%);
+}
+
+.rich-content-math-display:hover .rich-content-math-copy,
+.rich-content-math-display:focus-within .rich-content-math-copy,
+.rich-content-math-display[data-copied="true"] .rich-content-math-copy{
+  transform:translateY(0);
+}
+
+.rich-content-math[data-copied="true"] .rich-content-math-copy{
+  border-color:#2563eb;
+  background:#2563eb;
+  color:#f8fafc;
+}
+
+@media (hover:none){
+  .rich-content-math-copy{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .rich-content-math:not(.rich-content-math-display) .rich-content-math-copy{
+    transform:translateY(-50%);
+  }
+
+  .rich-content-math-display .rich-content-math-copy{
+    transform:translateY(0);
+  }
+}
