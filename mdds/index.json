@@ -1,0 +1,32 @@
+[
+  {
+    "id": "eco-14",
+    "label": "eco-14",
+    "src": "/mdds/generated/eco-14.svg",
+    "dualSrc": "/mdds/generated/eco-14-dual.svg"
+  },
+  {
+    "id": "eco-15",
+    "label": "eco-15",
+    "src": "/mdds/generated/eco-15.svg",
+    "dualSrc": "/mdds/generated/eco-15-dual.svg"
+  },
+  {
+    "id": "katsura-11",
+    "label": "katsura-11",
+    "src": "/mdds/generated/katsura-11.svg",
+    "dualSrc": "/mdds/generated/katsura-11-dual.svg"
+  },
+  {
+    "id": "katsura-12",
+    "label": "katsura-12",
+    "src": "/mdds/generated/katsura-12.svg",
+    "dualSrc": "/mdds/generated/katsura-12-dual.svg"
+  },
+  {
+    "id": "katsura-13",
+    "label": "katsura-13",
+    "src": "/mdds/generated/katsura-13.svg",
+    "dualSrc": "/mdds/generated/katsura-13-dual.svg"
+  }
+]

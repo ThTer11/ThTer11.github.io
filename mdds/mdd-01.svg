@@ -1,0 +1,24 @@
+<svg width="960" height="540" viewBox="0 0 960 540" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="540" rx="28" fill="#F8FAFC"/>
+  <path d="M210 130H750" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M210 270H750" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M210 410H750" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M310 135L430 265" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M310 135L530 265" stroke="#059669" stroke-width="10" stroke-linecap="round"/>
+  <path d="M430 275L340 405" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M430 275L470 405" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M530 275L470 405" stroke="#059669" stroke-width="10" stroke-linecap="round"/>
+  <path d="M530 275L620 405" stroke="#059669" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="310" cy="135" r="34" fill="#0F172A"/>
+  <circle cx="430" cy="275" r="34" fill="#2563EB"/>
+  <circle cx="530" cy="275" r="34" fill="#059669"/>
+  <circle cx="340" cy="405" r="30" fill="#E2E8F0"/>
+  <circle cx="470" cy="405" r="30" fill="#DBEAFE"/>
+  <circle cx="620" cy="405" r="30" fill="#D1FAE5"/>
+  <text x="310" y="143" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="white">x₁</text>
+  <text x="430" y="283" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="white">x₂</text>
+  <text x="530" y="283" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="white">x₂</text>
+  <text x="340" y="412" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#0F172A">0</text>
+  <text x="470" y="412" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#0F172A">1</text>
+  <text x="620" y="412" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#0F172A">1</text>
+</svg>
