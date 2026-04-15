@@ -1,155 +1,404 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { FaFilePdf } from 'react-icons/fa';
-import { FaLink } from "react-icons/fa";
-import BibTex from '@heroicons/react/24/outline/BookmarkIcon';
-import { Link } from "react-router-dom";
-import { useLang } from '../App';
+import "../research.css";
+import {
+  ArrowTopRightOnSquareIcon,
+  BookmarkIcon,
+  ClipboardDocumentIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { FaFilePdf } from "react-icons/fa";
+import { useLang } from "../App";
+import RichContent from "../components/RichContent";
 
-export default function Recherches() {
-    const { t } = useLang();
-    const [bibText, setBibText] = useState("");
-    const [showModal, setShowModal] = useState(false);
+function ResourceButton({ action, onClick }) {
+  const icon =
+    action.kind === "pdf" ? (
+      <FaFilePdf className="w-5 h-5" />
+    ) : action.kind === "bibtex" ? (
+      <BookmarkIcon className="w-5 h-5" />
+    ) : (
+      <ArrowTopRightOnSquareIcon className="w-5 h-5" />
+    );
 
-    // Fonction pour récupérer le fichier .bib
-    const openBib = async (bibfile) => {
-        const response = await fetch(`${process.env.PUBLIC_URL}/bibs/${bibfile}`);
-        const text = await response.text();
-        setBibText(text);
-        setShowModal(true);
+  const className = `research-action research-action-${action.kind}`;
+
+  if (action.kind === "bibtex") {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {icon}
+        <span>{action.label}</span>
+      </button>
+    );
+  }
+
+  return (
+    <a
+      href={action.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+    >
+      {icon}
+      <span>{action.label}</span>
+    </a>
+  );
+}
+
+export default function Recherche() {
+  const { t } = useLang();
+  const [bibText, setBibText] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [copyState, setCopyState] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [expandedAuthors, setExpandedAuthors] = useState({});
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
+
+  useEffect(() => {
+    if (!showModal) {
+      return undefined;
+    }
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowModal(false);
+      }
     };
 
-    return (
-        <div className="min-w-screen min-h-screen bg-gray-50 dark:bg-[#1b1b1b] pb-10">
-            <NavBar />
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [showModal]);
 
+  const openBib = async (bibfile) => {
+    try {
+      const response = await fetch(`${process.env.PUBLIC_URL}/bibs/${bibfile}`);
+      const text = await response.text();
+      setBibText(text);
+      setCopyState(false);
+      setShowModal(true);
+    } catch (error) {
+      setBibText("Unable to load BibTeX.");
+      setCopyState(false);
+      setShowModal(true);
+    }
+  };
 
-            
-            <div className="flex flex-col pt-20 lg:pt-28 px-5 lg:px-20">
-                <h1 className="dark:text-white text-4xl font-extrabold tracking-tight text-center lg:text-start">
-                    {t.research.title}
-                </h1>
+  const copyBibText = async () => {
+    if (!bibText) {
+      return;
+    }
 
-                <div className="flex flex-col items-start mt-10 gap-6">
+    try {
+      await navigator.clipboard.writeText(bibText);
+      setCopyState(true);
+      window.setTimeout(() => setCopyState(false), 1800);
+    } catch (error) {
+      setCopyState(false);
+    }
+  };
 
-                    <div className="w-full flex flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#252525] p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 space-y-4 animate-defil">
-                        <h1 className="dark:text-white text-2xl font-bold border-b border-gray-300 dark:border-gray-600 pb-2">
-                            2026
-                        </h1>
-                        <h2 className="dark:text-white font-semibold text-lg">
-                            {t.research.pub4Title}
-                        </h2>
-                        <p className="relative -top-2 text-gray-600 dark:text-gray-400 text-sm text-justify leading-relaxed">
-                            {t.research.pub4Info}
-                        </p>
-                        <div className="relative -top-2 flex justify-start w-full pt-0">
-                            <Link
-                                target="_blank"
-                                to="https://arxiv.org/abs/2601.05026/"
-                                className="flex items-center border border-blue-500 px-3 py-2 rounded-lg shadow-md text-blue-500 dark:text-blue-400 dark:bg-[#141414] transition duration-200 hover:bg-blue-500 hover:text-white dark:hover:text-white dark:hover:bg-blue-500"
-                            >
-                                <FaLink className="w-5 h-5" />
-                                <span className="text-sm ml-2">{t.research.link}</span>
-                            </Link>
-                        </div>
-                    </div>
+  const toggleAuthors = (id) => {
+    setExpandedAuthors((current) => ({
+      ...current,
+      [id]: !current[id],
+    }));
+  };
 
+  const toggleDescription = (id) => {
+    setExpandedDescriptions((current) => ({
+      ...current,
+      [id]: !current[id],
+    }));
+  };
 
-                    <div className="w-full flex flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#252525] p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 space-y-4 animate-defil">
-                        <h1 className="dark:text-white text-2xl font-bold border-b border-gray-300 dark:border-gray-600 pb-2">
-                            2025
-                        </h1>
-                        <h2 className="dark:text-white font-semibold text-lg">
-                            {t.research.pub2Title}
-                        </h2>
-                        <p className="relative -top-2 text-gray-600 dark:text-gray-400 text-sm text-justify leading-relaxed">
-                            {t.research.pub2Info}
-                        </p>
-                        <div className="relative -top-2 flex justify-start w-full pt-0">
-                            <Link
-                                target="_blank"
-                                to="https://www.h-k.fr/adc.ps.2025PSIm"
-                                className="flex items-center border border-blue-500 px-3 py-2 rounded-lg shadow-md text-blue-500 dark:text-blue-400 dark:bg-[#141414] transition duration-200 hover:bg-blue-500 hover:text-white dark:hover:text-white dark:hover:bg-blue-500"
-                            >
-                                <FaLink className="w-5 h-5" />
-                                <span className="text-sm ml-2">{t.research.link}</span>
-                            </Link>
-                        </div>
+  const publications = [
+    {
+      id: "paper-2026",
+      year: "2026",
+      type: "research",
+      accent: "cobalt",
+      title: t.research.pub4Title,
+      description: t.research.pub4Description,
+      authors: t.research.pub4Info,
+      actions: [
+        {
+          kind: "link",
+          label: t.research.actionPreprint,
+          href: "https://arxiv.org/abs/2601.05026/",
+        },
+      ],
+    },
+    {
+      id: "exam-2025",
+      year: "2025",
+      type: "teaching",
+      accent: "gold",
+      title: t.research.pub2Title,
+      description: t.research.pub2Info,
+      authors: null,
+      actions: [
+        {
+          kind: "link",
+          label: t.research.actionOpen,
+          href: "https://www.h-k.fr/adc.ps.2025PSIm",
+        },
+      ],
+    },
+    {
+      id: "outreach-2025",
+      year: "2025",
+      type: "outreach",
+      accent: "emerald",
+      title: t.research.pub3Title,
+      descriptionHtml: t.research.pub3Info,
+      authors: null,
+      actions: [
+        {
+          kind: "link",
+          label: t.research.actionArticle,
+          href: "https://www.calameo.com/read/007886373c61c15d30939/",
+        },
+      ],
+    },
+    {
+      id: "ryugu-2024",
+      year: "2024",
+      type: "research",
+      accent: "rose",
+      title: t.research.pub1Title,
+      description: t.research.pub1Info,
+      authors: t.research.pub1Authors,
+      actions: [
+        {
+          kind: "pdf",
+          label: t.research.actionPdf,
+          href: "https://onlinelibrary.wiley.com/doi/epdf/10.1111/maps.14068",
+        },
+        {
+          kind: "bibtex",
+          label: t.research.actionBibtex,
+          onClick: () => openBib("pericles_1945510059.bib"),
+        },
+      ],
+    },
+  ];
 
-                        <h2 className="dark:text-white font-semibold text-lg">
-                            {t.research.pub3Title}
-                        </h2>
+  const filters = [
+    { key: "all", label: t.research.filtersAll },
+    { key: "research", label: t.research.filtersResearch },
+    { key: "teaching", label: t.research.filtersTeaching },
+    { key: "outreach", label: t.research.filtersOutreach },
+  ];
 
-                        <p className="relative -top-2 text-gray-600 dark:text-gray-400 text-sm text-justify leading-relaxed" dangerouslySetInnerHTML={{ __html: t.research.pub3Info }}>
-                        </p>
-                        
-                        <div className="relative -top-2 flex justify-start w-full pt-0">
-                            <Link
-                                target="_blank"
-                                to="https://www.calameo.com/read/007886373c61c15d30939/"
-                                className="flex items-center border border-blue-500 px-3 py-2 rounded-lg shadow-md text-blue-500 dark:text-blue-400 dark:bg-[#141414] transition duration-200 hover:bg-blue-500 hover:text-white dark:hover:text-white dark:hover:bg-blue-500"
-                            >
-                                <FaLink className="w-5 h-5" />
-                                <span className="text-sm ml-2">{t.research.link}</span>
-                            </Link>
-                        </div>
-                    </div>
+  const filteredPublications =
+    activeFilter === "all"
+      ? publications
+      : publications.filter((publication) => publication.type === activeFilter);
 
-                    
+  const typeLabels = {
+    research: t.research.typeResearch,
+    teaching: t.research.typeTeaching,
+    outreach: t.research.typeOutreach,
+  };
 
-                    {/* Bloc recherche */}
-                    <div className="w-full flex flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#252525] p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 space-y-4 animate-defil">
-                        <h1 className="dark:text-white text-2xl font-bold border-b border-gray-300 dark:border-gray-600 pb-2">
-                            2024
-                        </h1>
-                        <h2 className="dark:text-white font-semibold text-lg">
-                            {t.research.pub1Title}
-                        </h2>
-                        <p className="relative -top-2 text-gray-600 dark:text-gray-400 text-sm text-justify leading-relaxed">
-                            {t.research.pub1Authors}
-                        </p>
-                        <div className="relative -top-2 flex justify-start w-full pt-0">
-                            {/* Lien vers le PDF */}
-                            <Link
-                                target="_blank"
-                                to="https://onlinelibrary.wiley.com/doi/epdf/10.1111/maps.14068"
-                                className="flex items-center border border-red-500 px-3 py-2 rounded-lg shadow-md text-red-500 dark:text-red-400 dark:bg-[#141414] transition duration-200 hover:bg-red-500 hover:text-white dark:hover:text-white dark:hover:bg-red-500"
-                            >
-                                <FaFilePdf className="w-5 h-5" />
-                                <span className="text-sm ml-2">PDF</span>
-                            </Link>
+  const accentColors = {
+    cobalt: "#2563eb",
+    gold: "#d97706",
+    emerald: "#059669",
+    rose: "#e11d48",
+  };
 
-                            {/* Bouton BibTeX */}
-                            <button
-                                onClick={() => openBib('pericles_1945510059.bib')}
-                                className="flex items-center border border-blue-600 px-3 py-2 ml-5 rounded-lg shadow-md text-blue-600 dark:text-blue-400 dark:bg-[#141414] transition duration-200 hover:bg-blue-600 hover:text-white dark:hover:text-white dark:hover:bg-blue-600"
-                            >
-                                <BibTex className="w-5 h-5" />
-                                <span className="text-sm ml-2">BibTeX</span>
-                            </button>
-                        </div>
-                    </div>
+  const getDescriptionLength = (publication) => {
+    const content = publication.descriptionHtml
+      ? publication.descriptionHtml.replace(/<[^>]+>/g, " ")
+      : publication.description ?? "";
 
-                    {/* Modal */}
-                    {showModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                            <div className="bg-white dark:bg-[#252525] p-6 rounded-xl max-w-3xl w-full max-h-[80vh] overflow-auto relative">
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 font-bold text-xl"
-                                >
-                                </button>
-                                <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                                    {bibText}
-                                </pre>
-                            </div>
-                        </div>
-                    )}
+    return content.replace(/\s+/g, " ").trim().length;
+  };
 
+  return (
+    <div className="research-page min-w-screen min-h-screen pb-10">
+      <NavBar />
+
+      <div className="research-shell">
+        <div className="research-orb research-orb-one" />
+        <div className="research-orb research-orb-two" />
+
+        <section className="research-panel research-hero animate-defil">
+          <div className="research-hero-copy">
+            <p className="research-eyebrow">2024 - 2026</p>
+            <h1 className="research-title">{t.research.title}</h1>
+            <p className="research-lead">{t.research.lead}</p>
+          </div>
+        </section>
+
+        <section className="research-toolbar animate-defil">
+          <div className="research-filter-row">
+            {filters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setActiveFilter(filter.key)}
+                className={
+                  activeFilter === filter.key
+                    ? "research-filter research-filter-active"
+                    : "research-filter"
+                }
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section key={activeFilter} className="research-list">
+          {filteredPublications.length === 0 && (
+            <div className="research-panel research-empty animate-defil">
+              {t.research.empty}
+            </div>
+          )}
+
+          {filteredPublications.map((publication, index) => {
+            const authorsAreLong =
+              publication.authors && publication.authors.length > 170;
+            const isExpanded = Boolean(expandedAuthors[publication.id]);
+            const descriptionIsLong = getDescriptionLength(publication) > 190;
+            const descriptionExpanded = Boolean(expandedDescriptions[publication.id]);
+            const displayedAuthors =
+              authorsAreLong && !isExpanded
+                ? `${publication.authors.slice(0, 170)}...`
+                : publication.authors;
+
+            return (
+              <article
+                key={`${activeFilter}-${publication.id}`}
+                className="research-panel research-card animate-defil"
+                style={{
+                  animationDelay: `${index * 0.08}s`,
+                  "--research-accent": accentColors[publication.accent],
+                }}
+              >
+                <div className="research-card-top">
+                  <div className="research-card-badges">
+                    <span className="research-year-badge">{publication.year}</span>
+                    <span className="research-type-badge">
+                      {typeLabels[publication.type]}
+                    </span>
+                  </div>
                 </div>
+
+                <h2 className="research-card-title">{publication.title}</h2>
+
+                {publication.authors && (
+                  <div className="research-authors-block">
+                    <p className="research-authors-label">{t.research.authorsLabel}</p>
+                    <p className="research-authors">{displayedAuthors}</p>
+                    {authorsAreLong && (
+                      <button
+                        type="button"
+                        className="research-inline-button"
+                        onClick={() => toggleAuthors(publication.id)}
+                      >
+                        {isExpanded ? t.research.hideAuthors : t.research.showAuthors}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {publication.description && (
+                  <p
+                    className={
+                      descriptionIsLong && !descriptionExpanded
+                        ? "research-description research-description-collapsed"
+                        : "research-description"
+                    }
+                  >
+                    {publication.description}
+                  </p>
+                )}
+
+                {publication.descriptionHtml && (
+                  <RichContent
+                    as="div"
+                    className={
+                      descriptionIsLong && !descriptionExpanded
+                        ? "research-description research-description-collapsed"
+                        : "research-description"
+                    }
+                    html={publication.descriptionHtml}
+                  />
+                )}
+
+                {descriptionIsLong && (
+                  <button
+                    type="button"
+                    className="research-inline-button"
+                    onClick={() => toggleDescription(publication.id)}
+                  >
+                    {descriptionExpanded
+                      ? t.research.hideDescription
+                      : t.research.showDescription}
+                  </button>
+                )}
+
+                <div className="research-actions">
+                  {publication.actions.map((action) => (
+                    <ResourceButton
+                      key={`${publication.id}-${action.label}`}
+                      action={action}
+                      onClick={action.onClick}
+                    />
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      </div>
+
+      {showModal && (
+        <div
+          className="research-modal-backdrop"
+          onClick={() => setShowModal(false)}
+          role="presentation"
+        >
+          <div
+            className="research-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bibtex-title"
+          >
+            <div className="research-modal-header">
+              <div>
+                <p className="research-modal-kicker">BibTeX</p>
+                <h2 id="bibtex-title">{t.research.bibtexTitle}</h2>
+              </div>
+
+              <div className="research-modal-actions">
+                <button
+                  type="button"
+                  onClick={copyBibText}
+                  className="research-icon-button"
+                >
+                  <ClipboardDocumentIcon className="w-5 h-5" />
+                  <span>{copyState ? t.research.copied : t.research.copy}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="research-icon-button"
+                  aria-label={t.research.close}
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            
+            <pre className="research-code-block">{bibText}</pre>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 }

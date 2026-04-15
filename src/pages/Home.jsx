@@ -1,80 +1,144 @@
-import Mail from '@heroicons/react/24/outline/EnvelopeIcon';
-import GoogleScholar from '../Google_Scholar_logo.svg.png';
-import Profile from '../profile.png';
-import Eco from '../eco.svg';
-import { FaLinkedin, FaGithub } from 'react-icons/fa';
-import NavBar from '../components/NavBar';
-import { useLang } from '../App';
+import ArrowTopRightOnSquareIcon from "@heroicons/react/24/outline/ArrowTopRightOnSquareIcon";
+import Mail from "@heroicons/react/24/outline/EnvelopeIcon";
+import GoogleScholar from "../Google_Scholar_logo.svg.png";
+import Profile from "../profile.png";
+import Eco from "../eco.svg";
+import { FaLinkedin, FaGithub } from "react-icons/fa";
+import NavBar from "../components/NavBar";
+import MddGallery from "../components/MddGallery";
+import RichContent from "../components/RichContent";
+import { useLang } from "../App";
+import "../showcase.css";
+
+function HomeLinkCard({ href, icon, label, caption }) {
+  return (
+    <a
+      href={href}
+      target={href.startsWith("mailto:") ? undefined : "_blank"}
+      rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
+      className="home-link-card"
+    >
+      <div className="home-link-main">
+        {icon}
+        <div>
+          <strong>{label}</strong>
+          <span>{caption}</span>
+        </div>
+      </div>
+
+      <ArrowTopRightOnSquareIcon className="home-link-arrow" />
+    </a>
+  );
+}
 
 export default function Home() {
-    const { t } = useLang();
+  const { t } = useLang();
 
-    return (
-        <div className="min-w-screen min-h-screen bg-gray-50 dark:bg-[#1b1b1b] overflow-hidden">
-            <div className="absolute inset-0 flex justify-center items-start pointer-events-none">
-            <img 
-                src={Eco}
-                alt="Background"
-                className="max-w-full max-h-full object-contain opacity-20 mt-10"
+  const profileLinks = [
+    {
+      href: "mailto:theo.ternier@inria.fr",
+      label: t.home.email,
+      caption: "theo.ternier@inria.fr",
+      icon: <Mail className="w-6 h-6" />,
+    },
+    {
+      href: "https://scholar.google.com/citations?user=3i6-KhIAAAAJ&hl=fr",
+      label: t.home.scholar,
+      caption: t.home.captionPublications,
+      icon: <img src={GoogleScholar} alt="Google Scholar" className="w-6 h-6" />,
+    },
+    {
+      href: "https://fr.linkedin.com/in/th%C3%A9o-ternier-6bab6726a",
+      label: t.home.linkedin,
+      caption: t.home.captionProfile,
+      icon: <FaLinkedin size={24} />,
+    },
+    {
+      href: "https://github.com/ThTer11",
+      label: t.home.github,
+      caption: t.home.captionCode,
+      icon: <FaGithub size={24} />,
+    },
+  ];
+
+  const subtitle = [t.home.job, t.home.workplace].filter(Boolean).join(" · ");
+
+  return (
+    <div className="showcase-page showcase-page-home min-w-screen min-h-screen pb-10">
+      <NavBar />
+
+      <div className="showcase-shell">
+        <div className="showcase-orb showcase-orb-a" />
+        <div className="showcase-orb showcase-orb-b" />
+        <img src={Eco} alt="" aria-hidden="true" className="showcase-watermark" />
+
+        <section className="showcase-home-layout">
+          <div className="showcase-home-main">
+            <section className="showcase-panel showcase-card animate-defil">
+              <p className="showcase-eyebrow">{t.home.heroKicker}</p>
+              <h1 className="showcase-title">{t.home.name}</h1>
+              {subtitle && <p className="showcase-subtitle">{subtitle}</p>}
+              <RichContent
+                as="p"
+                className="showcase-lead"
+                html={t.home.description}
+              />
+            </section>
+
+            <MddGallery
+              title={t.home.mddTitle}
+              emptyLabel={t.home.mddEmpty}
+              diagramLabel={t.home.mddDiagram}
+              dualLabel={t.home.mddDual}
+              showDualLabel={t.home.mddShowDual}
+              hideDualLabel={t.home.mddHideDual}
             />
+
+            <section className="showcase-panel showcase-card animate-defil">
+              <h2 className="showcase-section-title">{t.home.educationTitle}</h2>
+              <div className="showcase-list">
+                {t.home.education.map((education) => (
+                  <div
+                    key={`${education.year}-${education.title}`}
+                    className="showcase-list-item"
+                  >
+                    <strong>
+                      {education.year} · {education.title}
+                    </strong>
+                    <span>{education.school}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <aside className="showcase-panel showcase-card home-profile-card animate-defil">
+            <img src={Profile} alt="Profile" className="home-avatar" />
+            <h2 className="home-name">{t.home.name}</h2>
+
+            <div className="home-focus-block">
+              <p className="home-focus-title">{t.home.focusTitle}</p>
+              <div className="showcase-chip-row home-focus-row">
+                {t.home.focusAreas.map((item) => (
+                  <RichContent
+                    key={item}
+                    as="span"
+                    className="showcase-chip"
+                    html={item}
+                    enableMathCopy={false}
+                  />
+                ))}
+              </div>
             </div>
 
-            <NavBar />
-
-            <div className="flex flex-col lg:flex-row justify-center items-start gap-12 pt-24 px-6 lg:px-20">
-                
-                <div className="flex flex-col items-center text-center bg-white dark:bg-[#252525] border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 lg:max-w-sm w-full animate-defil">
-                    <img 
-                        src={Profile} 
-                        alt="Profile" 
-                        className="w-48 h-48 object-cover rounded-full shadow-lg transition-transform duration-500 hover:scale-105"
-                    />
-                    <h1 className="dark:text-white font-bold text-3xl mt-4">{t.home.name}</h1>
-                    <p className="dark:text-gray-400 text-gray-500 mt-1">{t.home.job}</p>
-                    <p className="dark:text-gray-400 text-gray-500">{t.home.workplace}</p>
-
-                    <div className="flex justify-center items-center gap-5 mt-5 animate-defil">
-                        <a href="mailto:theo.ternier@inria.fr" className="dark:text-white hover:text-black/70 dark:hover:text-white/80 transition">
-                            <Mail className="w-7 h-7" />
-                        </a>
-                        <a href="https://scholar.google.com/citations?user=3i6-KhIAAAAJ&hl=fr" target="_blank" rel="noopener noreferrer" className="transition">
-                            <img src={GoogleScholar} alt="GoogleScholar" className="w-7 h-7" />
-                        </a>
-                        <a href="https://fr.linkedin.com/in/th%C3%A9o-ternier-6bab6726a" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 transition">
-                            <FaLinkedin size={28} />
-                        </a>
-                        <a href="https://github.com/ThTer11" target="_blank" rel="noopener noreferrer" className="dark:text-white hover:text-black/70 dark:hover:text-white/80 transition">
-                            <FaGithub size={28} />
-                        </a>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-8 w-full max-w-3xl animate-defil">
-                    
-                    <div className="bg-white dark:bg-[#252525] border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300">
-                        <p className="dark:text-white leading-relaxed text-sm lg:text-base text-justify" dangerouslySetInnerHTML={{ __html: t.home.description }}>
-                        </p>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#252525] border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 mb-12">
-                        <h1 className="dark:text-white text-3xl font-bold mb-6 border-b dark:border-gray-700 border-gray-300 pb-2">
-                            {t.home.educationTitle}
-                        </h1>
-                    <div className="space-y-6">
-                        {t.home.education.map((edu, index) => (
-                        <div key={index}>
-                            <h2 className='dark:text-white font-semibold text-sm lg:text-md'>
-                                {edu.year} – {edu.title}
-                            </h2>
-                        <p className='dark:text-gray-400 text-gray-500 italic text-sm lg:text-md'>{edu.school}</p>
-                    </div>
-                    ))}
-                </div>
+            <div className="home-link-grid">
+              {profileLinks.map((link) => (
+                <HomeLinkCard key={link.label} {...link} />
+              ))}
             </div>
-
-
-                </div>
-            </div>
-        </div>
-    );
+          </aside>
+        </section>
+      </div>
+    </div>
+  );
 }
