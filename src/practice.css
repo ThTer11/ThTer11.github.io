@@ -1,0 +1,221 @@
+.practice-layout{
+  display:grid;
+  gap:1.2rem;
+  margin-top:1.2rem;
+}
+
+.practice-controls-card{
+  display:grid;
+  gap:1.2rem;
+}
+
+.practice-control-block{
+  display:grid;
+  gap:.8rem;
+}
+
+.practice-label{
+  color:#0f172a;
+  font-size:.92rem;
+  font-weight:800;
+}
+
+.dark .practice-label{
+  color:#f8fafc;
+}
+
+.practice-choice-grid{
+  display:grid;
+  gap:.7rem;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+}
+
+.practice-stats{
+  display:grid;
+  gap:.8rem;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.practice-stat-card{
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:1.1rem;
+  background:rgba(248,250,252,.78);
+  padding:.95rem 1rem;
+}
+
+.dark .practice-stat-card{
+  border-color:rgba(59,130,246,.18);
+  background:linear-gradient(180deg,rgba(20,30,48,.86) 0%,rgba(14,23,38,.92) 100%);
+}
+
+.practice-stat-card strong{
+  display:block;
+  color:#0f172a;
+  font-size:1.45rem;
+  font-weight:800;
+}
+
+.dark .practice-stat-card strong{
+  color:#f8fafc;
+}
+
+.practice-stat-card span{
+  display:block;
+  margin-top:.3rem;
+  color:#64748b;
+  font-size:.86rem;
+}
+
+.dark .practice-stat-card span{
+  color:#94a3b8;
+}
+
+.practice-result-card{
+  display:grid;
+  gap:1rem;
+}
+
+.practice-exercise-card{
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:1.2rem;
+  background:rgba(248,250,252,.78);
+  padding:1rem;
+}
+
+.dark .practice-exercise-card{
+  border-color:rgba(59,130,246,.24);
+  background:linear-gradient(180deg,rgba(20,30,48,.86) 0%,rgba(14,23,38,.94) 100%);
+}
+
+.practice-exercise-head{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.55rem;
+}
+
+.practice-chip{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  background:rgba(37,99,235,.08);
+  color:#2563eb;
+  padding:.42rem .75rem;
+  font-size:.78rem;
+  font-weight:800;
+}
+
+.dark .practice-chip{
+  background:rgba(37,99,235,.2);
+  color:#bfdbfe;
+}
+
+.practice-statement{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:10rem;
+  margin-top:.9rem;
+  text-align:center;
+}
+
+.practice-statement .rich-content-math-display{
+  margin:0;
+}
+
+.practice-statement mjx-container{
+  color:#0f172a !important;
+  font-size:1.28em !important;
+}
+
+.dark .practice-statement mjx-container{
+  color:#f8fafc !important;
+}
+
+.practice-answer-block{
+  display:grid;
+  gap:.55rem;
+}
+
+.practice-answer-input{
+  width:100%;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:1rem;
+  background:rgba(248,250,252,.88);
+  color:#0f172a;
+  font-size:1rem;
+  padding:.92rem 1rem;
+}
+
+.practice-answer-input:focus{
+  outline:none;
+  border-color:rgba(37,99,235,.44);
+  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
+.dark .practice-answer-input{
+  border-color:rgba(148,163,184,.18);
+  background:rgba(15,23,42,.72);
+  color:#e2e8f0;
+}
+
+.practice-page .gauss-mode{
+  justify-content:center;
+}
+
+.practice-page .gauss-mode-active{
+  border-color:rgba(37,99,235,.58);
+  box-shadow:0 0 0 3px rgba(37,99,235,.16),0 16px 30px rgba(37,99,235,.16);
+}
+
+.dark .practice-page .gauss-mode-active{
+  box-shadow:0 0 0 3px rgba(96,165,250,.18),0 18px 34px rgba(14,165,233,.16);
+}
+
+.practice-correction{
+  flex-direction:column;
+  gap:.85rem;
+}
+
+.practice-correction .rich-content-math-display{
+  width:100%;
+}
+
+.dark .practice-page .gauss-solution-card{
+  border-color:rgba(59,130,246,.22);
+  background:linear-gradient(180deg,rgba(19,29,45,.88) 0%,rgba(12,20,34,.94) 100%);
+  color:#f8fafc;
+}
+
+.dark .practice-page .gauss-summary-label{
+  color:#dbeafe;
+}
+
+@media (min-width:980px){
+  .practice-layout{
+    grid-template-columns:minmax(320px,390px) minmax(0,1fr);
+    align-items:start;
+  }
+
+  .practice-controls-card{
+    position:sticky;
+    top:6.8rem;
+  }
+}
+
+@media (max-width:640px){
+  .practice-choice-grid{
+    grid-template-columns:1fr;
+  }
+
+  .practice-stats{
+    grid-template-columns:1fr;
+  }
+
+  .practice-statement{
+    min-height:8rem;
+  }
+
+  .practice-statement mjx-container{
+    font-size:1.08em !important;
+  }
+}

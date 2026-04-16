@@ -7,6 +7,7 @@ import Enseignements from "./pages/Enseignements";
 import Conferences from "./pages/Conferences";
 import Gauss from "./pages/Gauss";
 import Inverse from "./pages/Inverse";
+import Calcul from "./pages/Calcul";
 
 const LangContext = createContext();
 export const useLang = () => useContext(LangContext);
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/:lang/enseignements" element={<LangWrapper><Enseignements /></LangWrapper>} />
       <Route path="/:lang/gauss" element={<LangWrapper><Gauss /></LangWrapper>} />
       <Route path="/:lang/inverse" element={<LangWrapper><Inverse /></LangWrapper>} />
+      <Route path="/:lang/calcul" element={<LangWrapper><Calcul /></LangWrapper>} />
       <Route path="/:lang/conferences" element={<LangWrapper><Conferences /></LangWrapper>} />
       <Route path="*" element={<Navigate to="/fr/" replace />} />
     </Routes>

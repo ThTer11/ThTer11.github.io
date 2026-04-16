@@ -79,6 +79,59 @@
   margin-top:1rem;
 }
 
+.gauss-export-box{
+  display:grid;
+  gap:.9rem;
+  margin-top:1.15rem;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:1.1rem;
+  background:rgba(248,250,252,.72);
+  padding:1rem;
+}
+
+.dark .gauss-export-box{
+  border-color:rgba(148,163,184,.18);
+  background:rgba(15,23,42,.62);
+}
+
+.gauss-export-title{
+  color:#0f172a;
+  font-size:.95rem;
+  font-weight:800;
+}
+
+.dark .gauss-export-title{
+  color:#f8fafc;
+}
+
+.gauss-export-lead{
+  margin-top:.3rem;
+  color:#64748b;
+  font-size:.9rem;
+  line-height:1.65;
+}
+
+.dark .gauss-export-lead{
+  color:#cbd5e1;
+}
+
+.gauss-export-grid{
+  display:grid;
+  gap:.75rem;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.gauss-export-action{
+  justify-content:center;
+}
+
+.gauss-export-action:disabled{
+  cursor:not-allowed;
+  opacity:.55;
+  transform:none;
+  box-shadow:none;
+}
+
 .gauss-error{
   display:grid;
   gap:.35rem;
@@ -311,6 +364,10 @@
 @media (max-width:640px){
   .gauss-textarea{
     min-height:12rem;
+  }
+
+  .gauss-export-grid{
+    grid-template-columns:1fr;
   }
 
   .gauss-step-header{
