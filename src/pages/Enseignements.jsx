@@ -177,6 +177,19 @@ export default function Enseignements() {
 
   const resourceCards = [
     {
+      id: "linear-map",
+      title: t.teaching.resourceLinearMapTitle,
+      description: t.teaching.resourceLinearMapText,
+      audience: "L1-L2",
+      actions: [
+        {
+          kind: "internal",
+          label: t.teaching.resourceActionOpen,
+          to: `/${lang}/application-lineaire`,
+        },
+      ],
+    },
+    {
       id: "gauss",
       title: t.teaching.resourceGaussTitle,
       description: t.teaching.resourceGaussText,

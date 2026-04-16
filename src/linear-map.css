@@ -1,0 +1,68 @@
+.linear-map-page .showcase-shell{
+  max-width: 1280px;
+}
+
+.linear-map-input-grid{
+  display:grid;
+  gap:1rem;
+  margin-top:1rem;
+}
+
+.linear-map-field{
+  display:grid;
+  gap:.35rem;
+}
+
+.linear-map-label{
+  color:#0f172a;
+  font-size:.95rem;
+  font-weight:800;
+}
+
+.dark .linear-map-label{
+  color:#f8fafc;
+}
+
+.linear-map-textarea{
+  min-height:11rem;
+}
+
+.linear-map-field-full{
+  grid-column:1 / -1;
+}
+
+.linear-map-columns{
+  display:grid;
+  gap:1rem;
+  margin-top:.9rem;
+}
+
+.linear-map-column-header{
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  color:#0f172a;
+  font-size:1rem;
+  font-weight:800;
+}
+
+.dark .linear-map-column-header{
+  color:#0f172a;
+}
+
+.linear-map-formulas{
+  display:grid;
+  gap:.7rem;
+  margin-top:.9rem;
+}
+
+.linear-map-page .gauss-actions .showcase-action{
+  padding:.64rem .82rem;
+  font-size:.88rem;
+}
+
+@media (min-width: 980px){
+  .linear-map-input-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
