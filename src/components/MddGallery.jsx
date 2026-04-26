@@ -82,6 +82,7 @@ export default function MddGallery({
     const [activeIndex, setActiveIndex] = useState(persistedState.index);
     const [autoplayPaused, setAutoplayPaused] = useState(persistedState.paused);
     const [showDual, setShowDual] = useState(persistedState.showDual);
+    const [zoom, setZoom] = useState(1);
 
     useEffect(() => {
         let mounted = true;
@@ -169,12 +170,18 @@ export default function MddGallery({
     const handleDotClick = (index) => {
         setAutoplayPaused(true);
         setShowDual(false);
+        setZoom(1);
         setActiveIndex(index);
     };
 
     const toggleDual = () => {
         setShowDual((current) => !current);
+        setZoom(1);
     };
+
+    const zoomOut = () => setZoom((current) => Math.max(1, Math.round((current - 0.5) * 10) / 10));
+    const zoomIn = () => setZoom((current) => Math.min(4, Math.round((current + 0.5) * 10) / 10));
+    const resetZoom = () => setZoom(1);
 
     return (
         <div className="showcase-panel showcase-card home-mdd-card animate-defil">
@@ -220,7 +227,12 @@ export default function MddGallery({
                         <p className="home-mdd-panel-title">
                             {showDual && activeItem.dualSrc ? dualLabel : diagramLabel}
                         </p>
-                        <div className="home-mdd-frame">
+                        <div className="home-mdd-zoom-controls" aria-label="Zoom MDD">
+                            <button type="button" onClick={zoomOut} disabled={zoom <= 1}>-</button>
+                            <button type="button" onClick={resetZoom}>{zoom.toFixed(1)}x</button>
+                            <button type="button" onClick={zoomIn} disabled={zoom >= 4}>+</button>
+                        </div>
+                        <div className={zoom > 1 ? "home-mdd-frame home-mdd-frame-zoomed" : "home-mdd-frame"}>
                             <img
                                 key={showDual && activeItem.dualSrc ? activeItem.dualSrc : activeItem.src}
                                 src={resolveAsset(
@@ -230,6 +242,8 @@ export default function MddGallery({
                                     showDual && activeItem.dualSrc ? dualLabel : diagramLabel
                                 }`}
                                 className="home-mdd-image"
+                                style={{ transform: `scale(${zoom})` }}
+                                onClick={zoom < 2 ? zoomIn : resetZoom}
                             />
                         </div>
                     </div>

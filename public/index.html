@@ -14,7 +14,13 @@
         tex: {
           inlineMath: [["$", "$"], ["\\(", "\\)"]],
           displayMath: [["$$", "$$"], ["\\[", "\\]"]],
-          processEscapes: true
+          processEscapes: true,
+          macros: {
+            e: ["_{\\mathrm{#1}}", 1],
+            dd: "\\mathop{}\\!\\mathrm{d}",
+            vect: ["\\overrightarrow{#1}", 1],
+            f: ["\\dfrac{#1}{#2}", 2]
+          }
         },
         options: {
           skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]

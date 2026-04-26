@@ -301,6 +301,12 @@ function openPdfPreview(title, result, view) {
           inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]],
           displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]],
           processEscapes: true,
+          macros: {
+            e: ["_{\\\\mathrm{#1}}", 1],
+            dd: "\\\\mathop{}\\\\!\\\\mathrm{d}",
+            vect: ["\\\\overrightarrow{#1}", 1],
+            f: ["\\\\dfrac{#1}{#2}", 2],
+          },
         },
         svg: {
           fontCache: "global",

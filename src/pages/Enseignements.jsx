@@ -177,6 +177,19 @@ export default function Enseignements() {
 
   const resourceCards = [
     {
+      id: "tikz",
+      title: t.teaching.resourceTikzTitle,
+      description: t.teaching.resourceTikzText,
+      audience: "LaTeX",
+      actions: [
+        {
+          kind: "internal",
+          label: t.teaching.resourceActionOpen,
+          to: `/${lang}/tikz`,
+        },
+      ],
+    },
+    {
       id: "linear-map",
       title: t.teaching.resourceLinearMapTitle,
       description: t.teaching.resourceLinearMapText,
