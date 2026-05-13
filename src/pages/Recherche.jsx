@@ -123,7 +123,7 @@ export default function Recherche() {
       actions: [
         {
           kind: "link",
-          label: t.research.actionPreprint,
+          label: t.research.actionArticle,
           href: "https://arxiv.org/abs/2601.05026/",
         },
       ],
