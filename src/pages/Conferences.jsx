@@ -2,6 +2,7 @@ import NavBar from "../components/NavBar";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { FaFilePdf } from "react-icons/fa";
 import { useLang } from "../App";
+import { getConferenceTalks } from "../data/conferenceContent";
 import "../showcase.css";
 
 function TalkAction({ action }) {
@@ -28,73 +29,7 @@ function TalkAction({ action }) {
 export default function Conferences() {
   const { t } = useLang();
 
-  const talks = [
-    {
-      id: "jncf-2026",
-      year: "2026",
-      type: t.conferences.typeFlashTalk,
-      accent: "rose",
-      title: t.conferences.conf4Title,
-      description: t.conferences.conf4Desc,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.conferences.actionSlides,
-          href: `${process.env.PUBLIC_URL}/docs/jncf_flash_talk.pdf`,
-        },
-      ],
-    },
-    {
-      id: "dijon-2026",
-      year: "2026",
-      type: t.conferences.typeSeminar,
-      accent: "cobalt",
-      title: t.conferences.conf3Title,
-      description: t.conferences.conf3Desc,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.conferences.actionSlides,
-          href: `${process.env.PUBLIC_URL}/docs/sem_dijon.pdf`,
-        },
-      ],
-    },
-    {
-      id: "odelix-2025",
-      year: "2025",
-      type: t.conferences.typeProgram,
-      accent: "gold",
-      title: t.conferences.conf2Title,
-      description: t.conferences.conf2Desc,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.conferences.actionSlides,
-          href: `${process.env.PUBLIC_URL}/docs/odelix_talk.pdf`,
-        },
-      ],
-    },
-    {
-      id: "mediation-2025",
-      year: "2025",
-      type: t.conferences.typeOutreach,
-      accent: "emerald",
-      title: t.conferences.conf1Title,
-      description: t.conferences.conf1Desc,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.conferences.actionSlides,
-          href: `${process.env.PUBLIC_URL}/docs/PrésentationSecondes.pdf`,
-        },
-        {
-          kind: "pdf",
-          label: t.conferences.conf1Doc1,
-          href: `${process.env.PUBLIC_URL}/docs/ActivitéSecondesArbres.pdf`,
-        },
-      ],
-    },
-  ];
+  const talks = getConferenceTalks(t);
 
   return (
     <div className="showcase-page showcase-page-conferences min-w-screen min-h-screen pb-10">

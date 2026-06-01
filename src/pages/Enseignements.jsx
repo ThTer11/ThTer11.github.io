@@ -10,6 +10,7 @@ import {
 import { FaFilePdf } from "react-icons/fa";
 import { useLang } from "../App";
 import RichContent from "../components/RichContent";
+import { getTeachingResourceCards, getTeachingYears } from "../data/teachingContent";
 import "../showcase.css";
 
 function TeachingActionButton({ action, onClick }) {
@@ -118,153 +119,8 @@ export default function Enseignements() {
     }
   };
 
-  const teachingYears = [
-    {
-      year: "2025-",
-      accent: "gold",
-      items: [
-        {
-          title: t.teaching.teach1.title4,
-          descriptionHtml: t.teaching.teach1.desc4,
-          actions: [],
-        },
-      ],
-    },
-    {
-      year: "2025-2026",
-      accent: "emerald",
-      items: [
-        {
-          title: t.teaching.teach1.title,
-          subtitle: t.teaching.teach1.desc1,
-          descriptionHtml: t.teaching.teach1.desc11,
-          actions: [],
-        },
-        {
-          title: t.teaching.teach1.title2,
-          subtitle: t.teaching.teach1.desc2,
-          descriptionHtml: t.teaching.teach1.desc21,
-          actions: [],
-        },
-        {
-          title: t.teaching.teach1.title3,
-          subtitle: t.teaching.teach1.desc3,
-          actions: [],
-        },
-      ],
-    },
-    {
-      year: "2024-2025",
-      accent: "cobalt",
-      items: [
-        {
-          title: t.teaching.teach2.title,
-          subtitle: t.teaching.teach2.desc1,
-          actions: [],
-        },
-        {
-          title: t.teaching.teach2.title2,
-          subtitle: t.teaching.teach2.desc2,
-          actions: [],
-        },
-        {
-          title: t.teaching.teach2.title3,
-          actions: [],
-        },
-      ],
-    },
-  ];
-
-  const resourceCards = [
-    {
-      id: "tikz",
-      title: t.teaching.resourceTikzTitle,
-      description: t.teaching.resourceTikzText,
-      audience: "LaTeX",
-      actions: [
-        {
-          kind: "internal",
-          label: t.teaching.resourceActionOpen,
-          to: `/${lang}/tikz`,
-        },
-      ],
-    },
-    {
-      id: "linear-map",
-      title: t.teaching.resourceLinearMapTitle,
-      description: t.teaching.resourceLinearMapText,
-      audience: "L1-L2",
-      actions: [
-        {
-          kind: "internal",
-          label: t.teaching.resourceActionOpen,
-          to: `/${lang}/application-lineaire`,
-        },
-      ],
-    },
-    {
-      id: "gauss",
-      title: t.teaching.resourceGaussTitle,
-      description: t.teaching.resourceGaussText,
-      audience: "L1",
-      actions: [
-        {
-          kind: "internal",
-          label: t.teaching.resourceActionOpen,
-          to: `/${lang}/gauss`,
-        },
-      ],
-    },
-    {
-      id: "inverse",
-      title: t.teaching.resourceInverseTitle,
-      description: t.teaching.resourceInverseText,
-      audience: "L1",
-      actions: [
-        {
-          kind: "internal",
-          label: t.teaching.resourceActionOpen,
-          to: `/${lang}/inverse`,
-        },
-      ],
-    },
-    {
-      id: "terminale",
-      title: t.teaching.resourceTerminaleTitle,
-      description: t.teaching.teach2.desc3,
-      audience: "Terminale",
-      actions: [
-        {
-          kind: "pdf",
-          label: t.teaching.resourceActionPdf,
-          href: `${process.env.PUBLIC_URL}/docs/exercicesterminale.pdf`,
-        },
-      ],
-    },
-    {
-      id: "agreg",
-      title: t.teaching.resourceAgregTitle,
-      descriptionHtml: t.teaching.teach3.desc,
-      audience: t.teaching.teach3.title,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.teaching.agreg.algebre,
-          href: `${process.env.PUBLIC_URL}/docs/metaplansalgebre.pdf`,
-        },
-        {
-          kind: "pdf",
-          label: t.teaching.agreg.analyse,
-          href: `${process.env.PUBLIC_URL}/docs/metaplansanalyse.pdf`,
-        },
-        {
-          kind: "package",
-          label: t.teaching.resourceActionPackage,
-          onClick: () => openTeX("packageagreg.tex"),
-        },
-      ],
-    },
-  ];
+  const teachingYears = getTeachingYears(t);
+  const resourceCards = getTeachingResourceCards({ t, lang, openTeX });
 
   return (
     <div className="showcase-page showcase-page-teaching min-w-screen min-h-screen pb-10">
@@ -308,6 +164,27 @@ export default function Enseignements() {
                             className="timeline-item-desc"
                             html={item.descriptionHtml}
                           />
+                        )}
+
+                        {item.imageLinks?.length > 0 && (
+                          <div
+                            key={`${item.title}-images-${item.imageLinks.length}`}
+                            className="timeline-image-grid"
+                            tabIndex={0}
+                          >
+                            {item.imageLinks.map((imageLink, imageIndex) => (
+                              <a
+                                key={`${imageLink.src}-${imageIndex}`}
+                                href={imageLink.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="timeline-image-link"
+                                aria-label={imageLink.alt}
+                              >
+                                <img src={imageLink.src} alt={imageLink.alt} />
+                              </a>
+                            ))}
+                          </div>
                         )}
 
                         {item.actions.length > 0 && (

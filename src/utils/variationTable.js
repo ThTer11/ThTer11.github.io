@@ -66,136 +66,170 @@ export function createBlankVariationTable() {
   };
 }
 
-export function createVariationTableExample(example = "simple") {
-  if (example === "minimum") {
-    const table = {
-      variableLabel: "$x$",
-      style: "classic",
-      columns: [createVariationColumn("$-\\infty$"), createVariationColumn("$1$"), createVariationColumn("$+\\infty$")],
-      rows: [],
+function createColumnsFromData(columns = []) {
+  return columns.map((column) => {
+    const data = typeof column === "string" ? { value: column } : column;
+
+    return {
+      ...createVariationColumn(data.value || ""),
+      barrier: data.barrier || "none",
+      barrierText: data.barrierText || "",
     };
-    table.rows = [
-      {
-        ...createVariationRow(table.columns.length, "sign", "$f'$"),
-        points: [{ ...createPointCell() }, { ...createPointCell(), value: "$0$" }, { ...createPointCell() }],
-        intervals: [{ ...createIntervalCell(), value: "$-$" }, { ...createIntervalCell(), value: "$+$" }],
-      },
-      {
-        ...createVariationRow(table.columns.length, "variation", "$f$"),
-        points: [
-          { ...createPointCell(), value: "$+\\infty$", position: "high" },
-          { ...createPointCell(), value: "$m$", position: "low" },
-          { ...createPointCell(), value: "$+\\infty$", position: "high" },
-        ],
-      },
-    ];
-    return table;
-  }
+  });
+}
 
-  if (example === "forbidden" || example === "asymptote") {
-    const forbidden = createVariationColumn("$0$");
-    forbidden.barrier = "double";
-    const table = {
-      variableLabel: "$x$",
-      style: "classic",
-      columns: [createVariationColumn("$-\\infty$"), forbidden, createVariationColumn("$+\\infty$")],
-      rows: [],
-    };
-    table.rows = [
-      {
-        ...createVariationRow(table.columns.length, "variation", "$f$"),
-        points: [
-          { ...createPointCell(), value: "$0$", position: "middle" },
-          { ...createPointCell(), leftValue: "$-\\infty$", rightValue: "$+\\infty$", position: "middle" },
-          { ...createPointCell(), value: "$0$", position: "middle" },
-        ],
-        intervals: [{ ...createIntervalCell(), arrow: "down" }, { ...createIntervalCell(), arrow: "down" }],
-      },
-    ];
-    return table;
-  }
+function createRowFromData(row, columnCount) {
+  return {
+    ...createVariationRow(columnCount, row.type || "variation", row.label || ""),
+    height: row.height,
+    points: Array.from({ length: columnCount }, (_, index) => ({
+      ...createPointCell(),
+      ...(row.points?.[index] || {}),
+    })),
+    intervals: Array.from({ length: Math.max(0, columnCount - 1) }, (_, index) => ({
+      ...createIntervalCell(),
+      ...(row.intervals?.[index] || {}),
+    })),
+  };
+}
 
-  if (example === "manyZeros") {
-    const table = {
-      variableLabel: "$x$",
-      style: "classic",
-      columns: [createVariationColumn("$-\\infty$"), createVariationColumn("$-2$"), createVariationColumn("$0$"), createVariationColumn("$3$"), createVariationColumn("$+\\infty$")],
-      rows: [],
-    };
-    table.rows = [
-      {
-        ...createVariationRow(table.columns.length, "sign", "$f'$"),
-        points: [
-          { ...createPointCell() },
-          { ...createPointCell(), value: "$0$" },
-          { ...createPointCell(), value: "$0$" },
-          { ...createPointCell(), value: "$0$" },
-          { ...createPointCell() },
-        ],
-        intervals: [
-          { ...createIntervalCell(), value: "$+$" },
-          { ...createIntervalCell(), value: "$-$" },
-          { ...createIntervalCell(), value: "$+$" },
-          { ...createIntervalCell(), value: "$-$" },
-        ],
-      },
-    ];
-    return table;
-  }
+export function createVariationTableFromData(definition = {}) {
+  const columns = createColumnsFromData(definition.columns || []);
 
-  if (example === "custom") {
-    const table = createVariationTableExample("simple");
-    table.rows.push({
-      ...createVariationRow(table.columns.length, "custom", "convexité"),
-      intervals: [{ ...createIntervalCell(), value: "convexe" }, { ...createIntervalCell(), value: "concave" }],
-    });
-    return table;
-  }
+  return syncVariationTable({
+    variableLabel: definition.variableLabel ?? "$x$",
+    style: definition.style || "classic",
+    labelColumnWidth: definition.labelColumnWidth,
+    intervalWidth: definition.intervalWidth,
+    columns,
+    rows: (definition.rows || []).map((row) => createRowFromData(row, columns.length)),
+  });
+}
 
-  const table = {
+const forbiddenValueExample = {
+  variableLabel: "$x$",
+  style: "classic",
+  columns: [
+    "$-\\infty$",
+    { value: "$0$", barrier: "double" },
+    "$+\\infty$",
+  ],
+  rows: [
+    {
+      type: "variation",
+      label: "$f$",
+      points: [
+        { value: "$0$", position: "middle" },
+        { leftValue: "$-\\infty$", rightValue: "$+\\infty$", position: "middle" },
+        { value: "$0$", position: "middle" },
+      ],
+      intervals: [{ arrow: "down" }, { arrow: "down" }],
+    },
+  ],
+};
+
+const VARIATION_TABLE_EXAMPLES = {
+  simple: {
     variableLabel: "$x$",
     style: "classic",
-    columns: [
-      createVariationColumn("$-\\infty$"),
-      createVariationColumn("$-1$"),
-      createVariationColumn("$1$"),
-      createVariationColumn("$+\\infty$"),
+    columns: ["$-\\infty$", "$-1$", "$1$", "$+\\infty$"],
+    rows: [
+      {
+        type: "sign",
+        label: "$f'$",
+        points: [{}, { value: "$0$" }, { value: "$0$" }, {}],
+        intervals: [{ value: "$+$" }, { value: "$-$" }, { value: "$+$" }],
+      },
+      {
+        type: "variation",
+        label: "$f$",
+        points: [
+          { value: "$-\\infty$", position: "low" },
+          { value: "$3$", position: "high" },
+          { value: "$-1$", position: "low" },
+          { value: "$+\\infty$", position: "high" },
+        ],
+        intervals: [{ arrow: "auto" }, { arrow: "auto" }, { arrow: "auto" }],
+      },
     ],
-    rows: [],
-  };
+  },
+  minimum: {
+    variableLabel: "$x$",
+    style: "classic",
+    columns: ["$-\\infty$", "$1$", "$+\\infty$"],
+    rows: [
+      {
+        type: "sign",
+        label: "$f'$",
+        points: [{}, { value: "$0$" }, {}],
+        intervals: [{ value: "$-$" }, { value: "$+$" }],
+      },
+      {
+        type: "variation",
+        label: "$f$",
+        points: [
+          { value: "$+\\infty$", position: "high" },
+          { value: "$m$", position: "low" },
+          { value: "$+\\infty$", position: "high" },
+        ],
+      },
+    ],
+  },
+  forbidden: forbiddenValueExample,
+  asymptote: forbiddenValueExample,
+  manyZeros: {
+    variableLabel: "$x$",
+    style: "classic",
+    columns: ["$-\\infty$", "$-2$", "$0$", "$3$", "$+\\infty$"],
+    rows: [
+      {
+        type: "sign",
+        label: "$f'$",
+        points: [{}, { value: "$0$" }, { value: "$0$" }, { value: "$0$" }, {}],
+        intervals: [
+          { value: "$+$" },
+          { value: "$-$" },
+          { value: "$+$" },
+          { value: "$-$" },
+        ],
+      },
+    ],
+  },
+  custom: {
+    variableLabel: "$x$",
+    style: "classic",
+    columns: ["$-\\infty$", "$-1$", "$1$", "$+\\infty$"],
+    rows: [
+      {
+        type: "sign",
+        label: "$f'$",
+        points: [{}, { value: "$0$" }, { value: "$0$" }, {}],
+        intervals: [{ value: "$+$" }, { value: "$-$" }, { value: "$+$" }],
+      },
+      {
+        type: "variation",
+        label: "$f$",
+        points: [
+          { value: "$-\\infty$", position: "low" },
+          { value: "$3$", position: "high" },
+          { value: "$-1$", position: "low" },
+          { value: "$+\\infty$", position: "high" },
+        ],
+        intervals: [{ arrow: "auto" }, { arrow: "auto" }, { arrow: "auto" }],
+      },
+      {
+        type: "custom",
+        label: "convexité",
+        intervals: [{ value: "convexe" }, { value: "concave" }],
+      },
+    ],
+  },
+};
 
-  table.rows = [
-    {
-      ...createVariationRow(table.columns.length, "sign", "$f'$"),
-      points: [
-        { ...createPointCell(), value: "", position: "middle" },
-        { ...createPointCell(), value: "$0$", position: "middle" },
-        { ...createPointCell(), value: "$0$", position: "middle" },
-        { ...createPointCell(), value: "", position: "middle" },
-      ],
-      intervals: [
-        { ...createIntervalCell(), value: "$+$" },
-        { ...createIntervalCell(), value: "$-$" },
-        { ...createIntervalCell(), value: "$+$" },
-      ],
-    },
-    {
-      ...createVariationRow(table.columns.length, "variation", "$f$"),
-      points: [
-        { ...createPointCell(), value: "$-\\infty$", position: "low" },
-        { ...createPointCell(), value: "$3$", position: "high" },
-        { ...createPointCell(), value: "$-1$", position: "low" },
-        { ...createPointCell(), value: "$+\\infty$", position: "high" },
-      ],
-      intervals: [
-        { ...createIntervalCell(), arrow: "auto" },
-        { ...createIntervalCell(), arrow: "auto" },
-        { ...createIntervalCell(), arrow: "auto" },
-      ],
-    },
-  ];
-
-  return table;
+export function createVariationTableExample(example = "simple") {
+  return createVariationTableFromData(
+    VARIATION_TABLE_EXAMPLES[example] || VARIATION_TABLE_EXAMPLES.simple,
+  );
 }
 
 export function syncVariationTable(table) {

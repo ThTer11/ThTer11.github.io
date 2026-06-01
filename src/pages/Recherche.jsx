@@ -10,6 +10,12 @@ import {
 import { FaFilePdf } from "react-icons/fa";
 import { useLang } from "../App";
 import RichContent from "../components/RichContent";
+import {
+  RESEARCH_ACCENT_COLORS,
+  getPublications,
+  getResearchFilters,
+  getResearchTypeLabels,
+} from "../data/researchContent";
 
 function ResourceButton({ action, onClick }) {
   const icon =
@@ -111,102 +117,15 @@ export default function Recherche() {
     }));
   };
 
-  const publications = [
-    {
-      id: "paper-2026",
-      year: "2026",
-      type: "research",
-      accent: "cobalt",
-      title: t.research.pub4Title,
-      description: t.research.pub4Description,
-      authors: t.research.pub4Info,
-      actions: [
-        {
-          kind: "link",
-          label: t.research.actionArticle,
-          href: "https://arxiv.org/abs/2601.05026/",
-        },
-      ],
-    },
-    {
-      id: "exam-2025",
-      year: "2025",
-      type: "teaching",
-      accent: "gold",
-      title: t.research.pub2Title,
-      description: t.research.pub2Info,
-      authors: null,
-      actions: [
-        {
-          kind: "link",
-          label: t.research.actionOpen,
-          href: "https://www.h-k.fr/adc.ps.2025PSIm",
-        },
-      ],
-    },
-    {
-      id: "outreach-2025",
-      year: "2025",
-      type: "outreach",
-      accent: "emerald",
-      title: t.research.pub3Title,
-      descriptionHtml: t.research.pub3Info,
-      authors: null,
-      actions: [
-        {
-          kind: "link",
-          label: t.research.actionArticle,
-          href: "https://www.calameo.com/read/007886373c61c15d30939/",
-        },
-      ],
-    },
-    {
-      id: "ryugu-2024",
-      year: "2024",
-      type: "research",
-      accent: "rose",
-      title: t.research.pub1Title,
-      description: t.research.pub1Info,
-      authors: t.research.pub1Authors,
-      actions: [
-        {
-          kind: "pdf",
-          label: t.research.actionPdf,
-          href: "https://onlinelibrary.wiley.com/doi/epdf/10.1111/maps.14068",
-        },
-        {
-          kind: "bibtex",
-          label: t.research.actionBibtex,
-          onClick: () => openBib("pericles_1945510059.bib"),
-        },
-      ],
-    },
-  ];
-
-  const filters = [
-    { key: "all", label: t.research.filtersAll },
-    { key: "research", label: t.research.filtersResearch },
-    { key: "teaching", label: t.research.filtersTeaching },
-    { key: "outreach", label: t.research.filtersOutreach },
-  ];
+  const publications = getPublications(t, openBib);
+  const filters = getResearchFilters(t);
 
   const filteredPublications =
     activeFilter === "all"
       ? publications
       : publications.filter((publication) => publication.type === activeFilter);
 
-  const typeLabels = {
-    research: t.research.typeResearch,
-    teaching: t.research.typeTeaching,
-    outreach: t.research.typeOutreach,
-  };
-
-  const accentColors = {
-    cobalt: "#2563eb",
-    gold: "#d97706",
-    emerald: "#059669",
-    rose: "#e11d48",
-  };
+  const typeLabels = getResearchTypeLabels(t);
 
   const getDescriptionLength = (publication) => {
     const content = publication.descriptionHtml
@@ -275,7 +194,7 @@ export default function Recherche() {
                 className="research-panel research-card animate-defil"
                 style={{
                   animationDelay: `${index * 0.08}s`,
-                  "--research-accent": accentColors[publication.accent],
+                  "--research-accent": RESEARCH_ACCENT_COLORS[publication.accent],
                 }}
               >
                 <div className="research-card-top">

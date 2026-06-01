@@ -153,6 +153,11 @@ const translations = {
         desc:
           'Mon profil agreg-maths est disponible <a class="text-blue-500" target="_blank" href="https://agreg-maths.fr/users/67122" rel="noopener noreferrer">ici</a>.',
       },
+      teach4: {
+        title: "UE MEU204 : Algèbre et Arithmétique (24h)",
+        desc:
+          'L2 Mathématiques',
+      },
       agreg: {
         algebre: "Algèbre",
         analyse: "Analyse",
@@ -587,6 +592,11 @@ const translations = {
         title: "Agrégation",
         desc:
           'My agreg-maths profile is available <a class="text-blue-500" target="_blank" href="https://agreg-maths.fr/users/67122" rel="noopener noreferrer">here</a>.',
+      },
+      teach4: {
+        title: "UE MEU204 : Algebra and arithmetic (24h)",
+        desc:
+          'L2 Mathematics',
       },
       agreg: {
         algebre: "Algebra",
