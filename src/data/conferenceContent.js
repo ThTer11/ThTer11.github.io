@@ -1,6 +1,26 @@
 export function getConferenceTalks(t) {
   return [
     {
+      id: "mediation-2026",
+      year: "2026",
+      type: t.conferences.typeOutreach,
+      accent: "emerald",
+      title: t.conferences.conf5Title,
+      description: t.conferences.conf5Desc,
+      actions: [
+        {
+          kind: "pdf",
+          label: t.conferences.actionSlides,
+          href: `${process.env.PUBLIC_URL}/docs/diapomediation.pdf`,
+        },
+        {
+          kind: "pdf",
+          label: t.conferences.conf1Doc1,
+          href: `${process.env.PUBLIC_URL}/docs/mediation2026.pdf`,
+        },
+      ],
+    },
+    {
       id: "jncf-2026",
       year: "2026",
       type: t.conferences.typeFlashTalk,

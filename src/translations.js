@@ -353,6 +353,9 @@ const translations = {
       conf4Title: "JNCF 2026 Flash Talk",
       conf4Desc: "",
       conf1Doc1: "Énoncé",
+      conf5Title: "Médiation scientifique à l'Inria Saclay",
+      conf5Desc:
+        "Vulgarisation de mes recherches actuelles et introduction d’élèves de seconde à l’étude des graphes. Travail réalisé avec Julie Capron.",
     },
     gauss: {
       title: "Pivot de Gauss pas à pas",
@@ -791,6 +794,8 @@ const translations = {
       conf3Desc: "",
       conf4Title: "JNCF 2026 Flash Talk",
       conf4Desc: "",
+      conf5Title: "Scientific outreach at Inria Saclay",
+      conf5Desc: "Popularization of my current research and introduction of high-school students to graphs. Work done with Julie Capron.",
       conf1Doc1: "Handout",
     },
     gauss: {
