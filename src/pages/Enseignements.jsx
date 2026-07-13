@@ -56,6 +56,44 @@ function TeachingActionButton({ action, onClick }) {
   );
 }
 
+function TimelineBookCard({ book }) {
+  const label = book.alt || book.title || book.status;
+  const content = book.src ? (
+    <img src={book.src} alt={label} />
+  ) : (
+    <div className="timeline-book-placeholder">
+      {book.status && <span className="timeline-book-status">{book.status}</span>}
+      {book.title && <strong>{book.title}</strong>}
+      {book.subtitle && <span className="timeline-book-subtitle">{book.subtitle}</span>}
+      {book.note && <span className="timeline-book-note">{book.note}</span>}
+    </div>
+  );
+
+  if (book.href) {
+    return (
+      <a
+        href={book.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="timeline-image-link"
+        aria-label={label}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      className="timeline-image-link timeline-book-link timeline-book-link-upcoming"
+      aria-label={label}
+      role="img"
+    >
+      {content}
+    </div>
+  );
+}
+
 export default function Enseignements() {
   const { t, lang } = useLang();
   const location = useLocation();
@@ -173,16 +211,10 @@ export default function Enseignements() {
                             tabIndex={0}
                           >
                             {item.imageLinks.map((imageLink, imageIndex) => (
-                              <a
-                                key={`${imageLink.src}-${imageIndex}`}
-                                href={imageLink.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="timeline-image-link"
-                                aria-label={imageLink.alt}
-                              >
-                                <img src={imageLink.src} alt={imageLink.alt} />
-                              </a>
+                              <TimelineBookCard
+                                key={`${imageLink.title || imageLink.src}-${imageIndex}`}
+                                book={imageLink}
+                              />
                             ))}
                           </div>
                         )}

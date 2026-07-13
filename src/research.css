@@ -1,10 +1,13 @@
 .research-page{
   position:relative;
   overflow:hidden;
+  min-height:100vh;
+  min-height:100dvh;
   background:
     radial-gradient(circle at top left,rgba(30,64,175,.12),transparent 28rem),
     radial-gradient(circle at right 18%,rgba(16,185,129,.14),transparent 24rem),
     linear-gradient(180deg,#f6f7fb 0%,#eef2f7 100%);
+  background-color:#eef2f7;
 }
 
 .dark .research-page{
@@ -12,6 +15,7 @@
     radial-gradient(circle at top left,rgba(59,130,246,.18),transparent 28rem),
     radial-gradient(circle at right 18%,rgba(16,185,129,.14),transparent 24rem),
     linear-gradient(180deg,#101827 0%,#0f172a 100%);
+  background-color:#0f172a;
 }
 
 .research-shell{
