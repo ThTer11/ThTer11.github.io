@@ -1,6 +1,21 @@
 export function getConferenceTalks(t) {
   return [
     {
+      id: "issac-2026",
+      year: "2026",
+      type: t.conferences.typeConference,
+      accent: "gold",
+      title: t.conferences.conf6Title,
+      description: t.conferences.conf6Desc,
+      actions: [
+        {
+          kind: "pdf",
+          label: t.conferences.actionSlides,
+          href: `${process.env.PUBLIC_URL}/docs/issac2026.pdf`,
+        },
+      ],
+    },
+    {
       id: "mediation-2026",
       year: "2026",
       type: t.conferences.typeOutreach,
