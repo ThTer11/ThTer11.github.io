@@ -41,6 +41,27 @@ export function getPublications(t, openBib) {
       ],
     },
     {
+      id: "exam2-2026",
+      year: "2026",
+      type: "teaching",
+      accent: "gold",
+      title: t.research.pub5Title,
+      description: t.research.pub5Info,
+      authors: null,
+      actions: [
+        {
+          kind: "link",
+          label: t.research.actionOpenMP2026,
+          href: "https://www.h-k.fr/adc.ps.2026MPm",
+        },
+        {
+          kind: "link",
+          label: t.research.actionOpenPC2026,
+          href: "https://www.h-k.fr/adc.ps.2026PCm",
+        },
+      ],
+    },
+    {
       id: "exam-2025",
       year: "2025",
       type: "teaching",
@@ -51,7 +72,7 @@ export function getPublications(t, openBib) {
       actions: [
         {
           kind: "link",
-          label: t.research.actionOpen,
+          label: t.research.actionOpenPSI2025,
           href: "https://www.h-k.fr/adc.ps.2025PSIm",
         },
       ],

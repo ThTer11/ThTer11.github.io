@@ -11,22 +11,22 @@ export function getTeachingYears(t) {
           descriptionHtml: t.teaching.teach1.desc4,
           imageLinks: [
             {
+              href: "https://www.h-k.fr/adc.ps.2026PCm",
+              src: `${process.env.PUBLIC_URL}/hetk/pc2026.jpg`,
+              alt: t.research.pub5Title,
+              title: t.research.pub5Title,
+            },
+            {
+              href: "https://www.h-k.fr/adc.ps.2026MPm",
+              src: `${process.env.PUBLIC_URL}/hetk/mp2026.jpg`,
+              alt: t.research.pub5Title,
+              title: t.research.pub5Title,
+            },
+            {
               href: "https://www.h-k.fr/adc.ps.2025PSIm",
               src: `${process.env.PUBLIC_URL}/hetk/psi2025.jpg`,
               alt: t.research.pub2Title,
               title: t.research.pub2Title,
-            },
-            {
-              title: t.teaching.resourceHKBookMP2026,
-              subtitle: t.teaching.resourceHKBookSubtitle,
-              status: t.teaching.resourceHKUpcomingStatus,
-              note: t.teaching.resourceHKUpcomingNote,
-            },
-            {
-              title: t.teaching.resourceHKBookPC2026,
-              subtitle: t.teaching.resourceHKBookSubtitle,
-              status: t.teaching.resourceHKUpcomingStatus,
-              note: t.teaching.resourceHKUpcomingNote,
             },
           ],
           actions: [],
