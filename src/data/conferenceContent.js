@@ -1,6 +1,21 @@
 export function getConferenceTalks(t) {
   return [
     {
+      id: "icms-2026",
+      year: "2026",
+      type: t.conferences.typeConference,
+      accent: "gold",
+      title: t.conferences.conf7Title,
+      description: t.conferences.conf6Desc,
+      actions: [
+        {
+          kind: "pdf",
+          label: t.conferences.actionSlides,
+          href: `${process.env.PUBLIC_URL}/docs/icms2026.pdf`,
+        },
+      ],
+    },
+    {
       id: "issac-2026",
       year: "2026",
       type: t.conferences.typeConference,

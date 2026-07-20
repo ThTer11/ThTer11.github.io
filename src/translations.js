@@ -370,6 +370,8 @@ const translations = {
         "Vulgarisation de mes recherches actuelles et introduction d’élèves de seconde à l’étude des graphes. Travail réalisé avec Julie Capron.",
       conf6Title: "ISSAC 2026",
       conf6Desc: "Présentation du papier \"A data structure for monomial ideals with applications to signature Gröbner bases\"",
+      conf7Title: "ICMS 2026",
+      conf7Desc: "Présentation du papier \"A data structure for monomial ideals with applications to signature Gröbner bases\"",
     },
     gauss: {
       title: "Pivot de Gauss pas à pas",
@@ -824,6 +826,8 @@ const translations = {
       conf5Desc: "Popularization of my current research and introduction of high-school students to graphs. Work done with Julie Capron.",
       conf6Title: "ISSAC 2026",
       conf6Desc: "Presenting the paper \"A data structure for monomial ideals with applications to signature Gröbner bases\"",
+      conf7Title: "ICMS 2026",
+      conf7Desc: "Presenting the paper \"A data structure for monomial ideals with applications to signature Gröbner bases\"",
       conf1Doc1: "Handout",
     },
     gauss: {
