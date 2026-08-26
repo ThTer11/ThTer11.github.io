@@ -65,9 +65,9 @@ const additionsTool = {
     mode: "per-question",
     seconds: {
       addition: { 1: 5, 2: 7, 3: 7 },
-      subtraction: { 1: 7, 2: 7, 3: 10 },
+      subtraction: { 1: 7, 2: 15, 3: 10 },
       "sum-three-terms": { 1: 15, 2: 20, 3: 25 },
-      difficult: 25,
+      difficult: 20,
     },
     strict: false,
     show: true,
@@ -118,7 +118,7 @@ const multiplicationsTool = {
     type: "generator",
     generate: ({ difficulty, rng }) => multiplicationQuestion(difficulty, rng),
   },
-  courseHintIds: [""],
+  courseHintIds: [],
   answer: { type: "integer", inputMode: "numeric" },
   feedback: {showCorrection: true,
   showExplanation: false,
@@ -158,7 +158,7 @@ const fractionsTool = {
     type: "generator",
     generate: ({ difficulty, rng }) => fractionQuestion(difficulty, rng),
   },
-  courseHintIds: [""],
+  courseHintIds: [],
   answer: {
     type: "text",
     placeholder: translated("ex. 1/2 ou <", "ex. 1/2 or <"),
@@ -1968,15 +1968,15 @@ function linearEquationQuestion(difficulty, rng) {
 
 export const elementaryTools = [
   additionsTool,
-  // multiplicationsTool,
-  // fractionsTool,
-  // squareRootsTool,
-  // developmentTool,
-  // factorizationTool,
-  // identitiesTool,
-  // powersTool,
-  // linearEquationsTool,
-  // guidedMethodsTool,
+  multiplicationsTool,
+  fractionsTool,
+  squareRootsTool,
+  developmentTool,
+  factorizationTool,
+  identitiesTool,
+  powersTool,
+  linearEquationsTool,
+  guidedMethodsTool,
 ];
 
 export default elementaryTools;

@@ -50,7 +50,7 @@ describe("application routes", () => {
   test("renders a category from the registry without a dedicated route", async () => {
     await renderRoute("/fr/entrainements/calcul-elementaire");
     expect(container.querySelectorAll(".exercise-tool-card")).toHaveLength(10);
-    expect(container.textContent).toContain("Additions rapides");
+    expect(container.textContent).toContain("Sommes rapides");
   });
 
   test("renders a shareable tool URL with the generic engine", async () => {

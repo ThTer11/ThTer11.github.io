@@ -9,36 +9,36 @@ export const exerciseCategories = [
     audience: "L1–L2",
     accent: "emerald",
   },
-  // {
-  //   id: "second-degre",
-  //   title: { fr: "Équations du second degré", en: "Quadratic equations" },
-  //   description: {
-  //     fr: "Discriminant, racines, lecture graphique et méthodes rapides.",
-  //     en: "Discriminant, roots, graphs and efficient methods.",
-  //   },
-  //   audience: "L1",
-  //   accent: "cobalt",
-  // },
-  // {
-  //   id: "matrices",
-  //   title: { fr: "Matrices", en: "Matrices" },
-  //   description: {
-  //     fr: "Dimensions, produits, déterminants et inverses exacts.",
-  //     en: "Dimensions, products, determinants and exact inverses.",
-  //   },
-  //   audience: "L1–L2",
-  //   accent: "gold",
-  // },
-  // {
-  //   id: "systemes-lineaires",
-  //   title: { fr: "Systèmes linéaires", en: "Linear systems" },
-  //   description: {
-  //     fr: "Résolution, pivot de Gauss et écritures paramétriques.",
-  //     en: "Solving, Gaussian elimination and parametric forms.",
-  //   },
-  //   audience: "L1–L2",
-  //   accent: "rose",
-  // },
+  {
+    id: "second-degre",
+    title: { fr: "Équations du second degré", en: "Quadratic equations" },
+    description: {
+      fr: "Discriminant, racines, lecture graphique et méthodes rapides.",
+      en: "Discriminant, roots, graphs and efficient methods.",
+    },
+    audience: "L1",
+    accent: "cobalt",
+  },
+  {
+    id: "matrices",
+    title: { fr: "Matrices", en: "Matrices" },
+    description: {
+      fr: "Dimensions, produits, déterminants et inverses exacts.",
+      en: "Dimensions, products, determinants and exact inverses.",
+    },
+    audience: "L1–L2",
+    accent: "gold",
+  },
+  {
+    id: "systemes-lineaires",
+    title: { fr: "Systèmes linéaires", en: "Linear systems" },
+    description: {
+      fr: "Résolution, pivot de Gauss et écritures paramétriques.",
+      en: "Solving, Gaussian elimination and parametric forms.",
+    },
+    audience: "L1–L2",
+    accent: "rose",
+  },
 ];
 
 export default exerciseCategories;
