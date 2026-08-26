@@ -15,7 +15,7 @@ function getMathJax() {
 }
 
 function getCopyLabels() {
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/en")) {
+    if (typeof document !== "undefined" && document.documentElement.lang === "en") {
         return {
             copyButton: "TeX",
             copiedButton: "OK",
@@ -236,7 +236,12 @@ function clearCopyTimers(element) {
 
 function enhanceMathControls(element, enableMathCopy) {
     element.querySelectorAll(".rich-content-math").forEach((wrapper) => {
-        wrapper.dataset.copyEnabled = enableMathCopy ? "true" : "false";
+        const copyEnabled = enableMathCopy && wrapper.classList.contains("rich-content-math-display");
+        wrapper.dataset.copyEnabled = copyEnabled ? "true" : "false";
+
+        if (!copyEnabled) {
+            wrapper.querySelectorAll(".rich-content-math-copy").forEach((button) => button.remove());
+        }
     });
 
     if (!enableMathCopy) {
@@ -248,7 +253,7 @@ function enhanceMathControls(element, enableMathCopy) {
 
     const labels = getCopyLabels();
 
-    element.querySelectorAll(".rich-content-math").forEach((wrapper) => {
+    element.querySelectorAll(".rich-content-math-display").forEach((wrapper) => {
         let button = wrapper.querySelector(".rich-content-math-copy");
 
         if (!button) {
@@ -316,14 +321,39 @@ export default function RichContent({
         element.innerHTML = html;
         annotateMathSources(element);
 
+        let cancelled = false;
+
         if (!mathJax) {
             enhanceMathControls(element, enableMathCopy);
+            let attempts = 0;
+            const retryTimer = window.setInterval(() => {
+                attempts += 1;
+                const loadedMathJax = getMathJax();
+
+                if (!loadedMathJax && attempts < 80) {
+                    return;
+                }
+
+                window.clearInterval(retryTimer);
+                if (!loadedMathJax || cancelled) {
+                    return;
+                }
+
+                loadedMathJax.typesetPromise([element])
+                    .then(() => {
+                        if (!cancelled) {
+                            enhanceMathControls(element, enableMathCopy);
+                        }
+                    })
+                    .catch(() => {});
+            }, 125);
+
             return () => {
+                cancelled = true;
+                window.clearInterval(retryTimer);
                 clearCopyTimers(element);
             };
         }
-
-        let cancelled = false;
 
         mathJax
             .typesetPromise([element])

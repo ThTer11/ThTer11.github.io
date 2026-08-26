@@ -60,11 +60,19 @@ export default function NavBar() {
         to: `/${lang}/enseignements#resources`,
         label: t.teaching.sectionResources,
       },
+      {
+        to: `/${lang}/entrainements`,
+        label: t.teaching.sectionTraining,
+      },
     ],
-    [lang, t.teaching.sectionActivities, t.teaching.sectionResources],
+    [lang, t.teaching.sectionActivities, t.teaching.sectionResources, t.teaching.sectionTraining],
   );
 
-  const teachingActive = location.pathname === `/${lang}/enseignements`;
+  const teachingActive =
+    location.pathname === `/${lang}/enseignements` ||
+    location.pathname.startsWith(`/${lang}/entrainements`) ||
+    ["gauss", "inverse", "application-lineaire", "tikz"].some((path) =>
+      location.pathname.startsWith(`/${lang}/${path}`));
 
   return (
     <div>
@@ -204,9 +212,9 @@ export default function NavBar() {
           </NavLink>
           <NavLink
             to={`/${lang}/enseignements`}
-            className={({ isActive }) =>
+            className={() =>
               `transition m-2 ${
-                isActive
+                teachingActive
                   ? "dark:text-white text-black"
                   : "text-gray-500 dark:hover:text-white hover:text-black"
               }`

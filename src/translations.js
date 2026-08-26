@@ -97,6 +97,7 @@ const translations = {
       resourcesTitle: "Ressources pour les étudiants",
       sectionActivities: "Activités d'enseignement",
       sectionResources: "Ressources pour les étudiants",
+      sectionTraining: "Entraînements mathématiques",
       resourceAudience: "Public ",
       resourceFormat: "Format",
       resourceSolutionsTitle: "Solutions TD1",
@@ -113,6 +114,7 @@ const translations = {
       resourceLinearMapTitle: "Matrice d'une application linéaire",
       resourceGaussTitle: "Outil pivot de Gauss",
       resourceInverseTitle: "Outil inversion de matrices",
+      resourceTrainingTitle: "Plateforme d'entraînement mathématique",
       resourceComingTitle: "Espace en développement",
       resourceComingText:
         "Cette zone est prête pour accueillir de futures ressources de cours, d'entraînement et de révision.",
@@ -124,6 +126,8 @@ const translations = {
         "Un outil interactif pour calculer la matrice d'une application linéaire dans deux bases données, en expliquant comment écrire chaque image dans la base d'arrivée.",
       resourceInverseText:
         "Un outil interactif pour inverser une matrice carrée par pivot de Gauss, avec toutes les étapes sur la matrice augmentée.",
+      resourceTrainingText:
+        "Des exercices mathématiques pour s'entraîner et progresser.",
       resourceFormatSheet: "Corrigé / feuille",
       resourceFormatPdf: "PDF",
       resourceFormatLibrary: "Collection de supports",
@@ -556,6 +560,7 @@ const translations = {
       resourcesTitle: "Resources for students",
       sectionActivities: "Teaching activities",
       sectionResources: "Student resources",
+      sectionTraining: "Mathematics practice",
       resourceAudience: "Audience",
       resourceFormat: "Format",
       resourceSolutionsTitle: "Tutorial 1 solutions",
@@ -572,6 +577,7 @@ const translations = {
       resourceLinearMapTitle: "Matrix of a linear map",
       resourceGaussTitle: "Gauss elimination tool",
       resourceInverseTitle: "Matrix inversion tool",
+      resourceTrainingTitle: "Mathematics practice platform",
       resourceComingTitle: "Section in progress",
       resourceComingText:
         "This area is ready to host future course notes, practice sheets and revision resources.",
@@ -583,6 +589,8 @@ const translations = {
         "An interactive tool to compute the matrix of a linear map in two given bases, while explaining how each image is decomposed in the target basis.",
       resourceInverseText:
         "An interactive tool to invert a square matrix via Gauss elimination, with all intermediate steps on the augmented matrix.",
+      resourceTrainingText:
+        "Mathematics exercises to practice and improve.",
       resourceFormatSheet: "Solution sheet",
       resourceFormatPdf: "PDF",
       resourceFormatLibrary: "Support collection",

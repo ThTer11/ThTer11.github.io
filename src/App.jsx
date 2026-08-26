@@ -9,6 +9,9 @@ import Gauss from "./pages/Gauss";
 import Inverse from "./pages/Inverse";
 import LinearMap from "./pages/LinearMap";
 import TikzEditor from "./pages/TikzEditor";
+import ExerciseCatalog from "./pages/ExerciseCatalog";
+import ExerciseCategory from "./pages/ExerciseCategory";
+import ExerciseTool from "./pages/ExerciseTool";
 
 const LangContext = createContext();
 export const useLang = () => useContext(LangContext);
@@ -23,7 +26,11 @@ function LangWrapper({ children }) {
     }
   }, [lang, currentLang]);
 
-  if (!translations[currentLang]) {
+  useEffect(() => {
+    document.documentElement.lang = currentLang;
+  }, [currentLang]);
+
+  if ((lang && !translations[lang]) || !translations[currentLang]) {
     return <Navigate to="/fr/" replace />;
   }
 
@@ -60,7 +67,8 @@ function PageBackground() {
           pathname.includes("/gauss") ||
           pathname.includes("/inverse") ||
           pathname.includes("/application-lineaire") ||
-          pathname.includes("/tikz")
+          pathname.includes("/tikz") ||
+          pathname.includes("/entrainements")
         ? "site-background-teaching"
         : pathname.includes("/recherche")
           ? "site-background-default"
@@ -91,6 +99,9 @@ export default function App() {
         <Route path="/:lang/inverse" element={<LangWrapper><Inverse /></LangWrapper>} />
         <Route path="/:lang/application-lineaire" element={<LangWrapper><LinearMap /></LangWrapper>} />
         <Route path="/:lang/tikz" element={<LangWrapper><TikzEditor /></LangWrapper>} />
+        <Route path="/:lang/entrainements" element={<LangWrapper><ExerciseCatalog /></LangWrapper>} />
+        <Route path="/:lang/entrainements/:categoryId" element={<LangWrapper><ExerciseCategory /></LangWrapper>} />
+        <Route path="/:lang/entrainements/:categoryId/:toolId" element={<LangWrapper><ExerciseTool /></LangWrapper>} />
         <Route path="/:lang/conferences" element={<LangWrapper><Conferences /></LangWrapper>} />
         <Route path="*" element={<Navigate to="/fr/" replace />} />
       </Routes>

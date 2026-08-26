@@ -1,11 +1,15 @@
 # Outils étudiants
 
+Les outils historiques ci-dessous restent des pages spécialisées. Les nouveaux entraînements configurables utilisent le moteur documenté dans [`docs/ADDING_EXERCISES.md`](../../docs/ADDING_EXERCISES.md).
+
 ## Ajouter un outil
 
 1. Créer la page React dans `src/pages`.
 2. Ajouter sa route dans `src/App.jsx`.
 3. Ajouter sa carte dans `src/tools/studentTools.js`.
 4. Ajouter les textes traduits dans `src/translations.js`.
+
+Pour un nouvel exercice du catalogue mathématique, ces quatre étapes ne sont pas nécessaires : ajouter principalement sa configuration dans `src/exercises/definitions/`.
 
 ## Outils TikZ
 

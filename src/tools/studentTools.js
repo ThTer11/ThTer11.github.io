@@ -1,5 +1,12 @@
 export const STUDENT_TOOLS = [
   {
+    id: "training",
+    titleKey: "resourceTrainingTitle",
+    descriptionKey: "resourceTrainingText",
+    audience: "> Lycée",
+    path: "entrainements",
+  },
+  {
     id: "tikz",
     titleKey: "resourceTikzTitle",
     descriptionKey: "resourceTikzText",
