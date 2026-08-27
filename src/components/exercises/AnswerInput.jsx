@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MathRenderer from "./MathRenderer";
 import { localize } from "../../exercises/core/localize";
 
@@ -68,37 +68,96 @@ function ChoiceInput({ options, value, onChange, onCommit, disabled, lang, first
   );
 }
 
-function MatrixInput({ value, onChange, disabled, labels, firstInputRef }) {
+function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions }) {
+  const [activeCell, setActiveCell] = useState([0, 0]);
   const update = (rowIndex, columnIndex, nextValue) => {
     const next = value.map((row) => [...row]);
     next[rowIndex][columnIndex] = nextValue;
     onChange(next);
   };
 
+  const [activeRow, activeColumn] = activeCell;
+  const activeValue = value[activeRow]?.[activeColumn] ?? "";
+
   return (
-    <div
-      className="exercise-matrix-input"
-      role="group"
-      aria-label={labels.answer}
-    >
-      <div
-        className="exercise-matrix-table"
-        style={{ "--exercise-matrix-columns": value[0]?.length ?? 1 }}
-      >
-        {value.map((row, rowIndex) => row.map((cell, columnIndex) => (
-          <input
-            key={`${rowIndex}-${columnIndex}`}
-            ref={rowIndex === 0 && columnIndex === 0 ? firstInputRef : undefined}
-            className="exercise-matrix-cell"
-            value={cell}
-            onChange={(event) => update(rowIndex, columnIndex, event.target.value)}
+    <div className="exercise-matrix-entry" role="group" aria-label={labels.answer}>
+      <div className="exercise-matrix-input">
+        <div
+          className="exercise-matrix-table"
+          style={{ "--exercise-matrix-columns": value[0]?.length ?? 1 }}
+        >
+          {value.map((row, rowIndex) => row.map((cell, columnIndex) => (
+            <input
+              key={`${rowIndex}-${columnIndex}`}
+              ref={rowIndex === 0 && columnIndex === 0 ? firstInputRef : undefined}
+              className="exercise-matrix-cell"
+              value={cell}
+              onFocus={() => setActiveCell([rowIndex, columnIndex])}
+              onChange={(event) => update(rowIndex, columnIndex, event.target.value)}
+              disabled={disabled}
+              inputMode="numeric"
+              aria-label={`${labels.matrixRow} ${rowIndex + 1}, ${labels.matrixColumn} ${columnIndex + 1}`}
+            />
+          )))}
+        </div>
+      </div>
+      <div className="exercise-numeric-symbols">
+        <NegativeSignButton
+          value={activeValue}
+          onChange={(nextValue) => update(activeRow, activeColumn, nextValue)}
+          disabled={disabled}
+          labels={labels}
+        />
+        {allowFractions && (
+          <FractionSeparatorButton
+            value={activeValue}
+            onChange={(nextValue) => update(activeRow, activeColumn, nextValue)}
             disabled={disabled}
-            inputMode="text"
-            aria-label={`${labels.matrixRow} ${rowIndex + 1}, ${labels.matrixColumn} ${columnIndex + 1}`}
+            labels={labels}
           />
-        )))}
+        )}
       </div>
     </div>
+  );
+}
+
+function toggleNegativeSign(value) {
+  const current = String(value ?? "");
+  return current.startsWith("-") ? current.slice(1) : `-${current}`;
+}
+
+function NegativeSignButton({ value, onChange, disabled, labels }) {
+  return (
+    <button
+      type="button"
+      className="exercise-negative-sign"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => onChange(toggleNegativeSign(value))}
+      disabled={disabled}
+      aria-label={labels.toggleNegative}
+      title={labels.toggleNegative}
+    >
+      −
+    </button>
+  );
+}
+
+function FractionSeparatorButton({ value, onChange, disabled, labels }) {
+  return (
+    <button
+      type="button"
+      className="exercise-negative-sign"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => {
+        const current = String(value ?? "");
+        if (!current.includes("/")) onChange(`${current}/`);
+      }}
+      disabled={disabled}
+      aria-label={labels.insertFractionBar}
+      title={labels.insertFractionBar}
+    >
+      /
+    </button>
   );
 }
 
@@ -122,7 +181,7 @@ function VectorInput({ value, onChange, disabled, labels, itemLabels = [], lang,
             value={cell}
             onChange={(event) => update(index, event.target.value)}
             disabled={disabled}
-            inputMode="text"
+            inputMode="numeric"
             aria-label={localize(itemLabels[index], lang) || `${labels.answer} ${index + 1}`}
           />
         </label>
@@ -165,6 +224,34 @@ function MultipleFieldsInput({ fields, value, onChange, disabled, lang, labels, 
                 <option key={option.id} value={option.id}>{localize(option.label, lang)}</option>
               ))}
             </select>
+          ) : ["integer", "fraction"].includes(field.answer?.type) ? (
+            <div className="exercise-signed-input">
+              <input
+                ref={index === 0 ? firstInputRef : undefined}
+                className="exercise-text-input"
+                value={value[field.id] ?? ""}
+                onChange={(event) => onChange({ ...value, [field.id]: event.target.value })}
+                disabled={disabled}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+              <div className="exercise-numeric-symbols">
+                <NegativeSignButton
+                  value={value[field.id]}
+                  onChange={(nextValue) => onChange({ ...value, [field.id]: nextValue })}
+                  disabled={disabled}
+                  labels={labels}
+                />
+                {field.answer?.type === "fraction" && (
+                  <FractionSeparatorButton
+                    value={value[field.id]}
+                    onChange={(nextValue) => onChange({ ...value, [field.id]: nextValue })}
+                    disabled={disabled}
+                    labels={labels}
+                  />
+                )}
+              </div>
+            </div>
           ) : (
             <input
               ref={index === 0 ? firstInputRef : undefined}
@@ -229,7 +316,16 @@ export default function AnswerInput({
   }
 
   if (type === "matrix") {
-    return <MatrixInput value={value} onChange={onChange} disabled={disabled} labels={labels} firstInputRef={firstInputRef} />;
+    return (
+      <MatrixInput
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        labels={labels}
+        firstInputRef={firstInputRef}
+        allowFractions={spec.elementType === "fraction"}
+      />
+    );
   }
 
   if (type === "vector" || type === "coordinates") {
@@ -260,20 +356,55 @@ export default function AnswerInput({
     );
   }
 
+  const usesNumericSymbolBar = ["integer", "decimal", "fraction"].includes(type)
+    && spec.allowNegative !== false;
+
   return (
     <label className="exercise-field-label">
       <span>{labels.answer}</span>
-      <input
-        ref={firstInputRef}
-        className="exercise-text-input"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        disabled={disabled}
-        inputMode={spec.inputMode ?? (type === "integer" || type === "decimal" ? "decimal" : "text")}
-        autoComplete="off"
-        spellCheck="false"
-        placeholder={localize(spec.placeholder, lang) || (type === "solution-set" ? labels.solutionSetPlaceholder : labels.answerPlaceholder)}
-      />
+      {usesNumericSymbolBar ? (
+        <div className="exercise-signed-input">
+          <input
+            ref={firstInputRef}
+            className="exercise-text-input"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            disabled={disabled}
+            inputMode={spec.inputMode ?? (type === "decimal" ? "decimal" : "numeric")}
+            autoComplete="off"
+            spellCheck="false"
+            placeholder={localize(spec.placeholder, lang) || labels.answerPlaceholder}
+          />
+          <div className="exercise-numeric-symbols">
+            <NegativeSignButton
+              value={value}
+              onChange={onChange}
+              disabled={disabled}
+              labels={labels}
+            />
+            {type === "fraction" && (
+              <FractionSeparatorButton
+                value={value}
+                onChange={onChange}
+                disabled={disabled}
+                labels={labels}
+              />
+            )}
+          </div>
+        </div>
+      ) : (
+        <input
+          ref={firstInputRef}
+          className="exercise-text-input"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          inputMode={spec.inputMode ?? "text"}
+          autoComplete="off"
+          spellCheck="false"
+          placeholder={localize(spec.placeholder, lang) || (type === "solution-set" ? labels.solutionSetPlaceholder : labels.answerPlaceholder)}
+        />
+      )}
     </label>
   );
 }

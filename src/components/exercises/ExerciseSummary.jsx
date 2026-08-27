@@ -39,11 +39,11 @@ function attemptTone(attempt) {
 }
 
 function TimeChart({ attempts, labels }) {
-  const chartWidth = Math.max(620, attempts.length * 72);
-  const chartHeight = 176;
+  const chartWidth = Math.max(680, attempts.length * 68);
+  const chartHeight = 220;
   const horizontalPadding = 42;
-  const topPadding = 30;
-  const bottomPadding = 30;
+  const topPadding = 38;
+  const bottomPadding = 36;
   const maximum = Math.max(1, ...attempts.map((attempt) => attempt.elapsedMs));
   const usableWidth = chartWidth - horizontalPadding * 2;
   const usableHeight = chartHeight - topPadding - bottomPadding;
@@ -86,7 +86,7 @@ function TimeChart({ attempts, labels }) {
           <polyline className="exercise-time-chart-line" points={pointList} />
           {points.map(({ attempt, x, y }) => (
             <g className="exercise-time-chart-point" key={attempt.number}>
-              <circle className={`exercise-time-chart-dot exercise-time-chart-dot-${attemptTone(attempt)}`} cx={x} cy={y} r="6" />
+              <circle className={`exercise-time-chart-dot exercise-time-chart-dot-${attemptTone(attempt)}`} cx={x} cy={y} r="7" />
               <text className="exercise-time-chart-time" x={x} y={Math.max(13, y - 11)} textAnchor="middle">{formatElapsed(attempt.elapsedMs)}</text>
               <text className="exercise-time-chart-question" x={x} y={chartHeight - 9} textAnchor="middle">Q{attempt.number}</text>
             </g>

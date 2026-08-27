@@ -69,7 +69,7 @@ const additionsTool = {
       "sum-three-terms": { 1: 15, 2: 20, 3: 25 },
       difficult: 25,
     },
-    strict: false,
+    strict: true,
     show: true,
   },
   score: true,
@@ -94,31 +94,34 @@ const multiplicationsTool = {
   mode: "practice",
   title: translated("Multiplications rapides", "Quick multiplication"),
   description: translated(
-    "Consolider les tables de multiplication et reconnaître des raccourcis de calcul mental utiles.",
-    "Strengthen multiplication tables and recognise useful mental shortcuts.",
+    "Entraînez-vous au calcul mental en réalisant des multiplications simples le plus rapidement possible.",
+    "Build your mental arithmetic skills by solving quick multiplication problems against the clock.",
   ),
   audience: elementaryAudience,
   difficulties: [
-    { id: "tables", label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers jusqu'à $10$.", "Products up to $10$.") },
-    { id: "simple", label: translated("Produits simples", "Simple products"), description: translated("Un nombre à deux chiffres par un petit entier.", "A two-digit number times a small integer.") },
-    { id: "tricks", label: translated("Astuces mentales", "Mental shortcuts"), description: translated("Produits par 5, 11, 25 ou 99.", "Products by 5, 11, 25 or 99.") },
-    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Tables, produits simples et astuces.", "Times tables, simple products and shortcuts.") },
+    { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of signed integers from $-10$ to $10$ in absolute value.") },
+    { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Un entier relatif à deux chiffres par un autre entier relatif.", "A signed two-digit integer times another signed integer.") },
+    { id: "mixed", color: "gold", timer: true, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal, sans choix supplémentaire.", "All exercises at maximum difficulty, with no additional level choice.") },
   ],
   defaultDifficulty: "tables",
   series: standardSeries,
   timer: {
     enabled: true,
     mode: "per-question",
-    seconds: { tables: 5, simple: 15, tricks: 15, mixed: 15 },
+    seconds: {
+      tables: 5,
+      simple: { 1: 10, 2: 15, 3: 20 },
+      mixed: 20,
+    },
     strict: true,
     show: true,
   },
   score: true,
   source: {
     type: "generator",
-    generate: ({ difficulty, rng }) => multiplicationQuestion(difficulty, rng),
+    generate: ({ difficulty, level, rng }) => multiplicationQuestion(difficulty, rng, level),
   },
-  courseHintIds: [""],
+  courseHintIds: [],
   answer: { type: "integer", inputMode: "numeric" },
   feedback: {showCorrection: true,
   showExplanation: false,
@@ -878,56 +881,52 @@ function additionQuestion(difficulty, rng, exerciseLevel = null) {
   };
 }
 
-function multiplicationQuestion(difficulty, rng) {
-  const level = currentDifficulty(difficulty, "tables");
-  const standard = () => ({
-    left: randomInteger(level === "tables" ? 2 : 11, level === "tables" ? 10 : 35, rng),
-    right: randomInteger(2, level === "tables" ? 10 : 15, rng),
-  });
-  const strategies = [
-    {
-      id: "times-five",
-      weight: 2,
-      make: () => ({ left: randomInteger(12, 98, rng), right: 5 }),
-      insight: translated("Multiplier par 5 revient à multiplier par 10 puis diviser par 2.", "Multiply by 10, then divide by 2."),
-    },
-    {
-      id: "times-twenty-five",
-      weight: 2,
-      make: () => ({ left: 4 * randomInteger(3, 24, rng), right: 25 }),
-      insight: translated("Multiplier par 25 revient à multiplier par 100 puis diviser par 4.", "Multiply by 100, then divide by 4."),
-    },
-    {
-      id: "times-ninety-nine",
-      weight: 1,
-      make: () => ({ left: randomInteger(11, 48, rng), right: 99 }),
-      insight: translated("Utilise $99=100-1$ puis la distributivité.", "Use $99=100-1$ and distributivity."),
-    },
-    {
-      id: "times-eleven",
-      weight: 1,
-      make: () => ({ left: randomInteger(12, 89, rng), right: 11 }),
-      insight: translated("Décompose $11$ en $10+1$.", "Split $11$ as $10+1$."),
-    },
-  ];
-  const variant = level === "tricks"
-    ? weightedPick(strategies, rng)
-    : level === "mixed" && randomInteger(0, 2, rng) > 0
-      ? weightedPick(strategies, rng)
-      : { id: "standard", make: standard };
-  const { left, right } = variant.make();
+
+
+
+
+
+function multiplicationQuestion(difficulty, rng, exerciseLevel = null) {
+  const difficultyId = currentDifficulty(difficulty, "tables");
+  const selectedLevel = Math.min(3, Math.max(1, Number(exerciseLevel) || 1));
+  const simpleRanges = {
+    1: { left: [11, 35], right: [2, 5] },
+    2: { left: [11, 59], right: [2, 9] },
+    3: { left: [11, 99], right: [2, 15] },
+  };
+  const generatedMode = difficultyId === "mixed"
+    ? (randomInteger(0, 2, rng) === 0 ? "tables" : "simple")
+    : difficultyId;
+  const effectiveLevel = difficultyId === "mixed" ? 3 : selectedLevel;
+  const ranges = generatedMode === "tables"
+    ? { left: [2, 10], right: [2, 10] }
+    : simpleRanges[effectiveLevel];
+  const absoluteLeft = randomInteger(ranges.left[0], ranges.left[1], rng);
+  const absoluteRight = randomInteger(ranges.right[0], ranges.right[1], rng);
+  const signPattern = randomInteger(0, 3, rng);
+  const left = signPattern % 2 === 1 ? -absoluteLeft : absoluteLeft;
+  const right = signPattern >= 2 ? -absoluteRight : absoluteRight;
   const expected = left * right;
+  const expression = `${left}\\times ${right < 0 ? `\\left(${right}\\right)` : right}`;
+  const variant = difficultyId === "mixed"
+    ? `mixed-${generatedMode}`
+    : generatedMode === "simple" ? `simple-level-${effectiveLevel}` : "tables";
 
   return {
-    variant: variant.id,
-    prompt: translated(`Calculer mentalement : $$${left}\\times ${right}$$`, `Calculate mentally: $$${left}\\times ${right}$$`),
+    variant,
+    operands: [left, right],
+    level: generatedMode === "simple" ? effectiveLevel : null,
+    prompt: translated(`Calculer : $$${expression}$$`, `Calculate : $$${expression}$$`),
     expected,
     answerDisplay: `$$${expected}$$`,
     explanation: translated(
-      `Le produit exact est $$${left}\\times ${right}=${expected}.$$`,
-      `The exact product is $$${left}\\times ${right}=${expected}.$$`,
+      `Le produit exact est $$${expression}=${expected}.$$`,
+      `The exact product is $$${expression}=${expected}.$$`,
     ),
-    insight: variant.insight,
+    insight: translated(
+      "Deux facteurs de même signe donnent un produit positif ; deux facteurs de signes contraires donnent un produit négatif.",
+      "Factors with the same sign give a positive product; factors with different signs give a negative product.",
+    ),
     courseHintIds: ["elementary-multiplication-strategies"],
   };
 }
@@ -1968,7 +1967,7 @@ function linearEquationQuestion(difficulty, rng) {
 
 export const elementaryTools = [
   additionsTool,
-  // multiplicationsTool,
+  multiplicationsTool,
   // fractionsTool,
   // squareRootsTool,
   // developmentTool,

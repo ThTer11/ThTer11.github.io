@@ -40,9 +40,7 @@ export default function ExerciseCategory() {
                   <article key={tool.id} className="showcase-panel exercise-tool-card">
                     <div className="exercise-tool-meta">
                       <span>{localize(tool.audience ?? category.audience, lang)}</span>
-                      {tool.timer && tool.timer.enabled !== false && (
-                        <span><ClockIcon className="exercise-tiny-icon" />{labels.timed}</span>
-                      )}
+                      {tool.timer && tool.timer.enabled !== false}
                       {tool.mode === "study" && <span>{labels.studyMode}</span>}
                     </div>
                     <MathRenderer as="h3" content={localize(tool.title, lang)} />

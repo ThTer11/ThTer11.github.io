@@ -74,7 +74,7 @@ export default function ScorePanel({ session, labels, compact = false }) {
         <span>{labels.correct}</span>
       </div>
 
-      {summary.timedCompleted > 0 && (
+      {summary.timedCompleted >= 0 && (
         <div className="exercise-score-item exercise-score-item-on-time">
           <strong>{summary.correctOnTime}</strong>
           <span>{labels.correctOnTime}</span>
@@ -86,17 +86,17 @@ export default function ScorePanel({ session, labels, compact = false }) {
         <span>{labels.errors}</span>
       </div>
 
-      {summary.timedOut > 0 && (
+      {summary.timedOut >= 0 && (
         <div className="exercise-score-item exercise-score-item-timeout">
           <strong>{summary.timedOut}</strong>
           <span>{labels.outOfTime}</span>
         </div>
       )}
 
-      <div className="exercise-score-item">
+      {/* <div className="exercise-score-item">
         <strong>{summary.successRate}%</strong>
         <span>{labels.successRate}</span>
-      </div>
+      </div> */}
 
       <div className="exercise-score-item exercise-score-item-streak">
         <StreakValue value={summary.bestStreak} />

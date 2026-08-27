@@ -6,7 +6,7 @@ export const exerciseCategories = [
       fr: "Addition, multiplication, fractions, puissances, racines carrées, identités remarquables, factorisation et développement, équations du premier degré.",
       en: "Addition, multiplication, fractions, powers, square roots, remarkable identities, factorization and expansion, degree one equations.",
     },
-    audience: "L1–L2",
+    audience: "",
     accent: "emerald",
   },
   // {
