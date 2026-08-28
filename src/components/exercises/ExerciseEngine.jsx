@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpenIcon, ClockIcon } from "@heroicons/react/24/outline";
 import AnswerInput, { emptyAnswerValue } from "./AnswerInput";
 import CourseHintModal from "./CourseHintModal";
+import ExerciseQuestionPrompt from "./ExerciseQuestionPrompt";
 import FeedbackPanel from "./FeedbackPanel";
 import ExerciseSummary from "./ExerciseSummary";
 import MathRenderer from "./MathRenderer";
 import ParabolaDiagram from "./ParabolaDiagram";
 import ScorePanel from "./ScorePanel";
 import Timer, { resolveTimerSeconds } from "./Timer";
-import { createQuestion, pickStudyExercise } from "../../exercises/core/source";
+import { createQuestionAvoidingDuplicates, pickStudyExercise } from "../../exercises/core/source";
 import { resolveAnswerSpec } from "../../exercises/core/answerSpec";
 import { localize } from "../../exercises/core/localize";
 import { createSession, recordAttempt } from "../../exercises/core/session";
@@ -387,6 +388,8 @@ function StudyEngine({ tool, lang, courseHints }) {
   }
 
   const hints = exercise.hints ?? [];
+  const exerciseVariant = getExerciseVariants(tool).find((variant) => variant.id === difficulty);
+  const questionPromptUi = exercise.promptUi ?? exerciseVariant?.promptUi ?? tool.promptUi;
 
   return (
     <section className="showcase-panel showcase-card exercise-workspace">
@@ -394,9 +397,10 @@ function StudyEngine({ tool, lang, courseHints }) {
         <span className="exercise-mode-badge">{labels.studyMode}</span>
       </div>
       <div className="exercise-question-frame">
-        <MathRenderer
+        <ExerciseQuestionPrompt
           content={localize(exercise.statement ?? exercise.prompt, lang)}
-          className="exercise-question-content"
+          lang={lang}
+          promptUi={questionPromptUi}
           trustedHtml={Boolean(exercise.trustedHtml)}
         />
       </div>
@@ -479,6 +483,7 @@ export default function ExerciseEngine({
   const submittingRef = useRef(false);
   const deadlineRef = useRef(null);
   const seriesDeadlineRef = useRef(null);
+  const questionSignaturesRef = useRef(new Set());
 
   useEffect(() => {
     onPhaseChange?.(phase);
@@ -502,6 +507,10 @@ export default function ExerciseEngine({
     () => resolveExerciseLevelValue(tool, difficulty, exerciseLevel),
     [difficulty, exerciseLevel, tool],
   );
+  const selectedExerciseVariant = useMemo(
+    () => getExerciseVariants(tool).find((variant) => variant.id === difficulty),
+    [difficulty, tool],
+  );
   const selectExercise = useCallback((variantId, levelId) => {
     setExerciseLevel((currentLevel) => {
       if (levelId !== undefined) {
@@ -517,7 +526,14 @@ export default function ExerciseEngine({
 
   const prepareQuestion = useCallback(() => {
     try {
-      const nextQuestion = createQuestion(tool, difficulty, Math.random, selectedExerciseLevel);
+      const generated = createQuestionAvoidingDuplicates(
+        tool,
+        difficulty,
+        Math.random,
+        selectedExerciseLevel,
+        questionSignaturesRef.current,
+      );
+      const nextQuestion = generated.question;
       const nextSpec = resolveAnswerSpec(tool.answer, nextQuestion.answer);
       setQuestion(nextQuestion);
       setAnswer(emptyAnswerValue(nextSpec, nextQuestion));
@@ -541,6 +557,7 @@ export default function ExerciseEngine({
       setQuestionStartedAt(startedAt);
       setGenerationError("");
       submittingRef.current = false;
+      questionSignaturesRef.current.add(generated.signature);
       return true;
     } catch (error) {
       setGenerationError(error.message);
@@ -552,6 +569,7 @@ export default function ExerciseEngine({
     const newSession = createSession(questionCount);
     deadlineRef.current = null;
     seriesDeadlineRef.current = null;
+    questionSignaturesRef.current = new Set();
     setSession(newSession);
     if (prepareQuestion()) {
       setPhase("active");
@@ -814,9 +832,10 @@ export default function ExerciseEngine({
           </header>
 
           <div className="exercise-question-frame">
-            <MathRenderer
+            <ExerciseQuestionPrompt
               content={localize(question.prompt, lang)}
-              className="exercise-question-content"
+              lang={lang}
+              promptUi={question.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi}
               trustedHtml={Boolean(question.trustedHtml)}
             />
           </div>

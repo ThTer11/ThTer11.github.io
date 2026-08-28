@@ -16,9 +16,13 @@ function formatElapsed(milliseconds) {
   return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)} s`;
 }
 
-function formatSubmittedAnswer(value, labels) {
+export function formatSubmittedAnswer(value, labels) {
   if (value === undefined || value === null || value === "") {
     return labels.noAnswer;
+  }
+
+  if (typeof value === "boolean") {
+    return value ? labels.true : labels.false;
   }
 
   if (Array.isArray(value)) {
@@ -30,6 +34,15 @@ function formatSubmittedAnswer(value, labels) {
   }
 
   return String(value);
+}
+
+export function isPlainTextExpectedAnswer(value) {
+  const content = String(value ?? "");
+
+  return !content.includes("$")
+    && !content.includes("\\(")
+    && !content.includes("\\[")
+    && !/<\/?[a-z][^>]*>/i.test(content);
 }
 
 function attemptTone(attempt) {
@@ -168,7 +181,11 @@ export default function ExerciseSummary({
                   </p>
                   <div>
                     <span>{labels.expectedAnswer}</span>
-                    <MathRenderer content={localize(attempt.expectedAnswer, lang)} trustedHtml />
+                    {isPlainTextExpectedAnswer(localize(attempt.expectedAnswer, lang)) ? (
+                      <strong>{localize(attempt.expectedAnswer, lang)}</strong>
+                    ) : (
+                      <MathRenderer content={localize(attempt.expectedAnswer, lang)} trustedHtml />
+                    )}
                   </div>
                 </div>
               </article>

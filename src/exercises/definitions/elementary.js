@@ -16,6 +16,80 @@ import {
 
 const translated = (fr, en) => ({ fr, en: en ?? fr });
 
+// Présentation compacte des consignes, configurable entièrement depuis ce fichier.
+// Icônes : "calculator", "scale", "pencil", "sparkles", false, ou un emoji.
+const elementaryPromptUi = {
+  calculate: {
+    label: translated("Calculer", "Calculate"),
+    detail: false,
+    tone: "calculate",
+    icon: "calculator",
+  },
+  reduceFraction: {
+    label: translated("Réduire", "Reduce"),
+    detail: translated("Donner une fraction irréductible.", "Give a fraction in lowest terms."),
+    tone: "complete",
+    icon: "pencil",
+  },
+  calculateFraction: {
+    label: translated("Calculer", "Calculate"),
+    detail: translated("Donner une fraction irréductible.", "Give a fraction in lowest terms."),
+    tone: "calculate",
+    icon: "calculator",
+  },
+  compareFractions: {
+    label: translated("Comparer", "Compare"),
+    detail: translated(
+      "Utiliser $>$, $=$ ou $<$.",
+      "Use $>$, $=$ or $<$.",
+    ),
+    tone: "decision",
+    icon: "scale",
+  },
+  identifyIdentity: {
+    label: translated("Vrai/Faux", "True/False"),
+    detail: translated(
+      "L'expression est une identité remarquable avec un facteur commun si nécessaire.",
+      "The expression is a standard identity with a common factor if needed.",
+    ),
+    tone: "decision",
+    icon: "scale",
+  },
+  factorIdentity: {
+    label: translated("Factoriser", "Factor"),
+    detail: false,
+    tone: "transform",
+    icon: "pencil",
+  },
+  completeFactorIdentity: {
+    label: translated("Complèter", "Complete"),
+    detail: false,
+    tone: "transform",
+    icon: "pencil",
+  },
+  developIdentity: {
+    label: translated("Développer", "Expand"),
+    detail: false,
+    tone: "complete",
+    icon: "pencil",
+  },
+  completeDevelopmentIdentity: {
+    label: translated("Complèter", "Complete"),
+    detail: false,
+    tone: "complete",
+    icon: "pencil",
+  },
+  identityReview: {
+    label: translated("Vrai/Faux", "True/False"),
+    detail: translated(
+      "L'expression est une identité remarquable avec un facteur commun si nécessaire.",
+      "The expression is a standard identity with a common factor if needed.",
+    ),
+    tone: "default",
+    icon: "scale",
+  },
+};
+
 const elementaryAudience = translated(
   "Automatismes du collège et du lycée",
   "Core secondary school skills",
@@ -37,10 +111,250 @@ const standardFeedback = {
 
 
 
+//##################################################################
+// Les fonctions de bases
+//##################################################################
+
+function currentDifficulty(difficulty, fallback) {
+  return typeof difficulty === "object"
+    ? difficulty?.id ?? fallback
+    : difficulty ?? fallback;
+}
+
+function randomNonZero(min, max, rng) {
+  let value = 0;
+
+  while (value === 0) {
+    value = randomInteger(min, max, rng);
+  }
+
+  return value;
+}
+
+function signedSumLatex(values) {
+  return values.map((value, index) => {
+    if (index === 0) {
+      return String(value);
+    }
+
+    return value < 0 ? `- ${Math.abs(value)}` : `+ ${value}`;
+  }).join(" ");
+}
+
+function polynomial(terms, latex = false) {
+  const visibleTerms = terms.filter(({ coefficient }) => coefficient !== 0);
+
+  if (visibleTerms.length === 0) {
+    return "0";
+  }
+
+  return visibleTerms.map(({ coefficient, variable }, index) => {
+    const negative = coefficient < 0;
+    const absolute = Math.abs(coefficient);
+    const sign = index === 0
+      ? negative ? "-" : ""
+      : negative ? " - " : " + ";
+    const coefficientText = variable && absolute === 1 ? "" : String(absolute);
+    const product = !latex && variable && coefficientText ? "*" : "";
+
+    return `${sign}${coefficientText}${product}${variable ?? ""}`;
+  }).join("");
+}
+
+function linearExpression(coefficient, constant, latex = false) {
+  return polynomial([
+    { coefficient, variable: "x" },
+    { coefficient: constant, variable: "" },
+  ], latex);
+}
+
+function quadraticExpression(a, b, c, latex = false) {
+  return polynomial([
+    { coefficient: a, variable: "x^2" },
+    { coefficient: b, variable: "x" },
+    { coefficient: c, variable: "" },
+  ], latex);
+}
+
+function fractionLatex(numerator, denominator) {
+  return `\\frac{${numerator}}{${denominator}}`;
+}
+
+function exactFractionValidator(rawValue, context) {
+  const { expected, question, lang } = context;
+
+  if (question.answerKind !== "comparison") {
+    return validateAnswer(
+      rawValue,
+      question.answerSpec ?? { type: "fraction", allowDecimal: false, requireReduced: true },
+      expected,
+      question,
+      lang,
+    );
+  }
+
+  const normalized = String(rawValue ?? "")
+    .trim()
+    .toLocaleLowerCase("fr")
+    .replace(/\\lt/g, "<")
+    .replace(/\\gt/g, ">")
+    .replace(/\\leq?/g, "≤")
+    .replace(/\\geq?/g, "≥");
+  const aliases = {
+    "<": ["<", "inférieur", "inferieur", "plus petit"],
+    "=": ["=", "égal", "egal", "égaux", "egaux"],
+    ">": [">", "supérieur", "superieur", "plus grand"],
+  };
+  const correct = aliases[expected]?.includes(normalized) ?? false;
+
+  return {
+    correct,
+    status: correct ? "correct" : "incorrect",
+    message: correct
+      ? (lang === "en" ? "Correct answer." : "Bonne réponse.")
+      : (lang === "en" ? "Compare the cross-products." : "Compare les produits en croix."),
+  };
+}
+
+function polynomialFormValidator(rawValue, { expected, question, lang }) {
+  try {
+    const alternatives = Array.isArray(expected) ? expected : [expected];
+    const equivalent = alternatives.some((candidate) =>
+      arePolynomialExpressionsEquivalent(rawValue, candidate));
+
+    if (!equivalent) {
+      return {
+        correct: false,
+        status: "incorrect",
+        message: lang === "en"
+          ? "The expression is not equivalent to the expected one."
+          : "L'expression n'est pas équivalente à celle attendue.",
+      };
+    }
+
+    const formOk = question.answerForm === "factorized"
+      ? hasExplicitFactorizedForm(rawValue)
+      : question.answerForm === "developed"
+        ? hasDevelopedForm(rawValue)
+        : true;
+
+    if (!formOk) {
+      return {
+        correct: false,
+        equivalent: true,
+        formOk: false,
+        status: "equivalent",
+        message: lang === "en"
+          ? `The value is right, but a ${question.answerForm} form is required.`
+          : question.answerForm === "factorized"
+            ? "L'expression est la même, mais la forme factorisée est demandée."
+            : "L'expression est la même, mais la forme développée est demandée.",
+      };
+    }
+
+    return {
+      correct: true,
+      equivalent: true,
+      formOk: true,
+      status: "correct",
+      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
+    };
+  } catch (error) {
+    return {
+      correct: false,
+      status: "invalid",
+      message: error.message,
+    };
+  }
+}
+
+function squareRootValidator(rawValue, { expected, question, lang }) {
+  try {
+    const result = inspectSquareRootAnswer(rawValue, expected);
+
+    if (!result.equivalent) {
+      return {
+        correct: false,
+        status: "incorrect",
+        message: lang === "en" ? "This is not the expected exact value." : "Ce n'est pas la valeur exacte attendue.",
+      };
+    }
+
+    if (question.requireSimplified !== false && !result.formOk) {
+      return {
+        correct: false,
+        equivalent: true,
+        formOk: false,
+        status: "equivalent",
+        message: lang === "en"
+          ? "The value is right, but the square root can still be simplified."
+          : "La valeur est correcte, mais la racine peut encore être simplifiée.",
+      };
+    }
+
+    return {
+      correct: true,
+      equivalent: true,
+      formOk: true,
+      status: "correct",
+      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
+    };
+  } catch (error) {
+    return { correct: false, status: "invalid", message: error.message };
+  }
+}
+
+function powerValidator(rawValue, { expected, lang }) {
+  try {
+    const result = inspectPowerAnswer(rawValue, expected);
+
+    if (!result.equivalent) {
+      return {
+        correct: false,
+        status: "incorrect",
+        message: lang === "en"
+          ? "Check the base and the operation on the exponents."
+          : "Vérifie la base et l'opération effectuée sur les exposants.",
+      };
+    }
+
+    if (!result.formOk) {
+      return {
+        correct: false,
+        equivalent: true,
+        formOk: false,
+        status: "equivalent",
+        message: lang === "en"
+          ? "The value is equivalent, but use one power and no negative exponent."
+          : "La valeur est équivalente, mais écris une seule puissance sans exposant négatif.",
+      };
+    }
+
+    return {
+      correct: true,
+      equivalent: true,
+      formOk: true,
+      status: "correct",
+      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
+    };
+  } catch (error) {
+    return { correct: false, status: "invalid", message: error.message };
+  }
+}
+
+
+
+
 
 //##################################################################
 // Les différents entraînements
 //##################################################################
+
+
+//##################################################################
+// Additions
+//##################################################################
+
 
 const additionsTool = {
   id: "sommes-rapides",
@@ -53,10 +367,19 @@ const additionsTool = {
   ),
   audience: elementaryAudience,
   exercises: [
-    { id: "addition", color: "sky", timer: true, levels: [1, 2, 3], defaultLevel: 1,label: translated("Addition d'entiers", "Addition of integers"), description: translated("Somme de nombres entre 1 et 99.", "Sum of integers from 1 to 99.") },
-    { id: "subtraction", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Soustraction d'entiers", "Subtraction of integers"), description: translated("Somme de deux entiers entre -99 et 99.", "Sum of two integers from -99 to 99.") },
-    { id: "sum-three-terms", color: "emerald", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme de trois termes", "Sum of three terms"), description: translated("Somme de trois entiers entre -99 et 99.", "Sum of three numbers from -99 to 99.") },
-    { id: "difficult", color: "gold", timer: true, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal, sans choix supplémentaire.", "All exercises at maximum difficulty, with no additional level choice.") },
+    {
+      id: "addition",
+      color: "sky",
+      timer: true,
+      levels: [1, 2, 3],
+      defaultLevel: 1,
+      label: translated("Addition d'entiers", "Addition of integers"),
+      description: translated("Somme de nombres entre 1 et 99.", "Sum of integers from 1 to 99."),
+      promptUi: elementaryPromptUi.calculate,
+    },
+    { id: "subtraction", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Soustraction d'entiers", "Subtraction of integers"), description: translated("Somme de deux entiers entre -99 et 99.", "Sum of two integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
+    { id: "sum-three-terms", color: "emerald", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme de trois termes", "Sum of three terms"), description: translated("Somme de trois entiers entre -99 et 99.", "Sum of three numbers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
+    { id: "difficult", color: "gold", timer: true, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal.", "All exercises at maximum difficulty."), promptUi: elementaryPromptUi.calculate },
   ],
   defaultDifficulty: "addition",
   series: standardSeries,
@@ -83,10 +406,103 @@ const additionsTool = {
 };
 
 
+function additionQuestion(difficulty, rng, exerciseLevel = null) {
+  const lvl = currentDifficulty(difficulty, "small");
+  const level = Number(exerciseLevel ?? 1);
+  const random_range_minimum_neg = level === 1 ? -20 : level === 2 ? -50 : level === 3 ? -99 : -99;
+  const random_range_minimum = level === 1 ? 1 : level === 2 ? 11 : level === 3 ? 11 : 11;
+  const random_range_maximum = level === 1 ? 20 : level === 2 ? 50 : level === 3 ? 99 : 99;
+  const variants = {
+    addition: [
+      {
+        weight: 1,
+        make: () => [randomInteger(random_range_minimum, random_range_maximum, rng), randomInteger(random_range_minimum, random_range_maximum, rng)],
+      },
+    ],
+
+
+
+    "subtraction": [
+      {
+        weight: 1,
+        make: () => [randomInteger(random_range_minimum_neg, random_range_maximum, rng), randomInteger(random_range_minimum_neg, random_range_maximum, rng)],
+      },
+    ],
+
+
+
+    "sum-three-terms": [
+      {
+        weight: 1,
+        make: () => [
+          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
+          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
+          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
+        ],
+      },
+    ],
 
 
 
 
+    difficult: [
+      {
+        weight: 2,
+        make: () => [randomInteger(40, 99, rng), randomInteger(40, 99, rng)],
+      },
+      {
+        weight: 2,
+        make: () => [
+          randomInteger(-80, 99, rng),
+          randomInteger(-80, 99, rng),
+          randomInteger(-30, 60, rng),
+        ],
+      },
+      {
+        weight: 1,
+        make: () => {
+          const first = randomInteger(11, 60, rng);
+          return [first, 100 - first, randomInteger(-25, 75, rng)];
+        },
+        strategy: true,
+      },
+    ],
+  };
+  const variant = weightedPick(variants[lvl] ?? variants.addition, rng);
+  const values = variant.make();
+  const expected = values.reduce((sum, value) => sum + value, 0);
+  const expression = signedSumLatex(values);
+  const compensation = values.length >= 2
+    ? Math.round(values[1] / 10) * 10 - values[1]
+    : 0;
+  const usefulCompensation = compensation !== 0 && Math.abs(compensation) <= 2;
+
+  return {
+    prompt: translated(`Calculer : $$${expression}$$`, `Calculate: $$${expression}$$`),
+    expected,
+    answerDisplay: `$$${expected}$$`,
+    explanation: translated(
+      `En regroupant soigneusement les unités, on obtient $$${expression}=${expected}.$$`,
+      `Grouping the units carefully gives $$${expression}=${expected}.$$`,
+    ),
+    insight: variant.strategy || usefulCompensation
+      ? translated(
+        "On peut déplacer une petite quantité d'un terme à l'autre pour faire apparaître une dizaine ou une centaine.",
+        "Move a small amount from one term to another to create a multiple of ten or one hundred.",
+      )
+      : undefined,
+    courseHintIds: [],
+  };
+}
+
+
+
+
+
+
+//##################################################################
+// Multiplications
+//##################################################################
 
 const multiplicationsTool = {
   id: "multiplications-rapides",
@@ -98,10 +514,10 @@ const multiplicationsTool = {
     "Build your mental arithmetic skills by solving quick multiplication problems against the clock.",
   ),
   audience: elementaryAudience,
-  difficulties: [
-    { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of signed integers from $-10$ to $10$ in absolute value.") },
-    { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Un entier relatif à deux chiffres par un autre entier relatif.", "A signed two-digit integer times another signed integer.") },
-    { id: "mixed", color: "gold", timer: true, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal, sans choix supplémentaire.", "All exercises at maximum difficulty, with no additional level choice.") },
+  exercises: [
+    { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of signed integers from $-10$ to $10$ in absolute value."), promptUi: elementaryPromptUi.calculate },
+    { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Produit d'un entier relatif à deux chiffres par un autre entier relatif.", "Product of a signed two-digit integer times another signed integer."), promptUi: elementaryPromptUi.calculate },
+    { id: "mixed", color: "red", timer: true, label: translated("Défi", "Challenge"), description: translated("Multiplications d'entiers entre -99 et 99.", "Multiplication of integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
   ],
   defaultDifficulty: "tables",
   series: standardSeries,
@@ -109,9 +525,9 @@ const multiplicationsTool = {
     enabled: true,
     mode: "per-question",
     seconds: {
-      tables: 5,
+      tables: 4,
       simple: { 1: 10, 2: 15, 3: 20 },
-      mixed: 20,
+      mixed: 25,
     },
     strict: true,
     show: true,
@@ -132,8 +548,75 @@ const multiplicationsTool = {
 
 
 
+function multiplicationQuestion(difficulty, rng, exerciseLevel = null) {
+  const difficultyId = currentDifficulty(difficulty, "tables");
+  const selectedLevel = Math.min(3, Math.max(1, Number(exerciseLevel) || 1));
+
+  const simpleRanges = {
+    1: { left: [11, 35], right: [2, 5] },
+    2: { left: [11, 59], right: [2, 9] },
+    3: { left: [11, 99], right: [2, 15] },
+  };
+
+  const generatedMode = difficultyId === "mixed"
+    ? "mixed"
+    : difficultyId;
+
+  const effectiveLevel = selectedLevel;
+
+  const ranges = generatedMode === "mixed"
+    ? { left: [11, 99], right: [11, 99] }
+    : generatedMode === "tables"
+      ? { left: [2, 10], right: [2, 10] }
+      : simpleRanges[effectiveLevel];
+
+  const absoluteLeft = randomInteger(ranges.left[0], ranges.left[1], rng);
+  const absoluteRight = randomInteger(ranges.right[0], ranges.right[1], rng);
+
+  const signPattern = randomInteger(0, 3, rng);
+  const left = signPattern % 2 === 1 ? -absoluteLeft : absoluteLeft;
+  const right = signPattern >= 2 ? -absoluteRight : absoluteRight;
+
+  const expected = left * right;
+
+  const expression = `${left}\\times ${right < 0 ? `\\left(${right}\\right)` : right}`;
+
+  const variant = difficultyId === "mixed"
+    ? "mixed"
+    : generatedMode === "simple"
+      ? `simple-level-${effectiveLevel}`
+      : "tables";
+
+  return {
+    variant,
+    operands: [left, right],
+    level: generatedMode === "simple" ? effectiveLevel : null,
+    prompt: translated(
+      `Calculer : $$${expression}$$`,
+      `Calculate : $$${expression}$$`
+    ),
+    expected,
+    answerDisplay: `$$${expected}$$`,
+    explanation: translated(
+      `Le produit exact est $$${expression}=${expected}.$$`,
+      `The exact product is $$${expression}=${expected}.$$`,
+    ),
+    insight: translated(
+      "Deux facteurs de même signe donnent un produit positif ; deux facteurs de signes contraires donnent un produit négatif.",
+      "Factors with the same sign give a positive product; factors with different signs give a negative product.",
+    ),
+    courseHintIds: ["elementary-multiplication-strategies"],
+  };
+}
 
 
+
+
+
+
+//##################################################################
+// Fractions
+//##################################################################
 
 
 const fractionsTool = {
@@ -142,24 +625,26 @@ const fractionsTool = {
   mode: "practice",
   title: translated("Fractions", "Fractions"),
   description: translated(
-    "Simplifier, calculer et comparer des fractions en conservant des résultats exacts.",
-    "Simplify, calculate and compare fractions while keeping exact results.",
+    "Simplifier, comparer, calculer des sommes et des produits de fractions.",
+    "Simplify, compare, and compute sums and products of fractions.",
   ),
   audience: elementaryAudience,
-  difficulties: [
-    { id: "basics", color: "sky", levels: [1, 2, 3], defaultLevel: 1, label: translated("Bases", "Basics"), description: translated("Mise de fractions sous forme irréductible.", "Reduction of fractions.") },
-    { id: "sum", label: translated("Somme de fractions", "Sum of fractions"), description: translated("Somme de fractions simples.", "Simple sum of fractions.") },
-    { id: "prod", label: translated("Produit de fractions", "Product of fractions"), description: translated("Produit de fractions simples.", "Simple product of fractions.") },
-    { id: "comparison", label: translated("Comparaison", "Comparison"), description: translated("Comparer sans approximation décimale.", "Compare without decimal approximations.") },
-    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Toutes les variantes avec des dénominateurs plus grands.", "Every variant with larger denominators.") },
+  exercises: [
+    { id: "basics", color: "sky", levels: [1, 2, 3], defaultLevel: 1, label: translated("Bases", "Basics"), description: translated("Mise de fractions sous forme irréductible.", "Reduction of fractions."), promptUi: elementaryPromptUi.reduceFraction },
+    { id: "sum", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme", "Sum"), description: translated("Somme de fractions.", "Sum of fractions."), promptUi: elementaryPromptUi.calculateFraction },
+    { id: "prod", color: "emerald", levels: [1, 2, 3], defaultLevel: 1, label: translated("Produit", "Product"), description: translated("Produit de fractions.", "Product of fractions."), promptUi: elementaryPromptUi.calculateFraction },
+    { id: "comparison", color: "rose", levels: [1, 2, 3], defaultLevel: 1, label: translated("Comparaison", "Comparison"), description: translated("Comparer sans approximation décimale.", "Compare without decimal approximations."), promptUi: elementaryPromptUi.compareFractions },
+    { id: "mixed", color: "gold", timer: false, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal.", "All exercises at maximum difficulty."), promptUi: elementaryPromptUi.calculateFraction },
   ],
   defaultDifficulty: "basics",
   series: standardSeries,
-  timer: false,
+  timer: {
+    enabled: false,
+  },
   score: true,
   source: {
     type: "generator",
-    generate: ({ difficulty, rng }) => fractionQuestion(difficulty, rng),
+    generate: ({ difficulty, rng, level}) => fractionQuestion(difficulty, rng, level),
   },
   courseHintIds: [""],
   answer: {
@@ -168,13 +653,1009 @@ const fractionsTool = {
     validator: exactFractionValidator,
   },
   feedback: {showCorrection: true,
-  showExplanation: true,
+  showExplanation: false,
   showInsight: false,
   showCourseHintOnError: false,
   nextQuestion: true,},
 };
 
 
+function gcdNumber(a, b) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+
+  while (b !== 0) {
+    [a, b] = [b, a % b];
+  }
+
+  return a;
+}
+
+
+function shouldUseNegativeDenominator(rng, chance) {
+  return randomInteger(1, 100, rng) <= chance * 100;
+}
+
+
+function shouldUseNegativeNumerator(rng, chance = 0.1) {
+  return randomInteger(1, 100, rng) <= chance * 100;
+}
+
+
+function applyNumeratorSign(numerator, rng, chance = 0.1) {
+  return shouldUseNegativeNumerator(rng, chance)
+    ? -Math.abs(numerator)
+    : numerator;
+}
+
+
+function applyDenominatorSign(denominator, rng, chance) {
+  return shouldUseNegativeDenominator(rng, chance)
+    ? -Math.abs(denominator)
+    : Math.abs(denominator);
+}
+
+function normalizedFractionParts(fraction) {
+  if (fraction.denominator < 0) {
+    return {
+      numerator: -fraction.numerator,
+      denominator: -fraction.denominator,
+    };
+  }
+
+  return {
+    numerator: fraction.numerator,
+    denominator: fraction.denominator,
+  };
+}
+
+
+function compareFractionParts(left, right) {
+  const normalizedLeft = normalizedFractionParts(left);
+  const normalizedRight = normalizedFractionParts(right);
+
+  const crossLeft =
+    normalizedLeft.numerator * normalizedRight.denominator;
+
+  const crossRight =
+    normalizedRight.numerator * normalizedLeft.denominator;
+
+  if (crossLeft < crossRight) {
+    return -1;
+  }
+
+  if (crossLeft > crossRight) {
+    return 1;
+  }
+
+  return 0;
+}
+
+
+function randomReducedFraction(
+  rng,
+  {
+    minDenominator = 2,
+    maxDenominator = 12,
+    maxNumerator = null,
+    proper = true,
+    negativeDenominatorChance = 0,
+  } = {},
+) {
+  let numerator;
+  let absoluteDenominator;
+
+  do {
+    absoluteDenominator = randomInteger(
+      minDenominator,
+      maxDenominator,
+      rng,
+    );
+
+    numerator = proper
+      ? randomInteger(1, absoluteDenominator - 1, rng)
+      : randomInteger(
+          1,
+          maxNumerator ?? maxDenominator,
+          rng,
+        );
+  } while (!areCoprime(numerator, absoluteDenominator));
+
+  const denominator = applyDenominatorSign(
+    absoluteDenominator,
+    rng,
+    negativeDenominatorChance,
+  );
+
+  return {
+    numerator,
+    denominator,
+    value: new Fraction(
+      BigInt(numerator),
+      BigInt(denominator),
+    ),
+  };
+}
+
+
+function fractionQuestion(
+  difficulty,
+  rng,
+  exerciseLevel = null,
+) {
+  const difficultyId = currentDifficulty(
+    difficulty,
+    "basics",
+  );
+
+  const selectedLevel = Math.min(
+    3,
+    Math.max(1, Number(exerciseLevel) || 1),
+  );
+
+  const effectiveLevel =
+    difficultyId === "mixed"
+      ? 3
+      : selectedLevel;
+
+  const negativeDenominatorChance = {
+    1: 0,
+    2: 0.2,
+    3: 0.35,
+  }[effectiveLevel];
+
+
+  const simplification = () => {
+    let maxDenominator;
+    let factors;
+
+    if (effectiveLevel === 1) {
+      maxDenominator = 10;
+      factors = [2, 3, 5];
+    } else if (effectiveLevel === 2) {
+      maxDenominator = 15;
+      factors = [4, 6, 7, 8, 9, 10];
+    } else {
+      maxDenominator = 20;
+      factors = [6, 8, 9, 10, 12, 14, 15];
+    }
+
+    let numerator;
+    let absoluteDenominator;
+
+    do {
+      absoluteDenominator = randomInteger(
+        2,
+        maxDenominator,
+        rng,
+      );
+
+      numerator = randomInteger(
+        1,
+        absoluteDenominator - 1,
+        rng,
+      );
+    } while (
+      !areCoprime(numerator, absoluteDenominator)
+    );
+
+    const factor =
+      factors[
+        randomInteger(
+          0,
+          factors.length - 1,
+          rng,
+        )
+      ];
+
+    const denominator = applyDenominatorSign(
+      absoluteDenominator,
+      rng,
+      negativeDenominatorChance,
+    );
+
+    numerator = applyNumeratorSign(numerator, rng);
+
+    const shownNumerator =
+      numerator * factor;
+
+    const shownDenominator =
+      denominator * factor;
+
+    const expected = new Fraction(
+      BigInt(shownNumerator),
+      BigInt(shownDenominator),
+    );
+
+    return {
+      variant: `simplify-level-${effectiveLevel}`,
+      promptUi: elementaryPromptUi.reduceFraction,
+
+      fraction: {
+        numerator: shownNumerator,
+        denominator: shownDenominator,
+      },
+
+      prompt: translated(
+        `Donner sous forme irréductible : $$${fractionLatex(shownNumerator, shownDenominator)}$$`,
+        `Write in lowest terms: $$${fractionLatex(shownNumerator, shownDenominator)}$$`,
+      ),
+
+      expected,
+
+      answerDisplay:
+        `$$${expected.toLatex()}$$`,
+
+      answerSpec: {
+        type: "fraction",
+        allowDecimal: false,
+        requireReduced: true,
+      },
+
+      explanation: translated(
+        `On divise le numérateur et le dénominateur par ${factor} : $$${fractionLatex(shownNumerator, shownDenominator)}=${expected.toLatex()}.$$`,
+        `Divide the numerator and denominator by ${factor}: $$${fractionLatex(shownNumerator, shownDenominator)}=${expected.toLatex()}.$$`,
+      ),
+    };
+  };
+
+
+  const sumOrDifference = (operator) => {
+    let left;
+    let right;
+
+    if (effectiveLevel === 1) {
+      const denominator = randomInteger(
+        3,
+        12,
+        rng,
+      );
+
+      let leftNumerator;
+      let rightNumerator;
+
+      do {
+        leftNumerator = randomInteger(
+          1,
+          denominator - 1,
+          rng,
+        );
+      } while (
+        !areCoprime(
+          leftNumerator,
+          denominator,
+        )
+      );
+
+      do {
+        rightNumerator = randomInteger(
+          1,
+          denominator - 1,
+          rng,
+        );
+      } while (
+        !areCoprime(
+          rightNumerator,
+          denominator,
+        )
+      );
+
+      left = {
+        numerator: leftNumerator,
+        denominator,
+      };
+
+      right = {
+        numerator: rightNumerator,
+        denominator,
+      };
+    }
+
+    else if (effectiveLevel === 2) {
+      const smallDenominator =
+        randomInteger(2, 8, rng);
+
+      const factor =
+        randomInteger(2, 4, rng);
+
+      const largeDenominator =
+        smallDenominator * factor;
+
+      let leftNumerator;
+      let rightNumerator;
+
+      do {
+        leftNumerator = randomInteger(
+          1,
+          smallDenominator - 1,
+          rng,
+        );
+      } while (
+        !areCoprime(
+          leftNumerator,
+          smallDenominator,
+        )
+      );
+
+      do {
+        rightNumerator = randomInteger(
+          1,
+          largeDenominator - 1,
+          rng,
+        );
+      } while (
+        !areCoprime(
+          rightNumerator,
+          largeDenominator,
+        )
+      );
+
+      left = {
+        numerator: leftNumerator,
+        denominator: applyDenominatorSign(
+          smallDenominator,
+          rng,
+          negativeDenominatorChance,
+        ),
+      };
+
+      right = {
+        numerator: rightNumerator,
+        denominator: applyDenominatorSign(
+          largeDenominator,
+          rng,
+          negativeDenominatorChance,
+        ),
+      };
+
+      if (randomInteger(0, 1, rng) === 1) {
+        [left, right] = [right, left];
+      }
+    }
+
+    else {
+      let absoluteLeftDenominator;
+      let absoluteRightDenominator;
+
+      do {
+        left = randomReducedFraction(
+          rng,
+          {
+            maxDenominator: 15,
+            negativeDenominatorChance,
+          },
+        );
+
+        right = randomReducedFraction(
+          rng,
+          {
+            maxDenominator: 15,
+            negativeDenominatorChance,
+          },
+        );
+
+        absoluteLeftDenominator =
+          Math.abs(left.denominator);
+
+        absoluteRightDenominator =
+          Math.abs(right.denominator);
+      } while (
+        absoluteLeftDenominator ===
+          absoluteRightDenominator ||
+        absoluteLeftDenominator %
+          absoluteRightDenominator ===
+          0 ||
+        absoluteRightDenominator %
+          absoluteLeftDenominator ===
+          0
+      );
+    }
+
+
+    left.numerator = applyNumeratorSign(
+      left.numerator,
+      rng,
+    );
+
+    right.numerator = applyNumeratorSign(
+      right.numerator,
+      rng,
+    );
+
+
+    left.value = new Fraction(
+      BigInt(left.numerator),
+      BigInt(left.denominator),
+    );
+
+    right.value = new Fraction(
+      BigInt(right.numerator),
+      BigInt(right.denominator),
+    );
+
+    if (
+      operator === "subtract" &&
+      effectiveLevel < 3 &&
+      compareFractionParts(left, right) < 0
+    ) {
+      [left, right] = [right, left];
+    }
+
+
+    const symbol =
+      operator === "add"
+        ? "+"
+        : "-";
+
+    const expected =
+      operator === "add"
+        ? left.value.add(right.value)
+        : left.value.sub(right.value);
+
+    const expression =
+      `${fractionLatex(
+        left.numerator,
+        left.denominator,
+      )}`
+      + ` ${symbol} `
+      + `${fractionLatex(
+        right.numerator,
+        right.denominator,
+      )}`;
+
+    return {
+      variant:
+        `${operator}-level-${effectiveLevel}`,
+      promptUi: elementaryPromptUi.calculateFraction,
+
+      fractions: {
+        left: {
+          numerator: left.numerator,
+          denominator: left.denominator,
+        },
+        right: {
+          numerator: right.numerator,
+          denominator: right.denominator,
+        },
+      },
+
+      prompt: translated(
+        `Calculer et mettre sous forme irréductible : $$${expression}$$`,
+        `Compute and write in lowest terms: $$${expression}$$`,
+      ),
+
+      expected,
+
+      answerDisplay:
+        `$$${expected.toLatex()}$$`,
+
+      answerSpec: {
+        type: "fraction",
+        allowDecimal: false,
+        requireReduced: true,
+      },
+
+      explanation: translated(
+        `On met les fractions au même dénominateur, puis on réduit le résultat : $$${expression}=${expected.toLatex()}.$$`,
+        `Put the fractions over a common denominator, then reduce the result: $$${expression}=${expected.toLatex()}.$$`,
+      ),
+    };
+  };
+
+  const productOrQuotient = (operator) => {
+    let left;
+    let right;
+
+    if (effectiveLevel === 1) {
+      left = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 8,
+        },
+      );
+
+      right = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 8,
+        },
+      );
+    }
+
+    else if (effectiveLevel === 2) {
+      let attempts = 0;
+
+      do {
+        left = randomReducedFraction(
+          rng,
+          {
+            maxDenominator: 12,
+            negativeDenominatorChance,
+          },
+        );
+
+        right = randomReducedFraction(
+          rng,
+          {
+            maxDenominator: 12,
+            negativeDenominatorChance,
+          },
+        );
+
+        attempts += 1;
+
+        if (attempts > 100) {
+          break;
+        }
+      } while (
+        operator === "multiply"
+          ? (
+              gcdNumber(
+                left.numerator,
+                Math.abs(right.denominator),
+              ) === 1 &&
+              gcdNumber(
+                right.numerator,
+                Math.abs(left.denominator),
+              ) === 1
+            )
+          : (
+              gcdNumber(
+                left.numerator,
+                right.numerator,
+              ) === 1 &&
+              gcdNumber(
+                Math.abs(left.denominator),
+                Math.abs(right.denominator),
+              ) === 1
+            )
+      );
+    }
+
+    else {
+      left = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 15,
+          maxNumerator: 20,
+          proper: false,
+          negativeDenominatorChance,
+        },
+      );
+
+      right = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 15,
+          maxNumerator: 20,
+          proper: false,
+          negativeDenominatorChance,
+        },
+      );
+    }
+
+
+    left.numerator = applyNumeratorSign(
+      left.numerator,
+      rng,
+    );
+
+    right.numerator = applyNumeratorSign(
+      right.numerator,
+      rng,
+    );
+
+    left.value = new Fraction(
+      BigInt(left.numerator),
+      BigInt(left.denominator),
+    );
+
+    right.value = new Fraction(
+      BigInt(right.numerator),
+      BigInt(right.denominator),
+    );
+
+
+    const isDivision =
+      operator === "divide";
+
+    const symbol =
+      isDivision
+        ? "\\div"
+        : "\\times";
+
+    const expected =
+      isDivision
+        ? left.value.div(right.value)
+        : left.value.mul(right.value);
+
+    const expression =
+      `${fractionLatex(
+        left.numerator,
+        left.denominator,
+      )}`
+      + ` ${symbol} `
+      + `${fractionLatex(
+        right.numerator,
+        right.denominator,
+      )}`;
+
+    return {
+      variant:
+        `${operator}-level-${effectiveLevel}`,
+      promptUi: elementaryPromptUi.calculateFraction,
+
+      fractions: {
+        left: {
+          numerator: left.numerator,
+          denominator: left.denominator,
+        },
+        right: {
+          numerator: right.numerator,
+          denominator: right.denominator,
+        },
+      },
+
+      prompt: translated(
+        `Calculer et mettre sous forme irréductible : $$${expression}$$`,
+        `Compute and write in lowest terms: $$${expression}$$`,
+      ),
+
+      expected,
+
+      answerDisplay:
+        `$$${expected.toLatex()}$$`,
+
+      answerSpec: {
+        type: "fraction",
+        allowDecimal: false,
+        requireReduced: true,
+      },
+
+      explanation: isDivision
+        ? translated(
+            `On transforme la division en multiplication par l'inverse de la seconde fraction, puis on simplifie : $$${expression}=${expected.toLatex()}.$$`,
+            `Replace the division with multiplication by the reciprocal of the second fraction, then simplify: $$${expression}=${expected.toLatex()}.$$`,
+          )
+        : translated(
+            `On multiplie les numérateurs entre eux et les dénominateurs entre eux, en simplifiant lorsque c'est possible : $$${expression}=${expected.toLatex()}.$$`,
+            `Multiply the numerators and denominators, simplifying whenever possible: $$${expression}=${expected.toLatex()}.$$`,
+          ),
+    };
+  };
+
+  const comparison = () => {
+    let left;
+    let right;
+
+    if (effectiveLevel === 1) {
+      const equivalentPair =
+        randomInteger(0, 4, rng) === 0;
+
+      if (equivalentPair) {
+        const denominator =
+          randomInteger(3, 8, rng);
+        const numerator =
+          randomInteger(1, denominator - 1, rng);
+        const factor =
+          randomInteger(2, 4, rng);
+
+        left = { numerator, denominator };
+        right = {
+          numerator: numerator * factor,
+          denominator: denominator * factor,
+        };
+      } else {
+        const denominator =
+          randomInteger(3, 12, rng);
+        const leftNumerator =
+          randomInteger(1, denominator - 1, rng);
+        const offset =
+          randomInteger(1, denominator - 2, rng);
+        const rightNumerator =
+          ((leftNumerator - 1 + offset)
+            % (denominator - 1)) + 1;
+
+        left = {
+          numerator: leftNumerator,
+          denominator,
+        };
+        right = {
+          numerator: rightNumerator,
+          denominator,
+        };
+      }
+
+      if (randomInteger(0, 1, rng) === 1) {
+        [left, right] = [right, left];
+      }
+    }
+
+    else if (effectiveLevel === 2) {
+      const denominator =
+        randomInteger(2, 8, rng);
+
+      const factor =
+        randomInteger(2, 4, rng);
+
+      const leftDenominator =
+        applyDenominatorSign(
+          denominator,
+          rng,
+          negativeDenominatorChance,
+        );
+
+      left = {
+        numerator: randomInteger(
+          1,
+          denominator - 1,
+          rng,
+        ),
+        denominator: leftDenominator,
+      };
+
+      if (
+        randomInteger(0, 5, rng) === 0
+      ) {
+        const signMultiplier =
+          left.denominator < 0
+            ? -1
+            : 1;
+
+        right = {
+          numerator:
+            left.numerator * factor,
+
+          denominator:
+            Math.abs(denominator * factor)
+            * signMultiplier,
+        };
+      } else {
+        right = {
+          numerator: randomInteger(
+            1,
+            denominator * factor - 1,
+            rng,
+          ),
+
+          denominator:
+            applyDenominatorSign(
+              denominator * factor,
+              rng,
+              negativeDenominatorChance,
+            ),
+        };
+      }
+
+
+      if (
+        randomInteger(0, 1, rng) === 1
+      ) {
+        [left, right] = [right, left];
+      }
+    }
+
+    else {
+      left = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 18,
+          negativeDenominatorChance,
+        },
+      );
+
+      right = randomReducedFraction(
+        rng,
+        {
+          maxDenominator: 18,
+          negativeDenominatorChance,
+        },
+      );
+
+      if (
+        randomInteger(0, 5, rng) === 0
+      ) {
+        const factor =
+          randomInteger(2, 5, rng);
+
+        right = {
+          numerator:
+            left.numerator * factor,
+
+          denominator:
+            left.denominator * factor,
+        };
+      }
+    }
+
+    const equivalentBeforeNumeratorSigns =
+      compareFractionParts(left, right) === 0;
+
+    if (equivalentBeforeNumeratorSigns) {
+      if (shouldUseNegativeNumerator(rng)) {
+        left.numerator = -Math.abs(left.numerator);
+        right.numerator = -Math.abs(right.numerator);
+      }
+    } else {
+      if (shouldUseNegativeNumerator(rng)) {
+        left.numerator = -Math.abs(left.numerator);
+      }
+
+      if (shouldUseNegativeNumerator(rng)) {
+        right.numerator = -Math.abs(right.numerator);
+      }
+    }
+
+    const normalizedLeft =
+      normalizedFractionParts(left);
+
+    const normalizedRight =
+      normalizedFractionParts(right);
+
+    const crossLeft =
+      normalizedLeft.numerator
+      * normalizedRight.denominator;
+
+    const crossRight =
+      normalizedRight.numerator
+      * normalizedLeft.denominator;
+
+    const expected =
+      crossLeft < crossRight
+        ? "<"
+        : crossLeft > crossRight
+          ? ">"
+          : "=";
+
+
+    return {
+      variant:
+        `compare-level-${effectiveLevel}`,
+      promptUi: elementaryPromptUi.compareFractions,
+
+      answerKind: "comparison",
+
+      fractions: {
+        left: {
+          numerator: left.numerator,
+          denominator: left.denominator,
+        },
+        right: {
+          numerator: right.numerator,
+          denominator: right.denominator,
+        },
+      },
+
+      prompt: translated(
+        `Compléter avec $<$, $=$ ou $>$ : $$${fractionLatex(left.numerator, left.denominator)}\\quad?\\quad${fractionLatex(right.numerator, right.denominator)}$$`,
+        `Fill in with $<$, $=$ or $>$: $$${fractionLatex(left.numerator, left.denominator)}\\quad?\\quad${fractionLatex(right.numerator, right.denominator)}$$`,
+      ),
+
+      expected,
+
+      answerDisplay:
+        `$$${fractionLatex(
+          left.numerator,
+          left.denominator,
+        )}`
+        + ` ${expected} `
+        + `${fractionLatex(
+          right.numerator,
+          right.denominator,
+        )}$$`,
+
+      explanation: translated(
+        `Après avoir ramené les éventuels signes des dénominateurs aux numérateurs, les produits en croix sont ${crossLeft} et ${crossRight}. Le symbole correct est donc $${expected}$.`,
+        `After moving any denominator signs to the numerators, the cross-products are ${crossLeft} and ${crossRight}. The correct symbol is therefore $${expected}$.`,
+      ),
+    };
+  };
+
+  const pools = {
+    basics: [
+      {
+        weight: 1,
+        make: simplification,
+      },
+    ],
+
+    sum: [
+      {
+        weight: 1,
+        make: () =>
+          sumOrDifference("add"),
+      },
+      {
+        weight: 1,
+        make: () =>
+          sumOrDifference("subtract"),
+      },
+    ],
+
+    prod: [
+      {
+        weight: 1,
+        make: () =>
+          productOrQuotient("multiply"),
+      },
+      {
+        weight: 1,
+        make: () =>
+          productOrQuotient("divide"),
+      },
+    ],
+
+    comparison: [
+      {
+        weight: 1,
+        make: comparison,
+      },
+    ],
+
+    mixed: [
+      {
+        weight: 1,
+        make: simplification,
+      },
+      {
+        weight: 1,
+        make: () =>
+          sumOrDifference("add"),
+      },
+      {
+        weight: 1,
+        make: () =>
+          sumOrDifference("subtract"),
+      },
+      {
+        weight: 1,
+        make: () =>
+          productOrQuotient("multiply"),
+      },
+      {
+        weight: 1,
+        make: () =>
+          productOrQuotient("divide"),
+      },
+      {
+        weight: 1,
+        make: comparison,
+      },
+    ],
+  };
+
+
+  const question = weightedPick(
+    pools[difficultyId]
+      ?? pools.basics,
+    rng,
+  ).make();
+
+
+  return {
+    courseHintIds: [
+      "elementary-fractions",
+    ],
+
+    insight:
+      question.variant.startsWith("divide")
+        ? translated(
+            "Diviser par une fraction revient à multiplier par son inverse.",
+            "Dividing by a fraction means multiplying by its reciprocal.",
+          )
+        : undefined,
+
+    ...question,
+  };
+}
+
+
+
+
+
+//##################################################################
+// Identités remarquables
+//##################################################################
 
 
 const identitiesTool = {
@@ -183,15 +1664,23 @@ const identitiesTool = {
   mode: "practice",
   title: translated("Identités remarquables", "Standard identities"),
   description: translated(
-    "Reconnaître, compléter, développer et factoriser les trois identités classiques.",
+    "Reconnaître, compléter, développer et factoriser les trois identités remarquables.",
     "Recognise, complete, expand and factor the three standard identities.",
   ),
   audience: elementaryAudience,
   exercises: [
-    { id: "identify", color: "sky", levels: [1, 2, 3], defaultLevel: 1, label: translated("Identifier une identité remarquable", "Identify a standard identity"), description: translated("Décider si l'expression est l'une des trois identités remarquables.", "Decide whether the expression directly matches one of the three standard forms.") },
-    { id: "recognize", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Factoriser ou compléter", "Factor or complete"), description: translated("Repérer les carrés de $ax$ et de $b$, puis retrouver la forme remarquable.", "Identify the squares of $ax$ and $b$, then recover the standard form.") },
-    { id: "use", color: "emerald", levels: [1, 2, 3], defaultLevel: 1, label: translated("Développer et utiliser", "Expand and apply"), description: translated("Développer, factoriser ou compléter avec des coefficients non unitaires.", "Expand, factor or complete with non-unit coefficients.") },
-    { id: "mixed", color: "gold", label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal, sans choix supplémentaire.", "All exercises at maximum difficulty, with no additional level choice.") },
+    {
+      id: "identify",
+      color: "sky",
+      levels: [1, 2, 3],
+      defaultLevel: 1,
+      label: translated("Identifier une identité remarquable", "Identify a standard identity"),
+      description: translated("Reconnaître si l'expression peut être développée ou factorisée avec une identité remarquable.", "Decide whether the expression can be expanded or factorised using a standard identity."),
+      promptUi: elementaryPromptUi.identifyIdentity,
+    },
+    { id: "recognize", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Factoriser", "Factor"), description: translated("Factoriser une expression littérale en utilisant une identité remarquable.", "Factor a literal expression using a standard identity."), promptUi: elementaryPromptUi.factorIdentity },
+    { id: "use", color: "emerald", levels: [1, 2, 3], defaultLevel: 1, label: translated("Développer et utiliser", "Expand and apply"), description: translated("Développer une expression littérale en utilisant une identité remarquable.", "Expand a literal expression using a standard identity."), promptUi: elementaryPromptUi.developIdentity },
+    { id: "mixed", color: "gold", label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal.", "All exercises at maximum difficulty."), promptUi: elementaryPromptUi.identityReview },
   ],
   defaultExercise: "identify",
   series: standardSeries,
@@ -208,9 +1697,9 @@ const identitiesTool = {
     validator: polynomialFormValidator,
   },
   feedback: {showCorrection: true,
-  showExplanation: true,
+  showExplanation: false,
   showInsight: false,
-  showCourseHintOnError: true,
+  showCourseHintOnError: false,
   nextQuestion: true,},
 };
 
@@ -550,542 +2039,6 @@ const guidedMethodsTool = {
 
 
 
-//##################################################################
-// Les fonctions de bases
-//##################################################################
-
-function currentDifficulty(difficulty, fallback) {
-  return typeof difficulty === "object"
-    ? difficulty?.id ?? fallback
-    : difficulty ?? fallback;
-}
-
-function randomNonZero(min, max, rng) {
-  let value = 0;
-
-  while (value === 0) {
-    value = randomInteger(min, max, rng);
-  }
-
-  return value;
-}
-
-function signedSumLatex(values) {
-  return values.map((value, index) => {
-    if (index === 0) {
-      return String(value);
-    }
-
-    return value < 0 ? `- ${Math.abs(value)}` : `+ ${value}`;
-  }).join(" ");
-}
-
-function polynomial(terms, latex = false) {
-  const visibleTerms = terms.filter(({ coefficient }) => coefficient !== 0);
-
-  if (visibleTerms.length === 0) {
-    return "0";
-  }
-
-  return visibleTerms.map(({ coefficient, variable }, index) => {
-    const negative = coefficient < 0;
-    const absolute = Math.abs(coefficient);
-    const sign = index === 0
-      ? negative ? "-" : ""
-      : negative ? " - " : " + ";
-    const coefficientText = variable && absolute === 1 ? "" : String(absolute);
-    const product = !latex && variable && coefficientText ? "*" : "";
-
-    return `${sign}${coefficientText}${product}${variable ?? ""}`;
-  }).join("");
-}
-
-function linearExpression(coefficient, constant, latex = false) {
-  return polynomial([
-    { coefficient, variable: "x" },
-    { coefficient: constant, variable: "" },
-  ], latex);
-}
-
-function quadraticExpression(a, b, c, latex = false) {
-  return polynomial([
-    { coefficient: a, variable: "x^2" },
-    { coefficient: b, variable: "x" },
-    { coefficient: c, variable: "" },
-  ], latex);
-}
-
-function fractionLatex(numerator, denominator) {
-  return `\\frac{${numerator}}{${denominator}}`;
-}
-
-function exactFractionValidator(rawValue, context) {
-  const { expected, question, lang } = context;
-
-  if (question.answerKind !== "comparison") {
-    return validateAnswer(
-      rawValue,
-      question.answerSpec ?? { type: "fraction", allowDecimal: false, requireReduced: true },
-      expected,
-      question,
-      lang,
-    );
-  }
-
-  const normalized = String(rawValue ?? "")
-    .trim()
-    .toLocaleLowerCase("fr")
-    .replace(/\\lt/g, "<")
-    .replace(/\\gt/g, ">")
-    .replace(/\\leq?/g, "≤")
-    .replace(/\\geq?/g, "≥");
-  const aliases = {
-    "<": ["<", "inférieur", "inferieur", "plus petit"],
-    "=": ["=", "égal", "egal", "égaux", "egaux"],
-    ">": [">", "supérieur", "superieur", "plus grand"],
-  };
-  const correct = aliases[expected]?.includes(normalized) ?? false;
-
-  return {
-    correct,
-    status: correct ? "correct" : "incorrect",
-    message: correct
-      ? (lang === "en" ? "Correct answer." : "Bonne réponse.")
-      : (lang === "en" ? "Compare the cross-products." : "Compare les produits en croix."),
-  };
-}
-
-function polynomialFormValidator(rawValue, { expected, question, lang }) {
-  try {
-    const alternatives = Array.isArray(expected) ? expected : [expected];
-    const equivalent = alternatives.some((candidate) =>
-      arePolynomialExpressionsEquivalent(rawValue, candidate));
-
-    if (!equivalent) {
-      return {
-        correct: false,
-        status: "incorrect",
-        message: lang === "en"
-          ? "The expression is not equivalent to the expected one."
-          : "L'expression n'est pas équivalente à celle attendue.",
-      };
-    }
-
-    const formOk = question.answerForm === "factorized"
-      ? hasExplicitFactorizedForm(rawValue)
-      : question.answerForm === "developed"
-        ? hasDevelopedForm(rawValue)
-        : true;
-
-    if (!formOk) {
-      return {
-        correct: false,
-        equivalent: true,
-        formOk: false,
-        status: "equivalent",
-        message: lang === "en"
-          ? `The value is right, but a ${question.answerForm} form is required.`
-          : question.answerForm === "factorized"
-            ? "L'expression est la même, mais la forme factorisée est demandée."
-            : "L'expression est la même, mais la forme développée est demandée.",
-      };
-    }
-
-    return {
-      correct: true,
-      equivalent: true,
-      formOk: true,
-      status: "correct",
-      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
-    };
-  } catch (error) {
-    return {
-      correct: false,
-      status: "invalid",
-      message: error.message,
-    };
-  }
-}
-
-function squareRootValidator(rawValue, { expected, question, lang }) {
-  try {
-    const result = inspectSquareRootAnswer(rawValue, expected);
-
-    if (!result.equivalent) {
-      return {
-        correct: false,
-        status: "incorrect",
-        message: lang === "en" ? "This is not the expected exact value." : "Ce n'est pas la valeur exacte attendue.",
-      };
-    }
-
-    if (question.requireSimplified !== false && !result.formOk) {
-      return {
-        correct: false,
-        equivalent: true,
-        formOk: false,
-        status: "equivalent",
-        message: lang === "en"
-          ? "The value is right, but the square root can still be simplified."
-          : "La valeur est correcte, mais la racine peut encore être simplifiée.",
-      };
-    }
-
-    return {
-      correct: true,
-      equivalent: true,
-      formOk: true,
-      status: "correct",
-      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
-    };
-  } catch (error) {
-    return { correct: false, status: "invalid", message: error.message };
-  }
-}
-
-function powerValidator(rawValue, { expected, lang }) {
-  try {
-    const result = inspectPowerAnswer(rawValue, expected);
-
-    if (!result.equivalent) {
-      return {
-        correct: false,
-        status: "incorrect",
-        message: lang === "en"
-          ? "Check the base and the operation on the exponents."
-          : "Vérifie la base et l'opération effectuée sur les exposants.",
-      };
-    }
-
-    if (!result.formOk) {
-      return {
-        correct: false,
-        equivalent: true,
-        formOk: false,
-        status: "equivalent",
-        message: lang === "en"
-          ? "The value is equivalent, but use one power and no negative exponent."
-          : "La valeur est équivalente, mais écris une seule puissance sans exposant négatif.",
-      };
-    }
-
-    return {
-      correct: true,
-      equivalent: true,
-      formOk: true,
-      status: "correct",
-      message: lang === "en" ? "Correct answer." : "Bonne réponse.",
-    };
-  } catch (error) {
-    return { correct: false, status: "invalid", message: error.message };
-  }
-}
-
-
-
-
-
-
-
-//##################################################################
-// Les fonctions pour les différents entraînements
-//##################################################################
-
-
-function additionQuestion(difficulty, rng, exerciseLevel = null) {
-  const lvl = currentDifficulty(difficulty, "small");
-  const level = Number(exerciseLevel ?? 1);
-  const random_range_minimum_neg = level === 1 ? -20 : level === 2 ? -50 : level === 3 ? -99 : -99;
-  const random_range_minimum = level === 1 ? 1 : level === 2 ? 11 : level === 3 ? 11 : 11;
-  const random_range_maximum = level === 1 ? 20 : level === 2 ? 50 : level === 3 ? 99 : 99;
-  const variants = {
-    addition: [
-      {
-        weight: 1,
-        make: () => [randomInteger(random_range_minimum, random_range_maximum, rng), randomInteger(random_range_minimum, random_range_maximum, rng)],
-      },
-    ],
-
-
-
-    "subtraction": [
-      {
-        weight: 1,
-        make: () => [randomInteger(random_range_minimum_neg, random_range_maximum, rng), randomInteger(random_range_minimum_neg, random_range_maximum, rng)],
-      },
-    ],
-
-
-
-    "sum-three-terms": [
-      {
-        weight: 1,
-        make: () => [
-          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
-          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
-          randomInteger(random_range_minimum_neg, random_range_maximum, rng),
-        ],
-      },
-    ],
-
-
-
-
-    difficult: [
-      {
-        weight: 2,
-        make: () => [randomInteger(40, 250, rng), randomInteger(40, 250, rng)],
-      },
-      {
-        weight: 2,
-        make: () => [
-          randomInteger(-80, 120, rng),
-          randomInteger(-80, 120, rng),
-          randomInteger(-30, 60, rng),
-        ],
-      },
-      {
-        weight: 1,
-        make: () => {
-          const first = randomInteger(11, 89, rng);
-          return [first, 100 - first, randomInteger(-25, 75, rng)];
-        },
-        strategy: true,
-      },
-    ],
-  };
-  const variant = weightedPick(variants[lvl] ?? variants.addition, rng);
-  const values = variant.make();
-  const expected = values.reduce((sum, value) => sum + value, 0);
-  const expression = signedSumLatex(values);
-  const compensation = values.length >= 2
-    ? Math.round(values[1] / 10) * 10 - values[1]
-    : 0;
-  const usefulCompensation = compensation !== 0 && Math.abs(compensation) <= 2;
-
-  return {
-    prompt: translated(`Calculer : $$${expression}$$`, `Calculate: $$${expression}$$`),
-    expected,
-    answerDisplay: `$$${expected}$$`,
-    explanation: translated(
-      `En regroupant soigneusement les unités, on obtient $$${expression}=${expected}.$$`,
-      `Grouping the units carefully gives $$${expression}=${expected}.$$`,
-    ),
-    insight: variant.strategy || usefulCompensation
-      ? translated(
-        "On peut déplacer une petite quantité d'un terme à l'autre pour faire apparaître une dizaine ou une centaine.",
-        "Move a small amount from one term to another to create a multiple of ten or one hundred.",
-      )
-      : undefined,
-    courseHintIds: [],
-  };
-}
-
-
-
-
-
-
-function multiplicationQuestion(difficulty, rng, exerciseLevel = null) {
-  const difficultyId = currentDifficulty(difficulty, "tables");
-  const selectedLevel = Math.min(3, Math.max(1, Number(exerciseLevel) || 1));
-  const simpleRanges = {
-    1: { left: [11, 35], right: [2, 5] },
-    2: { left: [11, 59], right: [2, 9] },
-    3: { left: [11, 99], right: [2, 15] },
-  };
-  const generatedMode = difficultyId === "mixed"
-    ? (randomInteger(0, 2, rng) === 0 ? "tables" : "simple")
-    : difficultyId;
-  const effectiveLevel = difficultyId === "mixed" ? 3 : selectedLevel;
-  const ranges = generatedMode === "tables"
-    ? { left: [2, 10], right: [2, 10] }
-    : simpleRanges[effectiveLevel];
-  const absoluteLeft = randomInteger(ranges.left[0], ranges.left[1], rng);
-  const absoluteRight = randomInteger(ranges.right[0], ranges.right[1], rng);
-  const signPattern = randomInteger(0, 3, rng);
-  const left = signPattern % 2 === 1 ? -absoluteLeft : absoluteLeft;
-  const right = signPattern >= 2 ? -absoluteRight : absoluteRight;
-  const expected = left * right;
-  const expression = `${left}\\times ${right < 0 ? `\\left(${right}\\right)` : right}`;
-  const variant = difficultyId === "mixed"
-    ? `mixed-${generatedMode}`
-    : generatedMode === "simple" ? `simple-level-${effectiveLevel}` : "tables";
-
-  return {
-    variant,
-    operands: [left, right],
-    level: generatedMode === "simple" ? effectiveLevel : null,
-    prompt: translated(`Calculer : $$${expression}$$`, `Calculate : $$${expression}$$`),
-    expected,
-    answerDisplay: `$$${expected}$$`,
-    explanation: translated(
-      `Le produit exact est $$${expression}=${expected}.$$`,
-      `The exact product is $$${expression}=${expected}.$$`,
-    ),
-    insight: translated(
-      "Deux facteurs de même signe donnent un produit positif ; deux facteurs de signes contraires donnent un produit négatif.",
-      "Factors with the same sign give a positive product; factors with different signs give a negative product.",
-    ),
-    courseHintIds: ["elementary-multiplication-strategies"],
-  };
-}
-
-function randomProperFraction(rng, maxDenominator = 12) {
-  const denominator = randomInteger(2, maxDenominator, rng);
-  const numerator = randomInteger(1, denominator - 1, rng);
-  return { numerator, denominator, value: new Fraction(BigInt(numerator), BigInt(denominator)) };
-}
-
-
-
-function fractionQuestion(difficulty, rng) {
-  const level = currentDifficulty(difficulty, "basics");
-  const simplification = () => {
-    let numerator;
-    let denominator;
-
-    do {
-      numerator = randomInteger(1, 11, rng);
-      denominator = randomInteger(numerator + 1, 15, rng);
-    } while (!areCoprime(numerator, denominator));
-
-    const factor = randomInteger(2, level === "mixed" ? 12 : 7, rng);
-    const shownNumerator = numerator * factor;
-    const shownDenominator = denominator * factor;
-    const expected = new Fraction(BigInt(shownNumerator), BigInt(shownDenominator));
-
-    return {
-      variant: "simplify",
-      prompt: translated(
-        `Donner sous forme irréductible : $$${fractionLatex(shownNumerator, shownDenominator)}$$`,
-        `Write in lowest terms: $$${fractionLatex(shownNumerator, shownDenominator)}$$`,
-      ),
-      expected,
-      answerDisplay: `$$${expected.toLatex()}$$`,
-      answerSpec: { type: "fraction", allowDecimal: false, requireReduced: true },
-      explanation: translated(
-        `On divise le numérateur et le dénominateur par ${factor} : $$${fractionLatex(shownNumerator, shownDenominator)}=${expected.toLatex()}.$$`,
-        `Divide numerator and denominator by ${factor}: $$${fractionLatex(shownNumerator, shownDenominator)}=${expected.toLatex()}.$$`,
-      ),
-    };
-  };
-  const operation = (operator) => {
-    const left = randomProperFraction(rng, level === "mixed" ? 15 : 10);
-    const right = randomProperFraction(rng, level === "mixed" ? 15 : 10);
-    const calculations = {
-      add: { symbol: "+", value: left.value.add(right.value), verb: translated("addition", "addition") },
-      subtract: { symbol: "-", value: left.value.sub(right.value), verb: translated("soustraction", "subtraction") },
-      multiply: { symbol: "\\times", value: left.value.mul(right.value), verb: translated("produit", "product") },
-      divide: { symbol: "\\div", value: left.value.div(right.value), verb: translated("quotient", "quotient") },
-    };
-    const selected = calculations[operator];
-    const expression = `${fractionLatex(left.numerator, left.denominator)} ${selected.symbol} ${fractionLatex(right.numerator, right.denominator)}`;
-
-    return {
-      variant: operator,
-      prompt: translated(`Calculer et mettre sous forme irréductible : $$${expression}$$`, `Compute and write in lowest terms: $$${expression}$$`),
-      expected: selected.value,
-      answerDisplay: `$$${selected.value.toLatex()}$$`,
-      answerSpec: { type: "fraction", allowDecimal: false, requireReduced: true },
-      explanation: translated(
-        `Après mise sous même dénominateur puis la mise sous forme irréductible, on trouve $$${expression}=${selected.value.toLatex()}.$$`,
-        `After putting under the same denominator and reduction, $$${expression}=${selected.value.toLatex()}.$$`,
-      ),
-    };
-  };
-  const comparison = () => {
-    const left = randomProperFraction(rng, 14);
-    let right = randomProperFraction(rng, 14);
-
-    if (randomInteger(0, 5, rng) === 0) {
-      const factor = randomInteger(2, 4, rng);
-      right = {
-        numerator: left.numerator * factor,
-        denominator: left.denominator * factor,
-        value: left.value,
-      };
-    }
-
-    const crossLeft = left.numerator * right.denominator;
-    const crossRight = right.numerator * left.denominator;
-    const expected = crossLeft < crossRight ? "<" : crossLeft > crossRight ? ">" : "=";
-
-    return {
-      variant: "compare",
-      answerKind: "comparison",
-      prompt: translated(
-        `Compléter avec $<$, $=$ ou $>$ : $$${fractionLatex(left.numerator, left.denominator)}\\quad?\\quad${fractionLatex(right.numerator, right.denominator)}$$`,
-        `Fill in with $<$, $=$ or $>$: $$${fractionLatex(left.numerator, left.denominator)}\\quad?\\quad${fractionLatex(right.numerator, right.denominator)}$$`,
-      ),
-      expected,
-      answerDisplay: `$$${fractionLatex(left.numerator, left.denominator)} ${expected} ${fractionLatex(right.numerator, right.denominator)}$$`,
-      explanation: translated(
-        `Les produits en croix sont ${crossLeft} et ${crossRight}, donc le symbole correct est $${expected}$.`,
-        `The cross-products are ${crossLeft} and ${crossRight}, so the correct symbol is $${expected}$.`,
-      ),
-    };
-  };
-  const fractionOfNumber = () => {
-    const fraction = randomProperFraction(rng, 12);
-    const number = randomInteger(3, 15, rng) * fraction.denominator;
-    const expected = fraction.value.mul(number);
-
-    return {
-      variant: "fraction-of-number",
-      prompt: translated(
-        `Calculer $${fractionLatex(fraction.numerator, fraction.denominator)}$ de $${number}$.`,
-        `Find $${fractionLatex(fraction.numerator, fraction.denominator)}$ of $${number}$.`,
-      ),
-      expected,
-      answerDisplay: `$$${expected.toLatex()}$$`,
-      answerSpec: { type: "fraction", allowDecimal: false, requireReduced: true },
-      explanation: translated(
-        `On calcule $$${fractionLatex(fraction.numerator, fraction.denominator)}\\times ${number}=${expected.toLatex()}.$$`,
-        `Compute $$${fractionLatex(fraction.numerator, fraction.denominator)}\\times ${number}=${expected.toLatex()}.$$`,
-      ),
-    };
-  };
-  const pools = {
-    basics: [
-      { weight: 3, make: simplification },
-      // { weight: 2, make: fractionOfNumber },
-    ],
-    sum: [
-      { weight: 1, make: () => operation("add") },
-      { weight: 2, make: () => operation("subtract") },
-    ],
-    prod: [
-      { weight: 1, make: () => operation("multiply") },
-      { weight: 1, make: () => operation("divide") },
-    ],
-    comparison: [
-      { weight: 3, make: comparison },
-      // { weight: 1, make: simplification },
-    ],
-    mixed: [
-      { weight: 2, make: simplification },
-      { weight: 2, make: () => operation("add") },
-      { weight: 2, make: () => operation("subtract") },
-      { weight: 2, make: () => operation("multiply") },
-      { weight: 1, make: () => operation("divide") },
-      { weight: 2, make: comparison },
-      //{ weight: 1, make: fractionOfNumber },
-    ],
-  };
-  const question = weightedPick(pools[level] ?? pools.basics, rng).make();
-
-  return {
-    courseHintIds: ["elementary-fractions"],
-    insight: question.variant === "divide"
-      ? translated("Diviser par une fraction revient à multiplier par son inverse.", "Dividing by a fraction means multiplying by its reciprocal.")
-      : undefined,
-    ...question,
-  };
-}
-
-
-
 
 
 
@@ -1093,7 +2046,7 @@ function fractionQuestion(difficulty, rng) {
 function identityQuestion(difficulty, rng, exerciseLevel = null) {
   const level = currentDifficulty(difficulty, "identify");
   const numericLevel = Number(exerciseLevel);
-  const leadingCoefficientBounds = level === "mixed"
+  const identityCoefficientBounds = level === "mixed"
     ? [2, 9]
     : numericLevel === 1
       ? [1, 1]
@@ -1103,90 +2056,137 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
           ? [2, 9]
           : [1, 1];
   const shiftBounds = level === "mixed"
-    ? [5, 18]
+    ? [5, 25]
     : numericLevel === 1
       ? [2, 6]
       : numericLevel === 2
         ? [2, 10]
         : numericLevel === 3
-          ? [4, 15]
+          ? [4, 25]
           : [2, 10];
-  const [minimumLeadingCoefficient, maximumLeadingCoefficient] = leadingCoefficientBounds;
+  const [minimumIdentityCoefficient, maximumIdentityCoefficient] = identityCoefficientBounds;
   const [minimumShift, maximumShift] = shiftBounds;
-  const xCoefficientChoices = [];
+  const identityCoefficientChoices = [];
 
-  // Une vraie forme (ax±b)² impose le carré a² devant x² : on ne garde donc
-  // que les carrés parfaits compris dans l'intervalle visible du niveau.
-  for (let coefficient = 1; coefficient * coefficient <= maximumLeadingCoefficient; coefficient += 1) {
-    if (coefficient * coefficient >= minimumLeadingCoefficient) {
-      xCoefficientChoices.push(coefficient);
-    }
+  for (let coefficient = minimumIdentityCoefficient; coefficient <= maximumIdentityCoefficient; coefficient += 1) {
+    identityCoefficientChoices.push(coefficient);
   }
 
-  const nonSquareLeadingCoefficientChoices = [];
+  const pickIdentityParameters = () => {
+    const coefficient = pickRandom(identityCoefficientChoices, rng);
+    const coefficientMode = coefficient === 1
+      ? "basic"
+      : pickRandom(["outer-factor", "inner-square"], rng);
+    const outerCoefficient = coefficientMode === "outer-factor" ? coefficient : 1;
+    const xCoefficient = coefficientMode === "inner-square" ? coefficient : 1;
 
-  for (let coefficient = minimumLeadingCoefficient; coefficient <= maximumLeadingCoefficient; coefficient += 1) {
-    if (!Number.isInteger(Math.sqrt(coefficient))) {
-      nonSquareLeadingCoefficientChoices.push(coefficient);
-    }
-  }
-
-  const pickXCoefficient = () => pickRandom(xCoefficientChoices, rng);
+    return {
+      coefficientMode,
+      identityCoefficient: coefficient,
+      outerCoefficient,
+      xCoefficient,
+      leadingCoefficient: outerCoefficient * xCoefficient * xCoefficient,
+    };
+  };
+  const factorPrefix = (coefficient, forExpected = false) => (
+    coefficient === 1
+      ? ""
+      : forExpected
+        ? `${coefficient}*`
+        : String(coefficient)
+  );
   const decide = () => {
     const expected = pickRandom([true, false], rng);
-    const xCoefficient = pickXCoefficient();
+    const parameters = pickIdentityParameters();
+    const {
+      leadingCoefficient,
+      outerCoefficient,
+      xCoefficient,
+    } = parameters;
     const shift = randomInteger(minimumShift, maximumShift, rng);
     const xTerm = xCoefficient === 1 ? "x" : `${xCoefficient}x`;
-    const leadingCoefficient = xCoefficient * xCoefficient;
-    const middleMagnitude = 2 * xCoefficient * shift;
-    const squaredShift = shift * shift;
-    const exactSum = quadraticExpression(leadingCoefficient, middleMagnitude, squaredShift, true);
-    const exactDifference = quadraticExpression(leadingCoefficient, -middleMagnitude, squaredShift, true);
-    const exactConjugates = quadraticExpression(leadingCoefficient, 0, -squaredShift, true);
+    const middleMagnitude = 2 * outerCoefficient * xCoefficient * shift;
+    const constantMagnitude = outerCoefficient * shift * shift;
+    const exactSum = quadraticExpression(leadingCoefficient, middleMagnitude, constantMagnitude, true);
+    const exactDifference = quadraticExpression(leadingCoefficient, -middleMagnitude, constantMagnitude, true);
+    const exactConjugates = quadraticExpression(leadingCoefficient, 0, -constantMagnitude, true);
+    const prefix = factorPrefix(outerCoefficient);
+    const sumSquareToDevelop = `${prefix}(${xTerm}+${shift})^2`;
+    const differenceSquareToDevelop = `${prefix}(${xTerm}-${shift})^2`;
+    const conjugatesToDevelop = `${prefix}(${xTerm}-${shift})(${xTerm}+${shift})`;
     const trueCases = [
       {
         variant: "decision-sum-square",
         expression: exactSum,
         explanation: translated(
-          `Le terme central vaut $2\\times(${xTerm})\\times${shift}$, donc $$${exactSum}=(${xTerm}+${shift})^2.$$`,
-          `The middle term is $2\\times(${xTerm})\\times${shift}$, so $$${exactSum}=(${xTerm}+${shift})^2.$$`,
+          `On reconnaît une identité remarquable : $$${exactSum}=${sumSquareToDevelop}.$$`,
+          `This is a standard identity: $$${exactSum}=${sumSquareToDevelop}.$$`,
         ),
       },
       {
         variant: "decision-difference-square",
         expression: exactDifference,
         explanation: translated(
-          `Le terme central vaut $-2\\times(${xTerm})\\times${shift}$, donc $$${exactDifference}=(${xTerm}-${shift})^2.$$`,
-          `The middle term is $-2\\times(${xTerm})\\times${shift}$, so $$${exactDifference}=(${xTerm}-${shift})^2.$$`,
+          `On reconnaît une identité remarquable : $$${exactDifference}=${differenceSquareToDevelop}.$$`,
+          `This is a standard identity: $$${exactDifference}=${differenceSquareToDevelop}.$$`,
         ),
       },
       {
         variant: "decision-conjugates",
         expression: exactConjugates,
         explanation: translated(
-          `C'est une différence de deux carrés et on reconnaît donc la troisième identité remarquable : $$${exactConjugates}= (${xTerm})^2 - ${shift}^2 = (${xTerm}-${shift})(${xTerm}+${shift}).$$`,
-          `This is a difference of squares, so $$${exactConjugates}= (${xTerm})^2 - ${shift}^2 = (${xTerm}-${shift})(${xTerm}+${shift}).$$`,
+          `On utilise $a^2-b^2=(a-b)(a+b)$ : $$${exactConjugates}=${conjugatesToDevelop}.$$`,
+          `Use $a^2-b^2=(a-b)(a+b)$: $$${exactConjugates}=${conjugatesToDevelop}.$$`,
+        ),
+      },
+      {
+        variant: "decision-develop-sum-square",
+        expression: sumSquareToDevelop,
+        explanation: translated(
+          `C'est la forme $(a+b)^2$. On peut donc la développer directement avec l'identité remarquable : $$${sumSquareToDevelop}=${exactSum}.$$`,
+          `This has the form $(a+b)^2$, so it can be expanded directly using the standard identity: $$${sumSquareToDevelop}=${exactSum}.$$`,
+        ),
+      },
+      {
+        variant: "decision-develop-difference-square",
+        expression: differenceSquareToDevelop,
+        explanation: translated(
+          `C'est la forme $(a-b)^2$. On peut donc la développer directement avec l'identité remarquable : $$${differenceSquareToDevelop}=${exactDifference}.$$`,
+          `This has the form $(a-b)^2$, so it can be expanded directly using the standard identity: $$${differenceSquareToDevelop}=${exactDifference}.$$`,
+        ),
+      },
+      {
+        variant: "decision-develop-conjugates",
+        expression: conjugatesToDevelop,
+        explanation: translated(
+          `Les deux facteurs sont conjugués : c'est la forme $(a-b)(a+b)$. Ainsi, $$${conjugatesToDevelop}=${exactConjugates}.$$`,
+          `The two factors are conjugates, matching $(a-b)(a+b)$. Therefore, $$${conjugatesToDevelop}=${exactConjugates}.$$`,
         ),
       },
     ];
 
     const constantOffsetMagnitude = randomInteger(1, 3, rng);
     const constantOffsetSign = pickRandom([-1, 1], rng);
-    const wrongConstantValue = squaredShift + constantOffsetSign * constantOffsetMagnitude;
+    const wrongConstantValue = constantMagnitude + constantOffsetSign * constantOffsetMagnitude;
     const wrongConstant = quadraticExpression(leadingCoefficient, middleMagnitude, wrongConstantValue, true);
     const middleOffset = randomInteger(1, 3, rng);
-    const wrongMiddle = quadraticExpression(leadingCoefficient, middleMagnitude + middleOffset, squaredShift, true);
+    const wrongMiddle = quadraticExpression(leadingCoefficient, middleMagnitude + middleOffset, constantMagnitude, true);
     const middleSign = pickRandom([-1, 1], rng);
     const signedMiddle = middleSign * middleMagnitude;
-    const sumOfSquares = quadraticExpression(leadingCoefficient, 0, squaredShift, true);
-    const incompatibleSigns = quadraticExpression(leadingCoefficient, signedMiddle, -squaredShift, true);
+    const sumOfSquares = quadraticExpression(leadingCoefficient, 0, constantMagnitude, true);
+    const incompatibleSigns = quadraticExpression(leadingCoefficient, signedMiddle, -constantMagnitude, true);
     const strayMiddleMagnitude = randomInteger(1, Math.max(3, middleMagnitude - 1), rng);
     const strayMiddle = quadraticExpression(
       leadingCoefficient,
       middleSign * strayMiddleMagnitude,
-      -squaredShift,
+      -constantMagnitude,
       true,
     );
+    const otherShift = shift === maximumShift
+      ? shift - 1
+      : shift + 1;
+    const unequalSquaresProduct = `${prefix}(${xTerm}+${shift})(${xTerm}+${otherShift})`;
+    const almostConjugatesProduct = `${prefix}(${xTerm}-${shift})(${xTerm}+${otherShift})`;
     const falseCases = [
       {
         variant: "decision-sum-of-squares",
@@ -1200,16 +2200,16 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
         variant: "decision-wrong-constant",
         expression: wrongConstant,
         explanation: translated(
-          `Avec les deux premiers termes, le dernier devrait être $${shift}^2=${squaredShift}$, et non $${wrongConstantValue}$.`,
-          `Given the first two terms, the last one should be $${shift}^2=${squaredShift}$, not $${wrongConstantValue}$.`,
+          `Avec les deux premiers termes, le dernier devrait être $${constantMagnitude}$, et non $${wrongConstantValue}$.`,
+          `Given the first two terms, the last one should be $${constantMagnitude}$, not $${wrongConstantValue}$.`,
         ),
       },
       {
         variant: "decision-wrong-middle",
         expression: wrongMiddle,
         explanation: translated(
-          `Le terme du milieu doit être $$2\times {xTerm}\times {shift} = ${middleMagnitude}x$, et non $${middleMagnitude + middleOffset}x$.`,
-          `The middle term should be $$2\times {xTerm}\times {shift} = ${middleMagnitude}x$, not $${middleMagnitude + middleOffset}x$.`,
+          `Le terme du milieu doit être $${middleMagnitude}x$, et non $${middleMagnitude + middleOffset}x$.`,
+          `The middle term should be $${middleMagnitude}x$, not $${middleMagnitude + middleOffset}x$.`,
         ),
       },
       {
@@ -1228,34 +2228,33 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
           `$${exactConjugates}$ would be a difference of squares, but the extra $x$ term prevents direct use of the identity.`,
         ),
       },
-    ];
-
-    if (nonSquareLeadingCoefficientChoices.length > 0) {
-      const nonSquareLeadingCoefficient = pickRandom(nonSquareLeadingCoefficientChoices, rng);
-      const nonSquareExpression = quadraticExpression(
-        nonSquareLeadingCoefficient,
-        middleMagnitude,
-        squaredShift,
-        true,
-      );
-
-      falseCases.push({
-        variant: "decision-non-square-leading-term",
-        expression: nonSquareExpression,
+      {
+        variant: "decision-develop-unequal-factors",
+        expression: unequalSquaresProduct,
         explanation: translated(
-          `Faux : le coefficient $${nonSquareLeadingCoefficient}$ devant $x^2$ n'est pas un carré parfait ; le premier terme ne peut donc pas être le carré d'un monôme à coefficient entier.`,
-          `False: the coefficient $${nonSquareLeadingCoefficient}$ of $x^2$ is not a perfect square, so the first term cannot be the square of a monomial with an integer coefficient.`,
+          `Les deux facteurs ne sont pas identiques : $${shift}\\neq${otherShift}$. Ce n'est donc pas un carré de la forme $(a+b)^2$.`,
+          `The two factors are not identical because $${shift}\\neq${otherShift}$, so this is not a square of the form $(a+b)^2$.`,
         ),
-      });
-    }
+      },
+      {
+        variant: "decision-develop-almost-conjugates",
+        expression: almostConjugatesProduct,
+        explanation: translated(
+          `Les deux termes constants ne sont pas opposés : $-${shift}$ et $+${otherShift}$. Les facteurs ne sont donc pas conjugués.`,
+          `The constant terms are not opposites: $-${shift}$ and $+${otherShift}$. Therefore, the factors are not conjugates.`,
+        ),
+      },
+    ];
 
     const selected = pickRandom(expected ? trueCases : falseCases, rng);
 
     return {
       variant: selected.variant,
+      ...parameters,
+      shift,
       prompt: translated(
-        `Vrai ou faux : cette expression peut être factorisée en utilisant une identité remarquable. $$${selected.expression}$$`,
-        `True or false: without rewriting it first, this expression directly matches one of the three standard identities. $$${selected.expression}$$`,
+        `Vrai ou faux : une identité remarquable est-elle applicable ? $$${selected.expression}$$`,
+        `True or false: can a standard identity be used? $$${selected.expression}$$`,
       ),
       expected,
       answer: { type: "boolean" },
@@ -1265,21 +2264,29 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
     };
   };
   const develop = () => {
-    const xCoefficient = pickXCoefficient();
+    const parameters = pickIdentityParameters();
+    const {
+      leadingCoefficient,
+      outerCoefficient,
+      xCoefficient,
+    } = parameters;
     const shift = randomInteger(minimumShift, maximumShift, rng);
     const identity = pickRandom(["sum-square", "difference-square", "conjugates"], rng);
+    const prefix = factorPrefix(outerCoefficient);
     const xTerm = xCoefficient === 1 ? "x" : `${xCoefficient}x`;
-    const leadingCoefficient = xCoefficient * xCoefficient;
-    const middleCoefficient = 2 * xCoefficient * shift;
+    const middleCoefficient = 2 * outerCoefficient * xCoefficient * shift;
+    const constant = outerCoefficient * shift * shift;
 
     if (identity === "sum-square") {
-      const expected = quadraticExpression(leadingCoefficient, middleCoefficient, shift * shift);
-      const display = quadraticExpression(leadingCoefficient, middleCoefficient, shift * shift, true);
+      const expected = quadraticExpression(leadingCoefficient, middleCoefficient, constant);
+      const display = quadraticExpression(leadingCoefficient, middleCoefficient, constant, true);
 
       return {
         variant: identity,
+        ...parameters,
+        shift,
         answerForm: "developed",
-        prompt: translated(`Développer : $$(${xTerm}+${shift})^2$$`, `Expand: $$(${xTerm}+${shift})^2$$`),
+        prompt: translated(`Développer : $$${prefix}(${xTerm}+${shift})^2$$`, `Expand: $$${prefix}(${xTerm}+${shift})^2$$`),
         expected,
         answerDisplay: `$$${display}$$`,
         explanation: translated(
@@ -1290,13 +2297,15 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
     }
 
     if (identity === "difference-square") {
-      const expected = quadraticExpression(leadingCoefficient, -middleCoefficient, shift * shift);
-      const display = quadraticExpression(leadingCoefficient, -middleCoefficient, shift * shift, true);
+      const expected = quadraticExpression(leadingCoefficient, -middleCoefficient, constant);
+      const display = quadraticExpression(leadingCoefficient, -middleCoefficient, constant, true);
 
       return {
         variant: identity,
+        ...parameters,
+        shift,
         answerForm: "developed",
-        prompt: translated(`Développer : $$(${xTerm}-${shift})^2$$`, `Expand: $$(${xTerm}-${shift})^2$$`),
+        prompt: translated(`Développer : $$${prefix}(${xTerm}-${shift})^2$$`, `Expand: $$${prefix}(${xTerm}-${shift})^2$$`),
         expected,
         answerDisplay: `$$${display}$$`,
         explanation: translated(
@@ -1306,86 +2315,191 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
       };
     }
 
-    const expected = quadraticExpression(leadingCoefficient, 0, -(shift * shift));
-    const display = quadraticExpression(leadingCoefficient, 0, -(shift * shift), true);
+    const expected = quadraticExpression(leadingCoefficient, 0, -constant);
+    const display = quadraticExpression(leadingCoefficient, 0, -constant, true);
 
     return {
       variant: identity,
+      ...parameters,
+      shift,
       answerForm: "developed",
-      prompt: translated(`Développer : $$(${xTerm}-${shift})(${xTerm}+${shift})$$`, `Expand: $$(${xTerm}-${shift})(${xTerm}+${shift})$$`),
+      prompt: translated(`Développer : $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})$$`, `Expand: $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})$$`),
       expected,
       answerDisplay: `$$${display}$$`,
       explanation: translated(
-        `On reconnaît $(a-b)(a+b)=a^2-b^2$, donc le résultat est $$${display}.$$`,
-        `Recognise $(a-b)(a+b)=a^2-b^2$, hence $$${display}.$$`,
+        `On utilise $(a-b)(a+b)=a^2-b^2$, donc $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${prefix}((${xTerm})^2-${shift * shift})=${display}.$$`,
+        `Use $(a-b)(a+b)=a^2-b^2$, hence $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${prefix}((${xTerm})^2-${shift * shift})=${display}.$$`,
       ),
     };
   };
   const factor = () => {
-    const xCoefficient = pickXCoefficient();
+    const parameters = pickIdentityParameters();
+    const {
+      leadingCoefficient,
+      outerCoefficient,
+      xCoefficient,
+    } = parameters;
     const shift = randomInteger(minimumShift, maximumShift, rng);
     const identity = pickRandom(["sum-square", "difference-square", "conjugates"], rng);
+    const displayPrefix = factorPrefix(outerCoefficient);
+    const expectedPrefix = factorPrefix(outerCoefficient, true);
     const xTerm = xCoefficient === 1 ? "x" : `${xCoefficient}x`;
     const expectedXTerm = xCoefficient === 1 ? "x" : `${xCoefficient}*x`;
-    const leadingCoefficient = xCoefficient * xCoefficient;
-    const middleMagnitude = 2 * xCoefficient * shift;
+    const middleMagnitude = 2 * outerCoefficient * xCoefficient * shift;
+    const constant = outerCoefficient * shift * shift;
 
     if (identity === "conjugates") {
-      const promptExpression = quadraticExpression(leadingCoefficient, 0, -(shift * shift), true);
-      const expected = `(${expectedXTerm}-${shift})*(${expectedXTerm}+${shift})`;
+      const promptExpression = quadraticExpression(leadingCoefficient, 0, -constant, true);
+      const expected = `${expectedPrefix}(${expectedXTerm}-${shift})*(${expectedXTerm}+${shift})`;
 
       return {
         variant: "recognize-conjugates",
+        ...parameters,
+        shift,
         answerForm: "factorized",
         prompt: translated(`Factoriser à l'aide d'une identité remarquable : $$${promptExpression}$$`, `Factor using an identity: $$${promptExpression}$$`),
         expected,
-        answerDisplay: `$$(${xTerm}-${shift})(${xTerm}+${shift})$$`,
+        answerDisplay: `$$${displayPrefix}(${xTerm}-${shift})(${xTerm}+${shift})$$`,
         explanation: translated(
-          `C'est une différence de deux carrés donc : $$${promptExpression}= ${xTerm}^2 - ${shift}^2 = (${xTerm}-${shift})(${xTerm}+${shift}).$$`,
-          `This is a difference of squares: $$${promptExpression}= ${xTerm}^2 - ${shift}^2 = (${xTerm}-${shift})(${xTerm}+${shift}).$$`,
+          `On utilise $a^2-b^2=(a-b)(a+b)$ : $$${promptExpression}=${displayPrefix}(${xTerm}-${shift})(${xTerm}+${shift}).$$`,
+          `Use $a^2-b^2=(a-b)(a+b)$: $$${promptExpression}=${displayPrefix}(${xTerm}-${shift})(${xTerm}+${shift}).$$`,
         ),
       };
     }
 
     const middle = identity === "sum-square" ? middleMagnitude : -middleMagnitude;
-    const promptExpression = quadraticExpression(leadingCoefficient, middle, shift * shift, true);
+    const promptExpression = quadraticExpression(leadingCoefficient, middle, constant, true);
     const sign = identity === "sum-square" ? "+" : "-";
-    const expected = `(${expectedXTerm}${sign}${shift})^2`;
+    const expected = `${expectedPrefix}(${expectedXTerm}${sign}${shift})^2`;
 
     return {
       variant: `recognize-${identity}`,
+      ...parameters,
+      shift,
       answerForm: "factorized",
       prompt: translated(`Factoriser à l'aide d'une identité remarquable : $$${promptExpression}$$`, `Factor using an identity: $$${promptExpression}$$`),
       expected,
-      answerDisplay: `$$(${xTerm}${sign}${shift})^2$$`,
+      answerDisplay: `$$${displayPrefix}(${xTerm}${sign}${shift})^2$$`,
       explanation: translated(
-        `Le terme du milieu est le double produit de $${xTerm}$ et $${shift}$ : $$${promptExpression}=(${xTerm}${sign}${shift})^2.$$`,
-        `The middle term is twice the product of $${xTerm}$ and $${shift}$: $$${promptExpression}=(${xTerm}${sign}${shift})^2.$$`,
+        `Le terme du milieu est le double produit attendu : $$${promptExpression}=${displayPrefix}(${xTerm}${sign}${shift})^2.$$`,
+        `The middle term is the required double product: $$${promptExpression}=${displayPrefix}(${xTerm}${sign}${shift})^2.$$`,
       ),
     };
   };
-  const complete = () => {
-    const xCoefficient = pickXCoefficient();
+  const completeFactorization = () => {
+    const parameters = pickIdentityParameters();
+    const {
+      leadingCoefficient,
+      outerCoefficient,
+      xCoefficient,
+    } = parameters;
     const shift = randomInteger(minimumShift, maximumShift, rng);
-    const sign = pickRandom([1, -1], rng);
-    const middle = 2 * sign * xCoefficient * shift;
-    const shownSign = sign > 0 ? "+" : "-";
+    const identity = pickRandom(["sum-square", "difference-square", "conjugates"], rng);
+    const prefix = factorPrefix(outerCoefficient);
     const xTerm = xCoefficient === 1 ? "x" : `${xCoefficient}x`;
-    const squaredXTerm = xCoefficient === 1 ? "x^2" : `${xCoefficient * xCoefficient}x^2`;
+    const middleMagnitude = 2 * outerCoefficient * xCoefficient * shift;
+    const constant = outerCoefficient * shift * shift;
+    const blank = "\\boxed{\\phantom{00}}";
+
+    if (identity === "conjugates") {
+      const developed = quadraticExpression(leadingCoefficient, 0, -constant, true);
+
+      return {
+        variant: "complete-conjugates",
+        ...parameters,
+        shift,
+        prompt: translated(
+          `Compléter la factorisation : $$${developed}=${prefix}(${xTerm}-${blank})(${xTerm}+${blank}).$$`,
+          `Complete the factorisation: $$${developed}=${prefix}(${xTerm}-${blank})(${xTerm}+${blank}).$$`,
+        ),
+        expected: shift,
+        answer: { type: "integer", placeholder: translated("ex. 4", "e.g. 4") },
+        answerDisplay: `$$${shift}$$`,
+        explanation: translated(
+          `Avec $a^2-b^2=(a-b)(a+b)$, on obtient $$${developed}=${prefix}(${xTerm}-${shift})(${xTerm}+${shift}).$$`,
+          `Using $a^2-b^2=(a-b)(a+b)$ gives $$${developed}=${prefix}(${xTerm}-${shift})(${xTerm}+${shift}).$$`,
+        ),
+      };
+    }
+
+    const isSum = identity === "sum-square";
+    const sign = isSum ? "+" : "-";
+    const middle = isSum ? middleMagnitude : -middleMagnitude;
+    const developed = quadraticExpression(leadingCoefficient, middle, constant, true);
+
+    return {
+      variant: `complete-${identity}`,
+      ...parameters,
+      shift,
+      prompt: translated(
+        `Compléter la factorisation : $$${developed}=${prefix}(${xTerm}${sign}${blank})^2.$$`,
+        `Complete the factorisation: $$${developed}=${prefix}(${xTerm}${sign}${blank})^2.$$`,
+      ),
+      expected: shift,
+      answer: { type: "integer", placeholder: translated("ex. 4", "e.g. 4") },
+      answerDisplay: `$$${shift}$$`,
+      explanation: translated(
+        `On reconnaît l'identité remarquable : $$${developed}=${prefix}(${xTerm}${sign}${shift})^2.$$`,
+        `Recognise the standard identity: $$${developed}=${prefix}(${xTerm}${sign}${shift})^2.$$`,
+      ),
+    };
+  };
+  const completeDevelopment = () => {
+    const parameters = pickIdentityParameters();
+    const {
+      leadingCoefficient,
+      outerCoefficient,
+      xCoefficient,
+    } = parameters;
+    const shift = randomInteger(minimumShift, maximumShift, rng);
+    const identity = pickRandom(["sum-square", "difference-square", "conjugates"], rng);
+    const prefix = factorPrefix(outerCoefficient);
+    const xTerm = xCoefficient === 1 ? "x" : `${xCoefficient}x`;
+    const middleMagnitude = 2 * outerCoefficient * xCoefficient * shift;
+    const constant = outerCoefficient * shift * shift;
+    const squaredXTerm = leadingCoefficient === 1 ? "x^2" : `${leadingCoefficient}x^2`;
+    const blank = "\\boxed{\\phantom{-000x}}";
+
+    if (identity === "conjugates") {
+      const constantBlank = "\\boxed{\\phantom{000}}";
+
+      return {
+        variant: "complete-development-conjugates",
+        ...parameters,
+        shift,
+        prompt: translated(
+          `Compléter le développement : $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${squaredXTerm}-${constantBlank}.$$`,
+          `Complete the expansion: $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${squaredXTerm}-${constantBlank}.$$`,
+        ),
+        expected: constant,
+        answer: { type: "integer", placeholder: translated("ex. 16", "e.g. 16") },
+        answerDisplay: `$$${constant}$$`,
+        explanation: translated(
+          `Avec $(a-b)(a+b)=a^2-b^2$, le terme manquant est $${constant}$ : $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${quadraticExpression(leadingCoefficient, 0, -constant, true)}.$$`,
+          `Using $(a-b)(a+b)=a^2-b^2$, the missing term is $${constant}$: $$${prefix}(${xTerm}-${shift})(${xTerm}+${shift})=${quadraticExpression(leadingCoefficient, 0, -constant, true)}.$$`,
+        ),
+      };
+    }
+
+    const isSum = identity === "sum-square";
+    const sign = isSum ? "+" : "-";
+    const middle = isSum ? middleMagnitude : -middleMagnitude;
     const expected = polynomial([{ coefficient: middle, variable: "x" }]);
     const display = polynomial([{ coefficient: middle, variable: "x" }], true);
 
     return {
-      variant: "complete",
+      variant: `complete-development-${identity}`,
+      ...parameters,
+      shift,
       prompt: translated(
-        `Compléter le terme manquant : $$(${xTerm}${shownSign}${shift})^2=${squaredXTerm}\\;\\boxed{\\phantom{-24x}}+${shift * shift}.$$`,
-        `Complete the missing term: $$(${xTerm}${shownSign}${shift})^2=${squaredXTerm}\\;\\boxed{\\phantom{-24x}}+${shift * shift}.$$`,
+        `Compléter le développement : $$${prefix}(${xTerm}${sign}${shift})^2=${squaredXTerm}\\;${blank}+${constant}.$$`,
+        `Complete the expansion: $$${prefix}(${xTerm}${sign}${shift})^2=${squaredXTerm}\\;${blank}+${constant}.$$`,
       ),
       expected,
       answerDisplay: `$$${display}$$`,
       explanation: translated(
-        `Le double produit est $2\\times (${xTerm})\\times (${sign * shift})$, soit $$${display}.$$`,
-        `The double product is $2\\times (${xTerm})\\times (${sign * shift})$, namely $$${display}.$$`,
+        `Le terme manquant est le double produit, soit $$${display}.$$`,
+        `The missing term is the double product, namely $$${display}.$$`,
       ),
     };
   };
@@ -1394,29 +2508,41 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
       { weight: 1, make: decide },
     ],
     recognize: [
-      { weight: 3, make: factor },
-      { weight: 1, make: complete },
+      { weight: 1, make: factor },
+      { weight: 1, make: completeFactorization },
     ],
     use: [
       { weight: 3, make: develop },
-      { weight: 2, make: factor },
-      { weight: 1, make: complete },
+      { weight: 1, make: completeDevelopment },
     ],
     mixed: [
       { weight: 3, make: decide },
       { weight: 3, make: develop },
       { weight: 3, make: factor },
-      { weight: 2, make: complete },
+      { weight: 2, make: completeFactorization },
+      { weight: 2, make: completeDevelopment },
     ],
   };
+
+  const question = weightedPick(pools[level] ?? pools.recognize, rng).make();
+  const promptUi = question.variant.startsWith("decision-")
+    ? elementaryPromptUi.identifyIdentity
+    : question.variant.startsWith("complete-development-")
+      ? elementaryPromptUi.completeDevelopmentIdentity
+      : question.variant.startsWith("complete-")
+        ? elementaryPromptUi.completeFactorIdentity
+        : question.answerForm === "factorized"
+          ? elementaryPromptUi.factorIdentity
+          : elementaryPromptUi.developIdentity;
 
   return {
     courseHintIds: ["elementary-identities"],
     insight: translated(
-      "Avant de calculer, repère les deux carrés et vérifie le double produit.",
-      "Before computing, identify the two squares and check the double product.",
+      "Commence par chercher un facteur commun, puis repère les deux carrés et vérifie le double produit.",
+      "First look for a common factor, then identify the two squares and check the double product.",
     ),
-    ...weightedPick(pools[level] ?? pools.recognize, rng).make(),
+    ...question,
+    promptUi,
   };
 }
 
@@ -1968,11 +3094,11 @@ function linearEquationQuestion(difficulty, rng) {
 export const elementaryTools = [
   additionsTool,
   multiplicationsTool,
-  // fractionsTool,
+  fractionsTool,
   // squareRootsTool,
   // developmentTool,
   // factorizationTool,
-  // identitiesTool,
+  identitiesTool,
   // powersTool,
   // linearEquationsTool,
   // guidedMethodsTool,
