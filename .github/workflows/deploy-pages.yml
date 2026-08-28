@@ -33,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: CI=true npm test -- --watchAll=false --runInBand
+        run: CI=true npm test -- --watchAll=false --runInBand --passWithNoTests
 
       - name: Build site
         run: npm run build

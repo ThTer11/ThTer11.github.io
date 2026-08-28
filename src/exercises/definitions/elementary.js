@@ -74,7 +74,7 @@ const elementaryPromptUi = {
     icon: "pencil",
   },
   completeDevelopmentIdentity: {
-    label: translated("Complèter", "Complete"),
+    label: translated("Compléter", "Complete"),
     detail: false,
     tone: "complete",
     icon: "pencil",
