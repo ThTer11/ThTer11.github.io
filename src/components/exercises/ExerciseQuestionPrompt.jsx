@@ -61,6 +61,7 @@ export function resolveQuestionPromptUi(promptUi, lang = "fr") {
     detail,
     icon: promptUi.icon,
     tone: promptUi.tone ?? "default",
+    mobileLayout: promptUi.mobileLayout ?? "inline",
     fullText: [label, detail].filter(Boolean).join(" — "),
   };
 }
@@ -105,7 +106,11 @@ export default function ExerciseQuestionPrompt({
     : null;
 
   return (
-    <div className="exercise-question-prompt" aria-label={compact.fullText}>
+    <div
+      className="exercise-question-prompt"
+      data-mobile-layout={compact.mobileLayout}
+      aria-label={compact.fullText}
+    >
       <div className="exercise-question-instruction">
         {(compact.label || iconChoice !== false) && (
           <span className={`exercise-question-action exercise-question-action-${compact.tone}`}>

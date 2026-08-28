@@ -54,6 +54,7 @@ const elementaryPromptUi = {
     ),
     tone: "decision",
     icon: "scale",
+    mobileLayout: "stack",
   },
   factorIdentity: {
     label: translated("Factoriser", "Factor"),
@@ -87,6 +88,7 @@ const elementaryPromptUi = {
     ),
     tone: "default",
     icon: "scale",
+    mobileLayout: "stack",
   },
 };
 

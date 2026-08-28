@@ -2921,6 +2921,25 @@
     -webkit-line-clamp:2;
   }
 
+  .exercise-question-prompt[data-mobile-layout="stack"] .exercise-question-instruction{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    align-items:start;
+    gap:.38rem;
+  }
+
+  .exercise-question-prompt[data-mobile-layout="stack"] .exercise-question-action{
+    width:max-content;
+  }
+
+  .exercise-question-prompt[data-mobile-layout="stack"] .exercise-question-detail{
+    display:block;
+    overflow:visible;
+    font-size:.72rem;
+    line-height:1.32;
+    -webkit-line-clamp:unset;
+  }
+
   .exercise-question-content{
     font-size:1.1rem;
   }
