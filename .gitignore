@@ -2,3 +2,9 @@ node_modules
 build
 .codex
 README.deploy.local.md
+
+# Tests locaux
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
