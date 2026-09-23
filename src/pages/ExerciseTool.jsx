@@ -47,7 +47,7 @@ export default function ExerciseTool() {
         {tool && category ? (
           <>
             {enginePhase === "setup" && (
-              <section className="showcase-panel showcase-card animate-defil exercise-tool-hero">
+              <section className="showcase-panel showcase-card exercise-tool-hero">
                 <p className="showcase-eyebrow">{localize(category.title, lang)}</p>
                 <MathRenderer as="h1" className="showcase-title" content={localize(tool.title, lang)} />
                 <MathRenderer as="p" className="showcase-lead" content={localize(tool.description, lang)} />

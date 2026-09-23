@@ -367,7 +367,6 @@ const additionsTool = {
     "Entraînez-vous au calcul mental en réalisant des sommes simples le plus rapidement possible.",
     "Build your mental arithmetic skills by solving quick addition problems against the clock.",
   ),
-  audience: elementaryAudience,
   exercises: [
     {
       id: "addition",
@@ -389,10 +388,10 @@ const additionsTool = {
     enabled: true,
     mode: "per-question",
     seconds: {
-      addition: { 1: 5, 2: 7, 3: 7 },
-      subtraction: { 1: 7, 2: 7, 3: 10 },
-      "sum-three-terms": { 1: 15, 2: 20, 3: 25 },
-      difficult: 25,
+      addition: { 1: 3, 2: 5, 3: 5 },
+      subtraction: { 1: 7, 2: 7, 3: 7 },
+      "sum-three-terms": { 1: 7, 2: 10, 3: 10 },
+      difficult: 10,
     },
     strict: true,
     show: true,
@@ -515,7 +514,6 @@ const multiplicationsTool = {
     "Entraînez-vous au calcul mental en réalisant des multiplications simples le plus rapidement possible.",
     "Build your mental arithmetic skills by solving quick multiplication problems against the clock.",
   ),
-  audience: elementaryAudience,
   exercises: [
     { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of signed integers from $-10$ to $10$ in absolute value."), promptUi: elementaryPromptUi.calculate },
     { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Produit d'un entier relatif à deux chiffres par un autre entier relatif.", "Product of a signed two-digit integer times another signed integer."), promptUi: elementaryPromptUi.calculate },
@@ -630,7 +628,6 @@ const fractionsTool = {
     "Simplifier, comparer, calculer des sommes et des produits de fractions.",
     "Simplify, compare, and compute sums and products of fractions.",
   ),
-  audience: elementaryAudience,
   exercises: [
     { id: "basics", color: "sky", levels: [1, 2, 3], defaultLevel: 1, label: translated("Bases", "Basics"), description: translated("Mise de fractions sous forme irréductible.", "Reduction of fractions."), promptUi: elementaryPromptUi.reduceFraction },
     { id: "sum", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme", "Sum"), description: translated("Somme de fractions.", "Sum of fractions."), promptUi: elementaryPromptUi.calculateFraction },
@@ -1669,7 +1666,6 @@ const identitiesTool = {
     "Reconnaître, compléter, développer et factoriser les trois identités remarquables.",
     "Recognise, complete, expand and factor the three standard identities.",
   ),
-  audience: elementaryAudience,
   exercises: [
     {
       id: "identify",
@@ -1704,344 +1700,6 @@ const identitiesTool = {
   showCourseHintOnError: false,
   nextQuestion: true,},
 };
-
-
-
-
-
-
-const developmentTool = {
-  id: "developpement-algebrique",
-  categoryId: "calcul-elementaire",
-  mode: "practice",
-  title: translated("Développement", "Algebraic expansion"),
-  description: translated(
-    "Développer et réduire des expressions algébriques de difficulté progressive.",
-    "Expand and collect algebraic expressions of increasing difficulty.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "single", label: translated("Distributivité simple", "Single distribution"), description: translated("Une constante devant une parenthèse.", "One constant before parentheses.") },
-    { id: "double", label: translated("Double distributivité", "Double distribution"), description: translated("Produit de deux facteurs moniques.", "Product of two monic factors.") },
-    { id: "coefficients", label: translated("Coefficients", "Coefficients"), description: translated("Deux facteurs avec coefficients et signes.", "Two factors with coefficients and signs.") },
-    { id: "mixed", label: translated("Expressions mêlées", "Mixed expressions"), description: translated("Deux développements à réduire ensemble.", "Two expansions to combine.") },
-  ],
-  defaultDifficulty: "single",
-  series: standardSeries,
-  timer: false,
-  score: true,
-  source: {
-    type: "generator",
-    generate: ({ difficulty, rng }) => developmentQuestion(difficulty, rng),
-  },
-  courseHintIds: ["elementary-distributivity"],
-  answer: {
-    type: "expression",
-    requiredForm: "developed",
-    placeholder: translated("ex. 3x^2-2x+1", "e.g. 3x^2-2x+1"),
-    validator: polynomialFormValidator,
-  },
-  feedback: standardFeedback,
-};
-
-const factorizationTool = {
-  id: "factorisation",
-  categoryId: "calcul-elementaire",
-  mode: "practice",
-  title: translated("Factorisation", "Factorisation"),
-  description: translated(
-    "Mettre en évidence un facteur commun puis mobiliser les identités remarquables.",
-    "Extract a common factor, then apply standard identities.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "common-factor", label: translated("Facteur commun", "Common factor"), description: translated("Extraire le facteur commun maximal.", "Extract the greatest common factor.") },
-    { id: "identities", label: translated("Identités", "Identities"), description: translated("Carrés parfaits et différence de carrés.", "Perfect squares and difference of squares.") },
-    { id: "combined", label: translated("Combinaisons", "Combined"), description: translated("Facteur commun puis identité remarquable.", "Common factor followed by an identity.") },
-    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Choisir soi-même la méthode adaptée.", "Choose the appropriate method yourself.") },
-  ],
-  defaultDifficulty: "common-factor",
-  series: standardSeries,
-  timer: false,
-  score: true,
-  source: {
-    type: "generator",
-    generate: ({ difficulty, rng }) => factorizationQuestion(difficulty, rng),
-  },
-  courseHintIds: ["elementary-factorization", "elementary-identities"],
-  answer: {
-    type: "expression",
-    requiredForm: "factorized",
-    placeholder: translated("ex. 3(x-2)(x+2)", "e.g. 3(x-2)(x+2)"),
-    validator: polynomialFormValidator,
-  },
-  feedback: standardFeedback,
-};
-
-const squareRootsTool = {
-  id: "racines-carrees",
-  categoryId: "calcul-elementaire",
-  mode: "practice",
-  title: translated("Racines carrées", "Square roots"),
-  description: translated(
-    "Connaître les racines carrées des carrés parfaits, simplifier des racines carrées et effectuer des produits ou quotients exacts.",
-    "Recognise perfect squares, simplify roots and compute exact products or quotients.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "perfect-squares", label: translated("Carrés parfaits", "Perfect squares"), description: translated("Valeurs usuelles jusqu'à $20^2$.", "Common values up to $20^2$.") },
-    { id: "simplify", label: translated("Simplification de racines", "Square root simplification"), description: translated("Extraire un facteur carré.", "Extract a square factor.") },
-    { id: "operations", label: translated("Produits et quotients de racines", "Square root products and quotients"), description: translated("Utiliser les règles de calculs.", "Use rules for square roots.") },
-    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Toutes les variantes avec des nombres plus grands.", "All variants with larger numbers.") },
-  ],
-  defaultDifficulty: "perfect-squares",
-  series: standardSeries,
-  timer: {
-    enabled: true,
-    mode: "per-question",
-    seconds: { "perfect-squares": 5, simplify: 20, operations: 20, mixed: 25 },
-    strict: false,
-    show: true,
-  },
-  score: true,
-  source: {
-    type: "generator",
-    generate: ({ difficulty, rng }) => squareRootQuestion(difficulty, rng),
-  },
-  courseHintIds: ["elementary-square-roots"],
-  answer: {
-    type: "text",
-    placeholder: translated("ex. 3sqrt(2)", "e.g. 3sqrt(2)"),
-    validator: squareRootValidator,
-  },
-  feedback: standardFeedback,
-};
-
-const powersTool = {
-  id: "puissances",
-  categoryId: "calcul-elementaire",
-  mode: "practice",
-  title: translated("Puissances", "Powers"),
-  description: translated(
-    "Automatiser les règles de produit, quotient et puissance d'une puissance, y compris avec des exposants littéraux.",
-    "Practise products, quotients and powers of powers, including symbolic exponents.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "products", label: translated("Produits", "Products"), description: translated("Additionner les exposants de même base.", "Add exponents with the same base.") },
-    { id: "quotients", label: translated("Quotients", "Quotients"), description: translated("Soustraire ou multiplier les exposants.", "Subtract or multiply exponents.") },
-    { id: "literal", label: translated("Exposants littéraux", "Symbolic exponents"), description: translated("Notamment $3^n\\times9$.", "Including $3^n\\times9$.") },
-    { id: "advanced", label: translated("Mélange avancé", "Advanced mix"), description: translated("Formes littérales et exposants négatifs.", "Symbolic forms and negative exponents.") },
-  ],
-  defaultDifficulty: "products",
-  series: standardSeries,
-  timer: {
-    enabled: true,
-    mode: "per-question",
-    seconds: { products: 14, quotients: 18, literal: 22, advanced: 25 },
-    strict: true,
-    show: true,
-  },
-  score: true,
-  source: {
-    type: "generator",
-    generate: ({ difficulty, rng }) => powerQuestion(difficulty, rng),
-  },
-  courseHintIds: ["elementary-powers"],
-  answer: {
-    type: "text",
-    placeholder: translated("ex. 3^(n+2)", "e.g. 3^(n+2)"),
-    validator: powerValidator,
-  },
-  feedback: standardFeedback,
-};
-
-const linearEquationsTool = {
-  id: "equations-premier-degre",
-  categoryId: "calcul-elementaire",
-  mode: "practice",
-  title: translated("Équations du premier degré", "Linear equations"),
-  description: translated(
-    "Résoudre des équations linéaires, des formes immédiates aux équations avec parenthèses ou solution fractionnaire.",
-    "Solve linear equations, from immediate forms to parentheses and fractional solutions.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "isolate", label: translated("Isoler $x$", "Isolate $x$"), description: translated("Une inconnue dans un seul membre.", "The unknown appears on one side.") },
-    { id: "both-sides", label: translated("Deux membres", "Both sides"), description: translated("Des termes en $x$ dans les deux membres.", "$x$ terms on both sides.") },
-    { id: "parentheses", label: translated("Parenthèses", "Parentheses"), description: translated("Développer avant de résoudre.", "Expand before solving.") },
-    { id: "fractions", label: translated("Solutions fractionnaires", "Fractional solutions"), description: translated("Conserver une réponse exacte et réduite.", "Keep an exact reduced answer.") },
-  ],
-  defaultDifficulty: "isolate",
-  series: standardSeries,
-  timer: false,
-  score: true,
-  source: {
-    type: "generator",
-    generate: ({ difficulty, rng }) => linearEquationQuestion(difficulty, rng),
-  },
-  courseHintIds: ["elementary-linear-equations", "elementary-distributivity", "elementary-fractions"],
-  answer: {
-    type: "fraction",
-    allowDecimal: false,
-    requireReduced: true,
-    placeholder: translated("valeur de x", "value of x"),
-  },
-  feedback: standardFeedback,
-};
-
-const guidedMethodsTool = {
-  id: "methodes-calcul-elementaire",
-  categoryId: "calcul-elementaire",
-  mode: "study",
-  title: translated("Méthodes guidées", "Guided methods"),
-  description: translated(
-    "Quelques exercices choisis à chercher sans chronomètre, avec indices progressifs et correction complète.",
-    "A curated set of untimed problems with progressive hints and full solutions.",
-  ),
-  audience: elementaryAudience,
-  difficulties: [
-    { id: "mental", label: translated("Calcul mental", "Mental arithmetic") },
-    { id: "algebra", label: translated("Calcul algébrique", "Algebra") },
-  ],
-  defaultDifficulty: "mental",
-  series: {
-    questionCount: 1,
-    choices: [1],
-    allowQuestionCount: false,
-  },
-  timer: false,
-  score: false,
-  source: {
-    type: "bank",
-    questions: [
-      {
-        id: "compensation-199",
-        difficulty: "mental",
-        statement: translated(
-          "Calculer mentalement $$199+347-99.$$ Chercher une réorganisation qui évite les longues additions.",
-          "Calculate mentally $$199+347-99.$$ Look for a rearrangement that avoids long addition.",
-        ),
-        prompt: translated("Calculer mentalement : $$199+347-99$$", "Calculate mentally: $$199+347-99$$"),
-        expected: 447,
-        hints: [
-          translated("Regroupe $199$ et $-99$.", "Group $199$ and $-99$."),
-          translated("Leur différence vaut exactement $100$.", "Their difference is exactly $100$."),
-        ],
-        solution: translated(
-          "Par associativité, $$199+347-99=(199-99)+347=100+347=447.$$",
-          "By associativity, $$199+347-99=(199-99)+347=100+347=447.$$",
-        ),
-        explanation: translated(
-          "Par associativité, $$199+347-99=(199-99)+347=447.$$",
-          "By associativity, $$199+347-99=(199-99)+347=447.$$",
-        ),
-        insight: translated("L'ordre des additions peut être choisi pour faire apparaître des nombres ronds.", "Reorder additions to create round numbers."),
-        courseHintIds: ["elementary-addition-strategies"],
-      },
-      {
-        id: "product-48-25",
-        difficulty: "mental",
-        statement: translated(
-          "Calculer mentalement $$48\\times25$$ sans poser la multiplication.",
-          "Calculate $$48\\times25$$ mentally, without long multiplication.",
-        ),
-        prompt: translated("Calculer mentalement : $$48\\times25$$", "Calculate mentally: $$48\\times25$$"),
-        expected: 1200,
-        hints: [
-          translated("Écris $25=100/4$.", "Write $25=100/4$."),
-          translated("Le nombre $48$ est divisible par $4$.", "$48$ is divisible by $4$."),
-        ],
-        solution: translated(
-          "On utilise $25=100/4$ : $$48\\times25=\\frac{48}{4}\\times100=12\\times100=1200.$$",
-          "Use $25=100/4$: $$48\\times25=\\frac{48}{4}\\times100=12\\times100=1200.$$",
-        ),
-        explanation: translated("La compensation transforme le calcul en $12\\times100$.", "The shortcut turns the product into $12\\times100$."),
-        insight: translated("Cette stratégie fonctionne très bien quand le premier facteur est divisible par $4$.", "This strategy is especially useful when the first factor is divisible by $4$."),
-        courseHintIds: ["elementary-multiplication-strategies"],
-      },
-      {
-        id: "fraction-cancellation",
-        difficulty: "mental",
-        statement: translated(
-          "Calculer exactement $$\\frac34-\\frac23\\times\\frac98.$$",
-          "Compute exactly $$\\frac34-\\frac23\\times\\frac98.$$",
-        ),
-        prompt: translated("Calculer exactement : $$\\frac34-\\frac23\\times\\frac98$$", "Compute exactly: $$\\frac34-\\frac23\\times\\frac98$$"),
-        expected: 0,
-        hints: [
-          translated("La multiplication est prioritaire.", "Multiplication comes first."),
-          translated("Simplifie avant de multiplier : $\\frac23\\times\\frac98$.", "Cancel factors before multiplying $\\frac23\\times\\frac98$."),
-        ],
-        solution: translated(
-          "On simplifie en croix : $$\\frac23\\times\\frac98=\\frac{2\\times9}{3\\times8}=\\frac34.$$ Ainsi, l'expression vaut $\\frac34-\\frac34=0$.",
-          "Cancel common factors: $$\\frac23\\times\\frac98=\\frac{2\\times9}{3\\times8}=\\frac34.$$ Hence the expression is $\\frac34-\\frac34=0$.",
-        ),
-        explanation: translated("Les deux termes sont finalement égaux.", "The two terms are ultimately equal."),
-        insight: translated("Simplifier avant de multiplier garde des nombres petits et limite les erreurs.", "Cancel before multiplying to keep numbers small and reduce errors."),
-        courseHintIds: ["elementary-fractions"],
-      },
-      {
-        id: "perfect-square-factorization",
-        difficulty: "algebra",
-        statement: translated(
-          "Factoriser complètement $$9x^2-24x+16$$ et expliquer comment reconnaître la forme obtenue.",
-          "Factor completely $$9x^2-24x+16$$ and explain how to recognise the resulting form.",
-        ),
-        prompt: translated("Factoriser : $$9x^2-24x+16$$", "Factor: $$9x^2-24x+16$$"),
-        expected: "(3x-4)^2",
-        answerDisplay: "$$(3x-4)^2$$",
-        hints: [
-          translated("Les termes extrêmes sont $(3x)^2$ et $4^2$.", "The outside terms are $(3x)^2$ and $4^2$."),
-          translated("Vérifie que le terme central est $-2\\times3x\\times4$.", "Check that the middle term is $-2\\times3x\\times4$."),
-        ],
-        solution: translated(
-          "On a $9x^2=(3x)^2$, $16=4^2$ et $-24x=-2\\times3x\\times4$. Donc $$9x^2-24x+16=(3x-4)^2.$$",
-          "We have $9x^2=(3x)^2$, $16=4^2$ and $-24x=-2\\times3x\\times4$. Therefore $$9x^2-24x+16=(3x-4)^2.$$",
-        ),
-        explanation: translated("Les trois termes correspondent exactement à l'identité $(a-b)^2$.", "The three terms exactly match $(a-b)^2$."),
-        insight: translated("Tester le double produit est indispensable : deux termes carrés ne suffisent pas.", "Checking the double product is essential: two square terms alone are not enough."),
-        courseHintIds: ["elementary-identities", "elementary-factorization"],
-      },
-      {
-        id: "linear-equation-fraction",
-        difficulty: "algebra",
-        statement: translated(
-          "Résoudre exactement $$6(x-2)-3x=5.$$",
-          "Solve exactly $$6(x-2)-3x=5.$$",
-        ),
-        prompt: translated("Résoudre : $$6(x-2)-3x=5$$", "Solve: $$6(x-2)-3x=5$$"),
-        expected: new Fraction(17n, 3n),
-        answerDisplay: "$$x=\\frac{17}{3}$$",
-        hints: [
-          translated("Commence par développer $6(x-2)$.", "First expand $6(x-2)$."),
-          translated("Après réduction, l'équation devient $3x-12=5$.", "After collecting terms, the equation is $3x-12=5$."),
-        ],
-        solution: translated(
-          "On développe puis on isole $x$ : $$6x-12-3x=5\\iff3x=17\\iff x=\\frac{17}{3}.$$",
-          "Expand, then isolate $x$: $$6x-12-3x=5\\iff3x=17\\iff x=\\frac{17}{3}.$$",
-        ),
-        explanation: translated("La solution exacte est une fraction irréductible.", "The exact solution is a reduced fraction."),
-        courseHintIds: ["elementary-linear-equations", "elementary-distributivity"],
-      },
-    ],
-  },
-  answer: { type: "text" },
-  feedback: {
-    showCorrection: true,
-    showExplanation: true,
-    showInsight: true,
-    showHints: true,
-    showCourseHintOnError: false,
-    nextQuestion: true,
-  },
-};
-
-
-
-
-
-
 
 
 
@@ -2547,6 +2205,346 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
     promptUi,
   };
 }
+
+
+
+
+
+
+
+
+const developmentTool = {
+  id: "developpement-algebrique",
+  categoryId: "calcul-elementaire",
+  mode: "practice",
+  title: translated("Développement", "Algebraic expansion"),
+  description: translated(
+    "Développer et réduire des expressions algébriques de difficulté progressive.",
+    "Expand and collect algebraic expressions of increasing difficulty.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "single", label: translated("Distributivité simple", "Single distribution"), description: translated("Une constante devant une parenthèse.", "One constant before parentheses.") },
+    { id: "double", label: translated("Double distributivité", "Double distribution"), description: translated("Produit de deux facteurs moniques.", "Product of two monic factors.") },
+    { id: "coefficients", label: translated("Coefficients", "Coefficients"), description: translated("Deux facteurs avec coefficients et signes.", "Two factors with coefficients and signs.") },
+    { id: "mixed", label: translated("Expressions mêlées", "Mixed expressions"), description: translated("Deux développements à réduire ensemble.", "Two expansions to combine.") },
+  ],
+  defaultDifficulty: "single",
+  series: standardSeries,
+  timer: false,
+  score: true,
+  source: {
+    type: "generator",
+    generate: ({ difficulty, rng }) => developmentQuestion(difficulty, rng),
+  },
+  courseHintIds: ["elementary-distributivity"],
+  answer: {
+    type: "expression",
+    requiredForm: "developed",
+    placeholder: translated("ex. 3x^2-2x+1", "e.g. 3x^2-2x+1"),
+    validator: polynomialFormValidator,
+  },
+  feedback: standardFeedback,
+};
+
+const factorizationTool = {
+  id: "factorisation",
+  categoryId: "calcul-elementaire",
+  mode: "practice",
+  title: translated("Factorisation", "Factorisation"),
+  description: translated(
+    "Mettre en évidence un facteur commun puis mobiliser les identités remarquables.",
+    "Extract a common factor, then apply standard identities.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "common-factor", label: translated("Facteur commun", "Common factor"), description: translated("Extraire le facteur commun maximal.", "Extract the greatest common factor.") },
+    { id: "identities", label: translated("Identités", "Identities"), description: translated("Carrés parfaits et différence de carrés.", "Perfect squares and difference of squares.") },
+    { id: "combined", label: translated("Combinaisons", "Combined"), description: translated("Facteur commun puis identité remarquable.", "Common factor followed by an identity.") },
+    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Choisir soi-même la méthode adaptée.", "Choose the appropriate method yourself.") },
+  ],
+  defaultDifficulty: "common-factor",
+  series: standardSeries,
+  timer: false,
+  score: true,
+  source: {
+    type: "generator",
+    generate: ({ difficulty, rng }) => factorizationQuestion(difficulty, rng),
+  },
+  courseHintIds: ["elementary-factorization", "elementary-identities"],
+  answer: {
+    type: "expression",
+    requiredForm: "factorized",
+    placeholder: translated("ex. 3(x-2)(x+2)", "e.g. 3(x-2)(x+2)"),
+    validator: polynomialFormValidator,
+  },
+  feedback: standardFeedback,
+};
+
+const squareRootsTool = {
+  id: "racines-carrees",
+  categoryId: "calcul-elementaire",
+  mode: "practice",
+  title: translated("Racines carrées", "Square roots"),
+  description: translated(
+    "Connaître les racines carrées des carrés parfaits, simplifier des racines carrées et effectuer des produits ou quotients exacts.",
+    "Recognise perfect squares, simplify roots and compute exact products or quotients.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "perfect-squares", label: translated("Carrés parfaits", "Perfect squares"), description: translated("Valeurs usuelles jusqu'à $20^2$.", "Common values up to $20^2$.") },
+    { id: "simplify", label: translated("Simplification de racines", "Square root simplification"), description: translated("Extraire un facteur carré.", "Extract a square factor.") },
+    { id: "operations", label: translated("Produits et quotients de racines", "Square root products and quotients"), description: translated("Utiliser les règles de calculs.", "Use rules for square roots.") },
+    { id: "mixed", label: translated("Mélange", "Mixed"), description: translated("Toutes les variantes avec des nombres plus grands.", "All variants with larger numbers.") },
+  ],
+  defaultDifficulty: "perfect-squares",
+  series: standardSeries,
+  timer: {
+    enabled: true,
+    mode: "per-question",
+    seconds: { "perfect-squares": 5, simplify: 20, operations: 20, mixed: 25 },
+    strict: false,
+    show: true,
+  },
+  score: true,
+  source: {
+    type: "generator",
+    generate: ({ difficulty, rng }) => squareRootQuestion(difficulty, rng),
+  },
+  courseHintIds: ["elementary-square-roots"],
+  answer: {
+    type: "text",
+    placeholder: translated("ex. 3sqrt(2)", "e.g. 3sqrt(2)"),
+    validator: squareRootValidator,
+  },
+  feedback: standardFeedback,
+};
+
+const powersTool = {
+  id: "puissances",
+  categoryId: "calcul-elementaire",
+  mode: "practice",
+  title: translated("Puissances", "Powers"),
+  description: translated(
+    "Automatiser les règles de produit, quotient et puissance d'une puissance, y compris avec des exposants littéraux.",
+    "Practise products, quotients and powers of powers, including symbolic exponents.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "products", label: translated("Produits", "Products"), description: translated("Additionner les exposants de même base.", "Add exponents with the same base.") },
+    { id: "quotients", label: translated("Quotients", "Quotients"), description: translated("Soustraire ou multiplier les exposants.", "Subtract or multiply exponents.") },
+    { id: "literal", label: translated("Exposants littéraux", "Symbolic exponents"), description: translated("Notamment $3^n\\times9$.", "Including $3^n\\times9$.") },
+    { id: "advanced", label: translated("Mélange avancé", "Advanced mix"), description: translated("Formes littérales et exposants négatifs.", "Symbolic forms and negative exponents.") },
+  ],
+  defaultDifficulty: "products",
+  series: standardSeries,
+  timer: {
+    enabled: true,
+    mode: "per-question",
+    seconds: { products: 14, quotients: 18, literal: 22, advanced: 25 },
+    strict: true,
+    show: true,
+  },
+  score: true,
+  source: {
+    type: "generator",
+    generate: ({ difficulty, rng }) => powerQuestion(difficulty, rng),
+  },
+  courseHintIds: ["elementary-powers"],
+  answer: {
+    type: "text",
+    placeholder: translated("ex. 3^(n+2)", "e.g. 3^(n+2)"),
+    validator: powerValidator,
+  },
+  feedback: standardFeedback,
+};
+
+const linearEquationsTool = {
+  id: "equations-premier-degre",
+  categoryId: "calcul-elementaire",
+  mode: "practice",
+  title: translated("Équations du premier degré", "Linear equations"),
+  description: translated(
+    "Résoudre des équations linéaires, des formes immédiates aux équations avec parenthèses ou solution fractionnaire.",
+    "Solve linear equations, from immediate forms to parentheses and fractional solutions.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "isolate", label: translated("Isoler $x$", "Isolate $x$"), description: translated("Une inconnue dans un seul membre.", "The unknown appears on one side.") },
+    { id: "both-sides", label: translated("Deux membres", "Both sides"), description: translated("Des termes en $x$ dans les deux membres.", "$x$ terms on both sides.") },
+    { id: "parentheses", label: translated("Parenthèses", "Parentheses"), description: translated("Développer avant de résoudre.", "Expand before solving.") },
+    { id: "fractions", label: translated("Solutions fractionnaires", "Fractional solutions"), description: translated("Conserver une réponse exacte et réduite.", "Keep an exact reduced answer.") },
+  ],
+  defaultDifficulty: "isolate",
+  series: standardSeries,
+  timer: false,
+  score: true,
+  source: {
+    type: "generator",
+    generate: ({ difficulty, rng }) => linearEquationQuestion(difficulty, rng),
+  },
+  courseHintIds: ["elementary-linear-equations", "elementary-distributivity", "elementary-fractions"],
+  answer: {
+    type: "fraction",
+    allowDecimal: false,
+    requireReduced: true,
+    placeholder: translated("valeur de x", "value of x"),
+  },
+  feedback: standardFeedback,
+};
+
+const guidedMethodsTool = {
+  id: "methodes-calcul-elementaire",
+  categoryId: "calcul-elementaire",
+  mode: "study",
+  title: translated("Méthodes guidées", "Guided methods"),
+  description: translated(
+    "Quelques exercices choisis à chercher sans chronomètre, avec indices progressifs et correction complète.",
+    "A curated set of untimed problems with progressive hints and full solutions.",
+  ),
+  audience: elementaryAudience,
+  difficulties: [
+    { id: "mental", label: translated("Calcul mental", "Mental arithmetic") },
+    { id: "algebra", label: translated("Calcul algébrique", "Algebra") },
+  ],
+  defaultDifficulty: "mental",
+  series: {
+    questionCount: 1,
+    choices: [1],
+    allowQuestionCount: false,
+  },
+  timer: false,
+  score: false,
+  source: {
+    type: "bank",
+    questions: [
+      {
+        id: "compensation-199",
+        difficulty: "mental",
+        statement: translated(
+          "Calculer mentalement $$199+347-99.$$ Chercher une réorganisation qui évite les longues additions.",
+          "Calculate mentally $$199+347-99.$$ Look for a rearrangement that avoids long addition.",
+        ),
+        prompt: translated("Calculer mentalement : $$199+347-99$$", "Calculate mentally: $$199+347-99$$"),
+        expected: 447,
+        hints: [
+          translated("Regroupe $199$ et $-99$.", "Group $199$ and $-99$."),
+          translated("Leur différence vaut exactement $100$.", "Their difference is exactly $100$."),
+        ],
+        solution: translated(
+          "Par associativité, $$199+347-99=(199-99)+347=100+347=447.$$",
+          "By associativity, $$199+347-99=(199-99)+347=100+347=447.$$",
+        ),
+        explanation: translated(
+          "Par associativité, $$199+347-99=(199-99)+347=447.$$",
+          "By associativity, $$199+347-99=(199-99)+347=447.$$",
+        ),
+        insight: translated("L'ordre des additions peut être choisi pour faire apparaître des nombres ronds.", "Reorder additions to create round numbers."),
+        courseHintIds: ["elementary-addition-strategies"],
+      },
+      {
+        id: "product-48-25",
+        difficulty: "mental",
+        statement: translated(
+          "Calculer mentalement $$48\\times25$$ sans poser la multiplication.",
+          "Calculate $$48\\times25$$ mentally, without long multiplication.",
+        ),
+        prompt: translated("Calculer mentalement : $$48\\times25$$", "Calculate mentally: $$48\\times25$$"),
+        expected: 1200,
+        hints: [
+          translated("Écris $25=100/4$.", "Write $25=100/4$."),
+          translated("Le nombre $48$ est divisible par $4$.", "$48$ is divisible by $4$."),
+        ],
+        solution: translated(
+          "On utilise $25=100/4$ : $$48\\times25=\\frac{48}{4}\\times100=12\\times100=1200.$$",
+          "Use $25=100/4$: $$48\\times25=\\frac{48}{4}\\times100=12\\times100=1200.$$",
+        ),
+        explanation: translated("La compensation transforme le calcul en $12\\times100$.", "The shortcut turns the product into $12\\times100$."),
+        insight: translated("Cette stratégie fonctionne très bien quand le premier facteur est divisible par $4$.", "This strategy is especially useful when the first factor is divisible by $4$."),
+        courseHintIds: ["elementary-multiplication-strategies"],
+      },
+      {
+        id: "fraction-cancellation",
+        difficulty: "mental",
+        statement: translated(
+          "Calculer exactement $$\\frac34-\\frac23\\times\\frac98.$$",
+          "Compute exactly $$\\frac34-\\frac23\\times\\frac98.$$",
+        ),
+        prompt: translated("Calculer exactement : $$\\frac34-\\frac23\\times\\frac98$$", "Compute exactly: $$\\frac34-\\frac23\\times\\frac98$$"),
+        expected: 0,
+        hints: [
+          translated("La multiplication est prioritaire.", "Multiplication comes first."),
+          translated("Simplifie avant de multiplier : $\\frac23\\times\\frac98$.", "Cancel factors before multiplying $\\frac23\\times\\frac98$."),
+        ],
+        solution: translated(
+          "On simplifie en croix : $$\\frac23\\times\\frac98=\\frac{2\\times9}{3\\times8}=\\frac34.$$ Ainsi, l'expression vaut $\\frac34-\\frac34=0$.",
+          "Cancel common factors: $$\\frac23\\times\\frac98=\\frac{2\\times9}{3\\times8}=\\frac34.$$ Hence the expression is $\\frac34-\\frac34=0$.",
+        ),
+        explanation: translated("Les deux termes sont finalement égaux.", "The two terms are ultimately equal."),
+        insight: translated("Simplifier avant de multiplier garde des nombres petits et limite les erreurs.", "Cancel before multiplying to keep numbers small and reduce errors."),
+        courseHintIds: ["elementary-fractions"],
+      },
+      {
+        id: "perfect-square-factorization",
+        difficulty: "algebra",
+        statement: translated(
+          "Factoriser complètement $$9x^2-24x+16$$ et expliquer comment reconnaître la forme obtenue.",
+          "Factor completely $$9x^2-24x+16$$ and explain how to recognise the resulting form.",
+        ),
+        prompt: translated("Factoriser : $$9x^2-24x+16$$", "Factor: $$9x^2-24x+16$$"),
+        expected: "(3x-4)^2",
+        answerDisplay: "$$(3x-4)^2$$",
+        hints: [
+          translated("Les termes extrêmes sont $(3x)^2$ et $4^2$.", "The outside terms are $(3x)^2$ and $4^2$."),
+          translated("Vérifie que le terme central est $-2\\times3x\\times4$.", "Check that the middle term is $-2\\times3x\\times4$."),
+        ],
+        solution: translated(
+          "On a $9x^2=(3x)^2$, $16=4^2$ et $-24x=-2\\times3x\\times4$. Donc $$9x^2-24x+16=(3x-4)^2.$$",
+          "We have $9x^2=(3x)^2$, $16=4^2$ and $-24x=-2\\times3x\\times4$. Therefore $$9x^2-24x+16=(3x-4)^2.$$",
+        ),
+        explanation: translated("Les trois termes correspondent exactement à l'identité $(a-b)^2$.", "The three terms exactly match $(a-b)^2$."),
+        insight: translated("Tester le double produit est indispensable : deux termes carrés ne suffisent pas.", "Checking the double product is essential: two square terms alone are not enough."),
+        courseHintIds: ["elementary-identities", "elementary-factorization"],
+      },
+      {
+        id: "linear-equation-fraction",
+        difficulty: "algebra",
+        statement: translated(
+          "Résoudre exactement $$6(x-2)-3x=5.$$",
+          "Solve exactly $$6(x-2)-3x=5.$$",
+        ),
+        prompt: translated("Résoudre : $$6(x-2)-3x=5$$", "Solve: $$6(x-2)-3x=5$$"),
+        expected: new Fraction(17n, 3n),
+        answerDisplay: "$$x=\\frac{17}{3}$$",
+        hints: [
+          translated("Commence par développer $6(x-2)$.", "First expand $6(x-2)$."),
+          translated("Après réduction, l'équation devient $3x-12=5$.", "After collecting terms, the equation is $3x-12=5$."),
+        ],
+        solution: translated(
+          "On développe puis on isole $x$ : $$6x-12-3x=5\\iff3x=17\\iff x=\\frac{17}{3}.$$",
+          "Expand, then isolate $x$: $$6x-12-3x=5\\iff3x=17\\iff x=\\frac{17}{3}.$$",
+        ),
+        explanation: translated("La solution exacte est une fraction irréductible.", "The exact solution is a reduced fraction."),
+        courseHintIds: ["elementary-linear-equations", "elementary-distributivity"],
+      },
+    ],
+  },
+  answer: { type: "text" },
+  feedback: {
+    showCorrection: true,
+    showExplanation: true,
+    showInsight: true,
+    showHints: true,
+    showCourseHintOnError: false,
+    nextQuestion: true,
+  },
+};
+
+
+
+
+
+
 
 function developmentQuestion(difficulty, rng) {
   const level = currentDifficulty(difficulty, "single");

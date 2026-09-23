@@ -27,30 +27,51 @@ export default function ExerciseCategory() {
 
         {category ? (
           <>
-            <section className="showcase-panel showcase-card animate-defil exercise-category-hero">
+            <section className="showcase-panel showcase-card exercise-category-hero">
               <p className="showcase-eyebrow">{labels.catalogEyebrow}</p>
               <h1 className="showcase-title">{localize(category.title, lang)}</h1>
               <p className="showcase-lead">{localize(category.description, lang)}</p>
             </section>
 
-            <section className="showcase-section-block animate-defil">
-              <h2 className="showcase-section-title">{labels.tools}</h2>
+            <section className="showcase-section-block">
               <div className="exercise-tool-grid">
                 {tools.map((tool) => (
                   <article key={tool.id} className="showcase-panel exercise-tool-card">
-                    <div className="exercise-tool-meta">
-                      <span>{localize(tool.audience ?? category.audience, lang)}</span>
-                      {tool.timer && tool.timer.enabled !== false}
-                      {tool.mode === "study" && <span>{labels.studyMode}</span>}
-                    </div>
-                    <MathRenderer as="h3" content={localize(tool.title, lang)} />
-                    <MathRenderer as="p" content={localize(tool.description, lang)} />
-                    {tool.tags?.length > 0 && (
-                      <div className="exercise-tags">
-                        {tool.tags.map((tag) => <span key={localize(tag, lang)}>{localize(tag, lang)}</span>)}
+                    {(tool.audience != null || tool.mode === "study") && (
+                      <div className="exercise-tool-meta">
+                        {tool.audience != null && (
+                          <span>{localize(tool.audience, lang)}</span>
+                        )}
+                        {tool.mode === "study" && (
+                          <span>{labels.studyMode}</span>
+                        )}
                       </div>
                     )}
-                    <Link to={`/${lang}/entrainements/${category.id}/${tool.id}`} className="showcase-action showcase-action-link">
+
+                    <MathRenderer
+                      as="h3"
+                      content={localize(tool.title, lang)}
+                    />
+
+                    <MathRenderer
+                      as="p"
+                      content={localize(tool.description, lang)}
+                    />
+
+                    {tool.tags?.length > 0 && (
+                      <div className="exercise-tags">
+                        {tool.tags.map((tag) => (
+                          <span key={localize(tag, lang)}>
+                            {localize(tag, lang)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <Link
+                      to={`/${lang}/entrainements/${category.id}/${tool.id}`}
+                      className="showcase-action showcase-action-link"
+                    >
                       {labels.openTool}
                       <ArrowRightIcon className="exercise-small-icon" />
                     </Link>

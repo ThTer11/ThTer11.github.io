@@ -55,14 +55,18 @@ export function resolveQuestionPromptUi(promptUi, lang = "fr") {
 
   const label = localizedPromptUiValue(promptUi.label, lang);
   const detail = localizedPromptUiValue(promptUi.detail, lang);
+  const context = localizedPromptUiValue(promptUi.context, lang);
+  const condition = localizedPromptUiValue(promptUi.condition, lang);
 
   return {
     label,
     detail,
+    context,
+    condition,
     icon: promptUi.icon,
     tone: promptUi.tone ?? "default",
     mobileLayout: promptUi.mobileLayout ?? "inline",
-    fullText: [label, detail].filter(Boolean).join(" — "),
+    fullText: [label, detail, context, condition].filter(Boolean).join(" — "),
   };
 }
 
@@ -132,11 +136,27 @@ export default function ExerciseQuestionPrompt({
           />
         )}
       </div>
+      {compact.context && (
+        <MathRenderer
+          as="p"
+          content={compact.context}
+          className="exercise-question-context"
+          trustedHtml={trustedHtml}
+        />
+      )}
       <MathRenderer
         content={expression}
         className="exercise-question-content exercise-question-expression"
         trustedHtml={trustedHtml}
       />
+      {compact.condition && (
+        <MathRenderer
+          as="div"
+          content={compact.condition}
+          className="exercise-question-condition"
+          trustedHtml={trustedHtml}
+        />
+      )}
     </div>
   );
 }

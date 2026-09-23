@@ -19,7 +19,7 @@ export default function ExerciseCatalog() {
         <div className="showcase-orb showcase-orb-a" />
         <div className="showcase-orb showcase-orb-b" />
 
-        <section className="showcase-panel showcase-card animate-defil exercise-catalog-hero">
+        <section className="showcase-panel showcase-card exercise-catalog-hero">
           <p className="showcase-eyebrow">{labels.catalogEyebrow}</p>
           <h1 className="showcase-title">{labels.catalogTitle}</h1>
           <p className="showcase-lead">{labels.catalogLead}</p>
@@ -29,19 +29,36 @@ export default function ExerciseCatalog() {
           </div>
         </section>
 
-        <section className="showcase-section-block animate-defil">
+        <section className="showcase-section-block">
           <h2 className="showcase-section-title">{labels.categories}</h2>
+
           <div className="exercise-catalog-grid">
             {exerciseCategories.map((category) => {
               const tools = getToolsForCategory(category.id);
+
               return (
-                <article key={category.id} className={`showcase-panel exercise-category-card exercise-accent-${category.accent}`}>
-                  <span className="exercise-category-count">{tools.length} {labels.tools.toLocaleLowerCase()}</span>
-                  <h3>{localize(category.title, lang)}</h3>
+                <article
+                  key={category.id}
+                  className={`showcase-panel exercise-category-card exercise-accent-${category.accent}`}
+                >
+                  <div className="exercise-category-header">
+                    <h3>{localize(category.title, lang)}</h3>
+
+                    <span className="exercise-category-count">
+                      {tools.length}{" "}
+                      {(tools.length === 1 ? labels.tool : labels.tools).toLocaleLowerCase()}
+                    </span>
+                  </div>
+
                   <p>{localize(category.description, lang)}</p>
+
                   <div className="exercise-card-footer">
                     <span>{category.audience}</span>
-                    <Link to={`/${lang}/entrainements/${category.id}`} className="showcase-action showcase-action-link">
+
+                    <Link
+                      to={`/${lang}/entrainements/${category.id}`}
+                      className="showcase-action showcase-action-link"
+                    >
                       {labels.openCategory}
                       <ArrowRightIcon className="exercise-small-icon" />
                     </Link>

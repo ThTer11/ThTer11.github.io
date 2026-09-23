@@ -3,11 +3,21 @@ export const exerciseCategories = [
     id: "calcul-elementaire",
     title: { fr: "Calcul mental", en: "Mental calculation" },
     description: {
-      fr: "Addition, multiplication, fractions, puissances, racines carrées, identités remarquables, factorisation et développement, équations du premier degré.",
-      en: "Addition, multiplication, fractions, powers, square roots, remarkable identities, factorization and expansion, degree one equations.",
+      fr: "Addition, multiplication, fractions et identités remarquables.",
+      en: "Addition, multiplication, fractions and remarkable identities.",
     },
     audience: "",
     accent: "emerald",
+  },
+  {
+    id: "analyse",
+    title: { fr: "Analyse élémentaire", en: "Elementary calculus" },
+    description: {
+      fr: "Dérivées, primitives de fonctions composées et intégration par parties.",
+      en: "Derivatives, antiderivatives of composite functions and integration by parts.",
+    },
+    audience: "",
+    accent: "cobalt",
   },
   // {
   //   id: "second-degre",

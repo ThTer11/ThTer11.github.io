@@ -4,6 +4,7 @@ import AnswerInput, { emptyAnswerValue } from "./AnswerInput";
 import CourseHintModal from "./CourseHintModal";
 import ExerciseQuestionPrompt from "./ExerciseQuestionPrompt";
 import FeedbackPanel from "./FeedbackPanel";
+import ResponsiveFeedback from "./ResponsiveFeedback";
 import ExerciseSummary from "./ExerciseSummary";
 import MathRenderer from "./MathRenderer";
 import ParabolaDiagram from "./ParabolaDiagram";
@@ -798,7 +799,7 @@ export default function ExerciseEngine({
         </section>
       )}
 
-      <div className="exercise-session-layout">
+      <div className={`exercise-session-layout exercise-session-layout-${phase}`}>
         <section className="showcase-panel showcase-card exercise-workspace">
           <header className="exercise-question-heading">
             <div className="exercise-question-progress">
@@ -886,6 +887,7 @@ export default function ExerciseEngine({
 
         <aside className={`exercise-response-column${phase === "feedback" ? " exercise-response-column-feedback" : ""}`}>
           {phase === "feedback" ? (
+            <ResponsiveFeedback labels={labels} lang={lang} nestedModalOpen={Boolean(openHint)}>
             <FeedbackPanel
               outcome={outcome}
               question={question}
@@ -898,6 +900,7 @@ export default function ExerciseEngine({
               showNext={tool.feedback?.showNextButton !== false && tool.feedback?.nextQuestion !== false}
               session={session}
             />
+            </ResponsiveFeedback>
           ) : (
             <div className="showcase-panel showcase-card exercise-response-placeholder">
               <span aria-hidden="true">✓</span>

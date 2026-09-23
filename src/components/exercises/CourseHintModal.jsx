@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import MathRenderer from "./MathRenderer";
 import { localize } from "../../exercises/core/localize";
@@ -51,7 +52,7 @@ export default function CourseHintModal({ hint, hints, lang, labels, onClose }) 
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div className="showcase-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         ref={dialogRef}
@@ -99,6 +100,7 @@ export default function CourseHintModal({ hint, hints, lang, labels, onClose }) 
           ))}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
