@@ -75,9 +75,7 @@ export default function FeedbackPanel({
   const showSolution = feedback.showSolution !== false && question.solution;
   const showInsight = feedback.showInsight !== false && question.insight;
   const hintIds = question.courseHintIds ?? [];
-  const showCourseLinks = hintIds.length > 0 && (
-    outcome.correct || feedback.showCourseHintOnError !== false
-  );
+  const showCourseLinks = hintIds.length > 0;
 
   return (
     <section className={`exercise-feedback exercise-feedback-${tone}`}>
@@ -114,6 +112,9 @@ export default function FeedbackPanel({
       
 
       <div className="exercise-feedback-body">
+        {outcome.reason && outcome.message && (
+          <MathRenderer className="exercise-feedback-message" content={outcome.message} />
+        )}
         {showCorrection && !outcome.correct && (
           <div className="exercise-feedback-block exercise-feedback-answer">
             <h3>{labels.expectedAnswer}</h3>

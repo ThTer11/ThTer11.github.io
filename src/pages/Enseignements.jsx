@@ -169,7 +169,6 @@ export default function Enseignements() {
         <div className="showcase-orb showcase-orb-b" />
 
         <section className="showcase-panel showcase-card animate-defil">
-          <p className="showcase-eyebrow">{t.teaching.title}</p>
           <h1 className="showcase-title">{t.teaching.title}</h1>
           <p className="showcase-lead">{t.teaching.lead}</p>
         </section>
@@ -260,12 +259,6 @@ export default function Enseignements() {
                     html={resource.descriptionHtml}
                   />
                 )}
-
-                <div className="resource-meta">
-                  <span className="resource-meta-chip">
-                    {t.teaching.resourceAudience}: {resource.audience}
-                  </span>
-                </div>
 
                 {resource.actions.length > 0 && (
                   <div className="resource-actions">

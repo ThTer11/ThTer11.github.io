@@ -38,6 +38,11 @@ export function getPublications(t, openBib) {
           label: t.research.actionArticle,
           href: "https://arxiv.org/abs/2601.05026/",
         },
+        {
+          kind: "bibtex",
+          label: t.research.actionBibtex,
+          onClick: () => openBib("adatastructure.bib"),
+        },
       ],
     },
     {
@@ -97,14 +102,14 @@ export function getPublications(t, openBib) {
       id: "ryugu-2024",
       year: "2024",
       type: "research",
-      accent: "rose",
+      accent: "cobalt",
       title: t.research.pub1Title,
       description: t.research.pub1Info,
       authors: t.research.pub1Authors,
       actions: [
         {
-          kind: "pdf",
-          label: t.research.actionPdf,
+          kind: "link",
+          label: t.research.actionArticle,
           href: "https://onlinelibrary.wiley.com/doi/epdf/10.1111/maps.14068",
         },
         {

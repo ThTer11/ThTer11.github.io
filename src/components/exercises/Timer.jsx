@@ -99,7 +99,7 @@ export default function Timer({ timer, difficulty, level, resetKey, paused, onEx
           <span className="exercise-timer-icon" aria-hidden="true"><ClockIcon /></span>
           {expired ? labels.timeExpired : labels.timeRemaining}
         </span>
-        <strong>{expired ? labels.timeExpiredShort : `${display}${minutesSuffix(display, labels.seconds)}`}</strong>
+        <strong>{`${display}${minutesSuffix(display, labels.seconds)}`}</strong>
       </div>
       <div className="exercise-timer-track" aria-hidden="true">
         <span style={{ width: `${ratio * 100}%` }} />

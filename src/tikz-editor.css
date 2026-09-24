@@ -1,5 +1,5 @@
 .tikz-page .showcase-shell{
-  max-width:1380px;
+  max-width:var(--site-shell-max);
 }
 
 .tikz-hero{

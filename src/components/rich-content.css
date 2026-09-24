@@ -34,8 +34,8 @@
   position:relative;
   display:block;
   width:100%;
-  margin:1.15rem 0;
-  padding:.95rem 1rem 1rem;
+  margin:.8rem 0;
+  padding:.7rem 1rem;
   border:1px solid rgba(148,163,184,.2);
   border-radius:1rem;
   background:rgba(248,250,252,.78);
@@ -44,6 +44,12 @@
 .dark .rich-content-math-display{
   border-color:rgba(148,163,184,.16);
   background:rgba(15,23,42,.52);
+}
+
+/* Display formulas already create a line break and have symmetric spacing. */
+.rich-content-math-display + br,
+.rich-content br:has(+ .rich-content-math-display){
+  display:none;
 }
 
 .rich-content-math-display mjx-container{
@@ -129,4 +135,48 @@
   .rich-content-math-display .rich-content-math-copy{
     transform:translateY(0);
   }
+}
+
+/* Exercise math: no nested formula cards and a single, keyboard/touch scroll owner. */
+.responsive-math{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+.responsive-math .rich-content-math-display,
+.responsive-math .rich-content-math.rich-content-math-wide{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  margin:.35rem 0;
+  padding:.15rem 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  white-space:nowrap;
+}
+.responsive-math .rich-content-math-display mjx-container,
+.responsive-math .rich-content-math-wide mjx-container{
+  display:block;
+  width:max-content;
+  min-width:100%;
+  max-width:none;
+  margin:0 !important;
+  padding:2px;
+  box-sizing:border-box;
+  overflow:visible;
+  text-align:center !important;
+}
+.responsive-math .rich-content-math mjx-container > svg{
+  max-width:none;
+  flex-shrink:0;
+}
+.responsive-math .rich-content-math-wide:focus-visible{
+  outline:2px solid #64748b;
+  outline-offset:-2px;
 }

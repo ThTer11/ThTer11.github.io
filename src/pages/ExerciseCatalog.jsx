@@ -20,7 +20,6 @@ export default function ExerciseCatalog() {
         <div className="showcase-orb showcase-orb-b" />
 
         <section className="showcase-panel showcase-card exercise-catalog-hero">
-          <p className="showcase-eyebrow">{labels.catalogEyebrow}</p>
           <h1 className="showcase-title">{labels.catalogTitle}</h1>
           <p className="showcase-lead">{labels.catalogLead}</p>
           <div className="exercise-catalog-summary">
@@ -53,8 +52,6 @@ export default function ExerciseCatalog() {
                   <p>{localize(category.description, lang)}</p>
 
                   <div className="exercise-card-footer">
-                    <span>{category.audience}</span>
-
                     <Link
                       to={`/${lang}/entrainements/${category.id}`}
                       className="showcase-action showcase-action-link"
@@ -62,6 +59,7 @@ export default function ExerciseCatalog() {
                       {labels.openCategory}
                       <ArrowRightIcon className="exercise-small-icon" />
                     </Link>
+                    {category.audience && <span>{category.audience}</span>}
                   </div>
                 </article>
               );

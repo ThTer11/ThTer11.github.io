@@ -9,77 +9,37 @@ const POSITIVE_DOMAIN = "]0,+\\infty[";
 const DEFAULT_POINTS = [-2.4, -1.35, -0.55, 0.4, 1.15, 2.3, 3.4];
 const POSITIVE_POINTS = [0.2, 0.55, 1, 1.7, 2.8, 4.2, 6.1];
 
+const derivativePrompt = {
+  label: translated("Calculer la dérivée de $f$", "Find the derivative of $f$"),
+  icon: false,
+};
+const primitivePrompt = {
+  label: translated("Déterminer une primitive $F$ de $f$", "Find an antiderivative $F$ of $f$"),
+  icon: false,
+};
 const promptUi = {
-  derivativeUsual: {
-  label: translated("Dériver", "Differentiate"),
-  detail: translated("Fonction classique", "Standard function"),
-  tone: "transform",
-  icon: "∂",
-},
-
-derivativeSum: {
-  label: translated("Dériver", "Differentiate"),
-  detail: translated("Une somme", "A sum"),
-  tone: "transform",
-  icon: "∂",
-},
-
-derivativeProduct: {
-  label: translated("Dériver", "Differentiate"),
-  detail: translated("Un produit", "A product"),
-  tone: "transform",
-  icon: "∂",
-},
-
-derivativeQuotient: {
-  label: translated("Dériver", "Differentiate"),
-  detail: translated("Un quotient", "A quotient"),
-  tone: "transform",
-  icon: "∂",
-},
-
-derivativeComposition: {
-  label: translated("Dériver", "Differentiate"),
-  detail: translated("Une composée", "A composition"),
-  tone: "transform",
-  icon: "∂",
-},
-
-primitiveUsual: {
-  label: translated("Trouver une primitive", "Find an antiderivative"),
-  detail: translated("Forme classique", "Standard form"),
-  tone: "complete",
-  icon: "∫",
-},
-
-primitiveSum: {
-  label: translated("Trouver une primitive", "Find an antiderivative"),
-  detail: translated("Une somme", "A sum"),
-  tone: "complete",
-  icon: "∫",
-},
-
-primitiveComposition: {
-  label: translated("Trouver une primitive", "Find an antiderivative"),
-  detail: translated("Reconnaître $u'\\varphi\\circ u$", "Spot $u'\\varphi\\circ u$"),
-  tone: "complete",
-  icon: "∫",
-},
-
-primitiveParts: {
-  label: translated("Trouver une primitive", "Find an antiderivative"),
-  detail: translated("Par parties", "By parts"),
-  tone: "complete",
-  icon: "∫",
-},
-
-initialCondition: {
-  label: translated("Trouver F", "Find F"),
-  detail: translated("Avec une condition initiale", "With an initial condition"),
-  tone: "decision",
-  icon: "F",
-  mobileLayout: "inline",
-},
+  derivativeUsual: derivativePrompt,
+  derivativeSum: derivativePrompt,
+  derivativeProduct: derivativePrompt,
+  derivativeQuotient: derivativePrompt,
+  derivativeComposition: derivativePrompt,
+  primitiveUsual: primitivePrompt,
+  primitiveSum: primitivePrompt,
+  primitiveComposition: primitivePrompt,
+  primitiveParts: {
+    ...primitivePrompt,
+    label: translated(
+      "Déterminer une primitive $F$ de $f$ par intégration par parties",
+      "Find an antiderivative $F$ of $f$ using integration by parts",
+    ),
+  },
+  initialCondition: {
+    label: translated(
+      "Déterminer la primitive $F$ de $f$ vérifiant la condition",
+      "Find the antiderivative $F$ of $f$ satisfying the condition",
+    ),
+    icon: false,
+  },
 };
 
 function levelNumber(level) {
@@ -158,10 +118,10 @@ function latexSignedNumber(value) {
 }
 
 function latexProduct(...factors) {
-  return factors
-    .filter((factor) => factor !== "" && factor !== null && factor !== undefined)
-    .map((factor) => String(factor))
-    .join("\\,");
+  const values = factors.filter((factor) => factor !== "" && factor != null).map(String);
+  const negative = values.filter((factor) => factor === "-1").length % 2;
+  const body = values.filter((factor) => factor !== "1" && factor !== "-1").join("\\,");
+  return (negative ? "-" : "") + (body || "1");
 }
 
 function latexScaled(coefficient, body) {
@@ -219,7 +179,10 @@ function derivativeQuestion({
     ),
     promptUi: {
       ...ui,
-      context: translated(`Sur $I=${domain}$`, `On $I=${domain}$`),
+      label: translated(
+        `${ui.label.fr} sur $I=${domain}$.`,
+        `${ui.label.en} on $I=${domain}$.`,
+      ),
     },
     expected: derivative.plain,
     sourceExpression: expression.plain,
@@ -252,16 +215,19 @@ function primitiveQuestion({
     ),
     promptUi: {
       ...ui,
-      context: translated(`Sur $I=${domain}$`, `On $I=${domain}$`),
+      label: translated(
+        `${ui.label.fr} sur $I=${domain}$.`,
+        `${ui.label.en} on $I=${domain}$.`,
+      ),
     },
     expected: primitive.plain,
     sourceExpression: integrand.plain,
-    answerDisplay: `$$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+    answerDisplay: `$$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     explanation,
     hints,
     courseHintIds,
     validationMode: "primitive",
-    requireIntegrationConstant: true,
+    requireIntegrationConstant: false,
     validationPoints: points,
   };
 }
@@ -287,8 +253,10 @@ function uniquePrimitiveQuestion({
     ),
     promptUi: {
       ...promptUi.initialCondition,
-      context: translated(`Sur $I=${domain}$`, `On $I=${domain}$`),
-      condition: translated(`Condition : $F(${conditionPoint})=${conditionValue}$`, `Condition: $F(${conditionPoint})=${conditionValue}$`),
+      label: translated(
+        `Déterminer la primitive $F$ de $f$ sur $I=${domain}$ telle que $F(${conditionPoint})=${conditionValue}$.`,
+        `Find the antiderivative $F$ of $f$ on $I=${domain}$ such that $F(${conditionPoint})=${conditionValue}$.`,
+      ),
     },
     expected: primitive.plain,
     sourceExpression: integrand.plain,
@@ -334,12 +302,12 @@ function reverseChainExplanation({ factor, inner, innerDerivative, outer, outerP
     `En posant $u(t)=${inner}$ et $\\varphi(x)=${outer}$, on obtient
     $$f(t)=${integrandForm}.$$
     Comme $u'(t)=${innerDerivative}$ et qu'une primitive de $\\varphi$ est $\\Phi(x)=${outerPrimitive}$, on a
-    $$F(t)=${result}+C,\\qquad C\\in\\mathbb R.$$`,
+    $$F(t)=${result}+C,\\,\\,C\\in\\mathbb R.$$`,
 
     `Let $u(t)=${inner}$ and $\\varphi(x)=${outer}$. Then
     $$f(t)=${integrandForm}.$$
     Since $u'(t)=${innerDerivative}$ and an antiderivative of $\\varphi$ is $\\Phi(x)=${outerPrimitive}$,
-    $$F(t)=${result}+C,\\qquad C\\in\\mathbb R.$$`,
+    $$F(t)=${result}+C,\\,\\,C\\in\\mathbb R.$$`,
   );
 }
 
@@ -365,7 +333,7 @@ function usualDerivative(rng) {
         `Since the derivative of $t\\mapsto t^\\alpha$ is $t\\mapsto \\alpha t^{\\alpha-1}$,
         $$f'(t)=${derivative.latex}.$$`,
       ),
-      courseHintIds: ["calculus-usual-derivatives"],
+      courseHintIds: [],
       domain: exponent < 0 ? "\\mathbb R\\setminus\\{0\\}" : REAL_DOMAIN,
       points: exponent < 0 ? [-3.2, -2, -0.8, 0.45, 1.1, 2.4, 4] : DEFAULT_POINTS,
     });
@@ -384,7 +352,7 @@ function usualDerivative(rng) {
         `Since the derivative of $t\\mapsto\\mathrm e^t$ is $t\\mapsto\\mathrm e^t$,
         $$f'(t)=${expression.latex}.$$`,
       ),
-      courseHintIds: ["calculus-usual-derivatives"],
+      courseHintIds: [],
     });
   }
 
@@ -418,7 +386,7 @@ function usualDerivative(rng) {
         we obtain
         $$f'(t)=${derivative.latex}.$$`,
       ),
-      courseHintIds: ["calculus-usual-derivatives", "calculus-domains"],
+      courseHintIds: [],
       domain: sideInterval?.latex ?? `\\mathbb R\\setminus\\{${shift}\\}`,
       points: sideInterval?.points
         ?? intervalAround(shift, "right").points.concat(intervalAround(shift, "left").points).slice(0, 8),
@@ -443,7 +411,7 @@ function usualDerivative(rng) {
         we obtain
         $$f'(t)=${derivative.latex}.$$`,
       ),
-      courseHintIds: ["calculus-usual-derivatives", "calculus-domains"],
+      courseHintIds: [],
       domain: POSITIVE_DOMAIN,
       points: POSITIVE_POINTS,
     });
@@ -452,7 +420,7 @@ function usualDerivative(rng) {
   const isSine = kind === "sin";
   const expression = joinTerms([scaledTerm(coefficient, `${kind}(t)`, `\\${kind}(t)`)]);
   const derivative = joinTerms([
-    scaledTerm(isSine ? coefficient : -coefficient, isSine ? "cos(t)" : "sin(t)", isSine ? "\\cos t" : "\\sin t"),
+    scaledTerm(isSine ? coefficient : -coefficient, isSine ? "cos(t)" : "sin(t)", isSine ? "\\cos(t)" : "\\sin(t)"),
   ]);
   return derivativeQuestion({
     variant: `usual-${kind}`,
@@ -460,12 +428,12 @@ function usualDerivative(rng) {
     derivative,
     ui: promptUi.derivativeUsual,
     explanation: translated(
-      `${isSine ? "Comme la dérivée de $t\\mapsto\\sin t$ est $t\\mapsto\\cos t$" : "Comme la dérivée de $t\\mapsto\\cos t$ est $t\\mapsto-\\sin t$"}, on obtient
+      `${isSine ? "Comme la dérivée de $t\\mapsto\\sin(t)$ est $t\\mapsto\\cos(t)$" : "Comme la dérivée de $t\\mapsto\\cos(t)$ est $t\\mapsto-\\sin(t)$"}, on obtient
       $$f'(t)=${derivative.latex}.$$`,
-      `${isSine ? "Since the derivative of $t\\mapsto\\sin t$ is $t\\mapsto\\cos t$" : "Since the derivative of $t\\mapsto\\cos t$ is $t\\mapsto-\\sin t$"},
+      `${isSine ? "Since the derivative of $t\\mapsto\\sin(t)$ is $t\\mapsto\\cos(t)$" : "Since the derivative of $t\\mapsto\\cos(t)$ is $t\\mapsto-\\sin(t)$"},
       $$f'(t)=${derivative.latex}.$$`,
     ),
-    courseHintIds: ["calculus-usual-derivatives"],
+    courseHintIds: [],
   });
 }
 
@@ -477,12 +445,12 @@ function sumDerivative(rng) {
   const expression = joinTerms([
     scaledTerm(a, powerBody(exponent).plain, powerBody(exponent).latex),
     scaledTerm(b, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(c, "sin(t)", "\\sin t"),
+    scaledTerm(c, "sin(t)", "\\sin(t)"),
   ]);
   const derivative = joinTerms([
     scaledTerm(a * exponent, powerBody(exponent - 1).plain, powerBody(exponent - 1).latex),
     scaledTerm(b, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(c, "cos(t)", "\\cos t"),
+    scaledTerm(c, "cos(t)", "\\cos(t)"),
   ]);
 
   return derivativeQuestion({
@@ -491,10 +459,10 @@ function sumDerivative(rng) {
     derivative,
     ui: promptUi.derivativeSum,
     explanation: translated(
-      `La dérivation est linéaire : on dérive chaque terme séparément. Avec $(u^n)'=nu^{n-1}$, $\\mathrm \\exp'(t)=\\mathrm e^t$ et $\\sin'(t)=\\cos t$, on obtient $$f'(t)=${derivative.latex}.$$`,
-      `Differentiation is linear, so each term is differentiated separately. Using $(u^n)'=nu^{n-1}$, $\\mathrm \\exp'(t)=\\mathrm e^t$ and $\\sin'(t)=\\cos t$ gives $$f'(t)=${derivative.latex}.$$`,
+      `La dérivation est linéaire : on dérive chaque terme séparément. Avec $(u^n)'=nu^{n-1}$, $\\mathrm \\exp'(t)=\\mathrm e^t$ et $\\sin'(t)=\\cos(t)$, on obtient $$f'(t)=${derivative.latex}.$$`,
+      `Differentiation is linear, so each term is differentiated separately. Using $(u^n)'=nu^{n-1}$, $\\mathrm \\exp'(t)=\\mathrm e^t$ and $\\sin'(t)=\\cos(t)$ gives $$f'(t)=${derivative.latex}.$$`,
     ),
-    courseHintIds: ["calculus-usual-derivatives", "calculus-derivative-rules"],
+    courseHintIds: [],
   });
 }
 
@@ -516,18 +484,20 @@ function productDerivative(rng) {
       ui: promptUi.derivativeProduct,
       explanation: translated(
         `On pose $u(t)=${affine.latex}$ et $v(t)=\\mathrm e^t$. Alors $u'(t)=${a}$ et $v'(t)=\\mathrm e^t$. On obtient
-        $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
+        $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      $$f'(t)=${derivative.latex}.$$`,
         `Let $u(t)=${affine.latex}$ and $v(t)=\\mathrm e^t$. Then $u'(t)=${a}$ and $v'(t)=\\mathrm e^t$. Thus
-        $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
+        $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      $$f'(t)=${derivative.latex}.$$`,
       ),
-      courseHintIds: ["calculus-derivative-rules"],
+      courseHintIds: [],
     });
   }
 
-  const expression = { plain: `(${affine.plain})*sin(t)`, latex: `${latexParenthesize(affine.latex)}\\sin t` };
+  const expression = { plain: `(${affine.plain})*sin(t)`, latex: `${latexParenthesize(affine.latex)}\\sin(t)` };
   const derivative = joinTerms([
-    scaledTerm(a, "sin(t)", "\\sin t"),
-    scaledTerm(1, `(${affine.plain})*cos(t)`, `${latexParenthesize(affine.latex)}\\cos t`),
+    scaledTerm(a, "sin(t)", "\\sin(t)"),
+    scaledTerm(1, `(${affine.plain})*cos(t)`, `${latexParenthesize(affine.latex)}\\cos(t)`),
   ]);
   return derivativeQuestion({
     variant: "product-sine",
@@ -535,12 +505,14 @@ function productDerivative(rng) {
     derivative,
     ui: promptUi.derivativeProduct,
     explanation: translated(
-      `On pose $u(t)=${affine.latex}$ et $v(t)=\\sin t$. Alors $u'(t)=${a}$ et $v'(t)=\\cos t$. On obtient
-      $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
-      `Let $u(t)=${affine.latex}$ and $v(t)=\\sin t$. Then $u'(t)=${a}$ and $v'(t)=\\cos t$. Thus
-      $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
+      `On pose $u(t)=${affine.latex}$ et $v(t)=\\sin(t)$. Alors $u'(t)=${a}$ et $v'(t)=\\cos(t)$. On obtient
+      $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      $$f'(t)=${derivative.latex}.$$`,
+      `Let $u(t)=${affine.latex}$ and $v(t)=\\sin(t)$. Then $u'(t)=${a}$ and $v'(t)=\\cos(t)$. Thus
+      $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      $$f'(t)=${derivative.latex}.$$`,
     ),
-    courseHintIds: ["calculus-derivative-rules"],
+    courseHintIds: [],
   });
 }
 
@@ -578,13 +550,16 @@ function quotientDerivative(rng) {
     ui: promptUi.derivativeQuotient,
     explanation: translated(
       `On pose $u(t)=${numerator.latex}$ et $v(t)=${denominator.latex}$. Alors $u'(t)=${a}$ et $v'(t)=${c}$. Comme $v$ ne s'annule pas sur $I$, on obtient
-      $$f'(t)=\\frac{u'(t)v(t)-u(t)v'(t)}{v(t)^2}
-      =\\frac{${latexSignedNumber(a)}\\,${latexParenthesize(denominator.latex)}-${latexParenthesize(numerator.latex)}\\,${latexSignedNumber(c)}}{${latexPower(denominator.latex, 2)}}
-      =${derivative.latex}.$$`,
+      $$f'(t)=\\frac{u'(t)v(t)-u(t)v'(t)}{v(t)^2}$$
+      d'où
+      $$f'(t)=\\frac{${latexSignedNumber(a)}\\,${latexParenthesize(denominator.latex)}-${latexParenthesize(numerator.latex)}\\,${latexSignedNumber(c)}}{${latexPower(denominator.latex, 2)}}$$
+      Enfin, on a
+      $$f'(t)=${derivative.latex}.$$`,
       `Let $u(t)=${numerator.latex}$ and $v(t)=${denominator.latex}$. Then $u'(t)=${a}$ and $v'(t)=${c}$. Since $v$ does not vanish on $I$,
-      $$f'(t)=\\frac{u'(t)v(t)-u(t)v'(t)}{v(t)^2}=${derivative.latex}.$$`,
+      $$f'(t)=\\frac{u'(t)v(t)-u(t)v'(t)}{v(t)^2}.$$
+      $$f'(t)=${derivative.latex}.$$`,
     ),
-    courseHintIds: ["calculus-derivative-rules", "calculus-domains"],
+    courseHintIds: [],
     domain: `\\mathbb R\\setminus\\{${rootLatex}\\}`,
     points: safePointsForLinear(c, d),
   });
@@ -630,7 +605,7 @@ function composedDerivative(rng) {
         outerDerivative: `${exponent}x^{${exponent - 1}}`,
         result: derivative.latex,
       }),
-      courseHintIds: ["calculus-chain-rule"],
+      courseHintIds: [],
     });
   }
 
@@ -650,7 +625,7 @@ function composedDerivative(rng) {
         outerDerivative: "\\mathrm e^x",
         result: derivative.latex,
       }),
-      courseHintIds: ["calculus-chain-rule"],
+      courseHintIds: [],
     });
   }
 
@@ -670,10 +645,10 @@ function composedDerivative(rng) {
         inner: inner.latex,
         innerDerivative: a,
         outer: `\\${kind} x`,
-        outerDerivative: isSine ? "\\cos x" : "-\\sin x",
+        outerDerivative: isSine ? "\\cos(x)" : "-\\sin(x)",
         result: derivative.latex,
       }),
-      courseHintIds: ["calculus-chain-rule"],
+      courseHintIds: [],
     });
   }
 
@@ -693,7 +668,7 @@ function composedDerivative(rng) {
         outerDerivative: "-\\dfrac1{x^2}",
         result: derivative.latex,
       }),
-      courseHintIds: ["calculus-chain-rule", "calculus-domains"],
+      courseHintIds: [],
       domain,
       points,
     });
@@ -717,7 +692,7 @@ function composedDerivative(rng) {
       outerDerivative: "\\dfrac1{2\\sqrt x}",
       result: squareRootDerivative.latex,
     }),
-    courseHintIds: ["calculus-chain-rule", "calculus-domains"],
+    courseHintIds: [],
     domain,
     points,
   });
@@ -754,15 +729,18 @@ function compositeProductDerivative(rng) {
       \\qquad\\text{et}\\qquad
       v'(t)=${latexScaled(c, `\\cos(${trigInner.latex})`)}.$$
       On obtient
-      $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
+      $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      d'où
+      $$f'(t)=${derivative.latex}.$$`,
       `Let $u(t)=\\mathrm e^{${exponentialInner.latex}}$ and $v(t)=\\sin(${trigInner.latex})$. Then
       $$u'(t)=${latexScaled(a, `\\mathrm e^{${exponentialInner.latex}}`)}
       \\qquad\\text{and}\\qquad
       v'(t)=${latexScaled(c, `\\cos(${trigInner.latex})`)}.$$
       Thus
-      $$f'(t)=u'(t)v(t)+u(t)v'(t)=${derivative.latex}.$$`,
+      $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
+      $$f'(t)=${derivative.latex}.$$`,
     ),
-    courseHintIds: ["calculus-derivative-rules", "calculus-chain-rule"],
+    courseHintIds: [],
   });
 }
 
@@ -802,11 +780,11 @@ function usualPrimitive(rng) {
       ui: promptUi.primitiveUsual,
       explanation: translated(
         `Comme une primitive de $t\\mapsto t^n$ est $t\\mapsto\\frac{t^{n+1}}{n+1}$, on obtient
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Since an antiderivative of $t\\mapsto t^n$ is $t\\mapsto\\frac{t^{n+1}}{n+1}$,
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
-      courseHintIds: ["calculus-usual-primitives"],
+      courseHintIds: [],
     });
   }
 
@@ -819,18 +797,18 @@ function usualPrimitive(rng) {
       ui: promptUi.primitiveUsual,
       explanation: translated(
         `Comme une primitive de $t\\mapsto\\mathrm e^t$ est $t\\mapsto\\mathrm e^t$, on obtient
-        $$F(t)=${expression.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${expression.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Since an antiderivative of $t\\mapsto\\mathrm e^t$ is $t\\mapsto\\mathrm e^t$,
-        $$F(t)=${expression.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${expression.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
-      courseHintIds: ["calculus-usual-primitives"],
+      courseHintIds: [],
     });
   }
 
   if (kind === "cos" || kind === "sin") {
     const isCosine = kind === "cos";
     const integrand = joinTerms([scaledTerm(multiplier, `${kind}(t)`, `\\${kind}(t)`)]);
-    const primitive = joinTerms([scaledTerm(isCosine ? multiplier : -multiplier, isCosine ? "sin(t)" : "cos(t)", isCosine ? "\\sin t" : "\\cos t")]);
+    const primitive = joinTerms([scaledTerm(isCosine ? multiplier : -multiplier, isCosine ? "sin(t)" : "cos(t)", isCosine ? "\\sin(t)" : "\\cos(t)")]);
     return primitiveQuestion({
       variant: `usual-${kind}`,
       integrand,
@@ -838,18 +816,18 @@ function usualPrimitive(rng) {
       ui: promptUi.primitiveUsual,
       explanation: translated(
         `${isCosine
-          ? "Une primitive de $t\\mapsto\\cos t$ est $t\\mapsto\\sin t$"
-          : "Une primitive de $t\\mapsto\\sin t$ est $t\\mapsto-\\cos t$"
+          ? "Une primitive de $t\\mapsto\\cos(t)$ est $t\\mapsto\\sin(t)$"
+          : "Une primitive de $t\\mapsto\\sin(t)$ est $t\\mapsto-\\cos(t)$"
         }. On obtient donc
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
 
         `${isCosine
-          ? "An antiderivative of $t\\mapsto\\cos t$ is $t\\mapsto\\sin t$"
-          : "An antiderivative of $t\\mapsto\\sin t$ is $t\\mapsto-\\cos t$"
+          ? "An antiderivative of $t\\mapsto\\cos(t)$ is $t\\mapsto\\sin(t)$"
+          : "An antiderivative of $t\\mapsto\\sin(t)$ is $t\\mapsto-\\cos(t)$"
         }. Hence
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
-      courseHintIds: ["calculus-usual-primitives"],
+      courseHintIds: [],
     });
   }
 
@@ -863,11 +841,11 @@ function usualPrimitive(rng) {
       ui: promptUi.primitiveUsual,
       explanation: translated(
         `On écrit $\\sqrt t=t^{1/2}$. Comme une primitive de $t\\mapsto t^{1/2}$ est $t\\mapsto\\frac23t^{3/2}$, on obtient
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Write $\\sqrt t=t^{1/2}$. Since an antiderivative of $t\\mapstot^{1/2}$ is $t\\mapsto\\frac23t^{3/2}$,
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C, C\\in\\mathbb R.$$`,
       ),
-      courseHintIds: ["calculus-usual-primitives", "calculus-domains"],
+      courseHintIds: [],
       domain: POSITIVE_DOMAIN,
       points: POSITIVE_POINTS,
     });
@@ -888,9 +866,9 @@ function usualPrimitive(rng) {
     ui: promptUi.primitiveUsual,
     explanation: translated(
       `Sur $I$, le logarithme est bien défini. On obtient donc
-      $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       `On $I$, the logarithm is well defined. Hence
-      $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     ),
     hints: [],
     courseHintIds: [],
@@ -907,12 +885,12 @@ function sumPrimitive(rng) {
   const integrand = joinTerms([
     scaledTerm(polynomialMultiplier * (exponent + 1), powerBody(exponent).plain, powerBody(exponent).latex),
     scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(trigCoefficient, "cos(t)", "\\cos t"),
+    scaledTerm(trigCoefficient, "cos(t)", "\\cos(t)"),
   ]);
   const primitive = joinTerms([
     scaledTerm(polynomialMultiplier, powerBody(exponent + 1).plain, powerBody(exponent + 1).latex),
     scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(trigCoefficient, "sin(t)", "\\sin t"),
+    scaledTerm(trigCoefficient, "sin(t)", "\\sin(t)"),
   ]);
 
   return primitiveQuestion({
@@ -922,9 +900,9 @@ function sumPrimitive(rng) {
     ui: promptUi.primitiveSum,
     explanation: translated(
       `Par linéarité, on cherche une primitive de chaque terme séparément. On obtient
-      $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       `By linearity, integrate each term separately. Thus
-      $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     ),
     hints: [],
     courseHintIds: [],
@@ -1030,8 +1008,8 @@ function composedPrimitive(rng) {
         factor: multiplier,
         inner: inner.latex,
         innerDerivative: a,
-        outer: isCosine ? "\\cos x" : "-\\sin x",
-        outerPrimitive: isCosine ? "\\sin x" : "\\cos x",
+        outer: isCosine ? "\\cos(x)" : "-\\sin(x)",
+        outerPrimitive: isCosine ? "\\sin(x)" : "\\cos(x)",
         result: primitive.latex,
       }),
       courseHintIds: [],
@@ -1074,11 +1052,11 @@ function integrationByPartsPrimitive(rng) {
         `On pose $u(t)=t^2$ et $v'(t)=\\mathrm e^t$. Alors $u'(t)=2t$ et $v(t)=\\mathrm e^t$. Une première IPP donne
         $$\\int t^2\\mathrm e^t\\,dt=t^2\\mathrm e^t-\\int 2t\\mathrm e^t\\,dt.$$
         En appliquant une seconde IPP à la dernière intégrale, on obtient
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Let $u(t)=t^2$ and $v'(t)=\\mathrm e^t$. Then $u'(t)=2t$ and $v(t)=\\mathrm e^t$. A first integration by parts gives
         $$\\int t^2\\mathrm e^t\\,dt=t^2\\mathrm e^t-\\int 2t\\mathrm e^t\\,dt.$$
         Applying integration by parts once more gives
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
       courseHintIds: [],
     });
@@ -1088,10 +1066,10 @@ function integrationByPartsPrimitive(rng) {
   const argument = linearForms(a, 0);
 
   if (kind === "exponential") {
-    const primitive = joinTerms([scaledTerm(multiplier, `(${a}*t-1)*exp(${argument.plain})`, `(${a}t-1)\\mathrm e^{${argument.latex}}`)]);
+    const primitive = joinTerms([scaledTerm(multiplier, `(${a}*t-1)*exp(${argument.plain})`, `(${latexScaled(a, "t")}-1)\\mathrm e^{${argument.latex}}`)]);
     return primitiveQuestion({
       variant: "parts-exponential",
-      integrand: { plain: `${multiplier * a * a}*t*exp(${argument.plain})`, latex: `${multiplier * a * a}t\\mathrm e^{${argument.latex}}` },
+      integrand: { plain: `${multiplier * a * a}*t*exp(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\mathrm e^{${argument.latex}}` },
       primitive,
       ui: promptUi.primitiveParts,
       explanation: translated(
@@ -1100,13 +1078,13 @@ function integrationByPartsPrimitive(rng) {
         Par intégration par parties,
         $$\\int uv'=uv-\\int u'v,$$
         d'où
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Let $u(t)=t$ and $v'(t)=\\mathrm e^{${argument.latex}}$. Then $u'(t)=1$ and
         $$v(t)=\\frac{\\mathrm e^{${argument.latex}}}{${latexSignedNumber(a)}}.$$
         By integration by parts,
         $$\\int uv'=uv-\\int u'v,$$
         hence
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
       courseHintIds: [],
     });
@@ -1120,7 +1098,7 @@ function integrationByPartsPrimitive(rng) {
     const primitive = joinTerms([scaledTerm(multiplier, `(${innerPrimitive.plain})`, `(${innerPrimitive.latex})`)]);
     return primitiveQuestion({
       variant: "parts-cosine",
-      integrand: { plain: `${multiplier * a * a}*t*cos(${argument.plain})`, latex: `${multiplier * a * a}t\\cos(${argument.latex})` },
+      integrand: { plain: `${multiplier * a * a}*t*cos(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\cos(${argument.latex})` },
       primitive,
       ui: promptUi.primitiveParts,
       explanation: translated(
@@ -1129,13 +1107,13 @@ function integrationByPartsPrimitive(rng) {
         Par intégration par parties,
         $$\\int uv'=uv-\\int u'v,$$
         d'où
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Let $u(t)=t$ and $v'(t)=\\cos(${argument.latex})$. Then $u'(t)=1$ and
         $$v(t)=\\frac{\\sin(${argument.latex})}{${latexSignedNumber(a)}}.$$
         By integration by parts,
         $$\\int uv'=uv-\\int u'v,$$
         hence
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       ),
       courseHintIds: [],
     });
@@ -1148,7 +1126,7 @@ function integrationByPartsPrimitive(rng) {
   const primitive = joinTerms([scaledTerm(multiplier, `(${innerPrimitive.plain})`, `(${innerPrimitive.latex})`)]);
   return primitiveQuestion({
     variant: "parts-sine",
-    integrand: { plain: `${multiplier * a * a}*t*sin(${argument.plain})`, latex: `${multiplier * a * a}t\\sin(${argument.latex})` },
+    integrand: { plain: `${multiplier * a * a}*t*sin(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\sin(${argument.latex})` },
     primitive,
     ui: promptUi.primitiveParts,
     explanation: translated(
@@ -1157,13 +1135,13 @@ function integrationByPartsPrimitive(rng) {
         Par intégration par parties,
         $$\\int uv'=uv-\\int u'v,$$
         d'où
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       `Let $u(t)=t$ and $v'(t)=\\sin(${argument.latex})$. Then $u'(t)=1$ and
         $$v(t)=-\\frac{\\cos(${argument.latex})}{${latexSignedNumber(a)}}.$$
         By integration by parts,
         $$\\int uv'=uv-\\int u'v,$$
         hence
-        $$F(t)=${primitive.latex}+C,\\qquad C\\in\\mathbb R.$$`,
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     ),
     courseHintIds: [],
   });
@@ -1234,9 +1212,9 @@ function trigonometricInitialCondition(rng) {
   const conditionPoint = 0;
 
   if (kind === "sine-primitive") {
-    const integrand = joinTerms([scaledTerm(coefficient, "cos(t)", "\\cos t")]);
+    const integrand = joinTerms([scaledTerm(coefficient, "cos(t)", "\\cos(t)")]);
     const primitive = joinTerms([
-      scaledTerm(coefficient, "sin(t)", "\\sin t"),
+      scaledTerm(coefficient, "sin(t)", "\\sin(t)"),
       scaledTerm(constant),
     ]);
     return uniquePrimitiveQuestion({
@@ -1247,19 +1225,19 @@ function trigonometricInitialCondition(rng) {
       conditionValue: constant,
       explanation: translated(
         `Les primitives sont de la forme
-        $$F(t)=${latexScaled(coefficient, "\\sin t")}+C.$$
-        Comme $\\sin 0=0$, la condition $F(0)=${constant}$ donne $C=${constant}$.`,
+        $$F(t)=${latexScaled(coefficient, "\\sin(t)")}+C.$$
+        Comme $\\sin(0)=0$, la condition $F(0)=${constant}$ donne $C=${constant}$.`,
         `The antiderivatives are
-        $$F(t)=${latexScaled(coefficient, "\\sin t")}+C.$$
-        Since $\\sin 0=0$, the condition $F(0)=${constant}$ gives $C=${constant}$.`,
+        $$F(t)=${latexScaled(coefficient, "\\sin(t)")}+C.$$
+        Since $\\sin(0)=0$, the condition $F(0)=${constant}$ gives $C=${constant}$.`,
       ),
       courseHintIds: [],
     });
   }
 
-  const integrand = joinTerms([scaledTerm(-coefficient, "sin(t)", "\\sin t")]);
+  const integrand = joinTerms([scaledTerm(-coefficient, "sin(t)", "\\sin(t)")]);
   const primitive = joinTerms([
-    scaledTerm(coefficient, "cos(t)", "\\cos t"),
+    scaledTerm(coefficient, "cos(t)", "\\cos(t)"),
     scaledTerm(constant),
   ]);
   return uniquePrimitiveQuestion({
@@ -1270,11 +1248,11 @@ function trigonometricInitialCondition(rng) {
     conditionValue: coefficient + constant,
     explanation: translated(
       `Les primitives sont de la forme
-      $$F(t)=${latexScaled(coefficient, "\\cos t")}+C.$$
-      Comme $\\cos 0=1$, la condition $F(0)=${coefficient + constant}$ donne $C=${constant}$.`,
+      $$F(t)=${latexScaled(coefficient, "\\cos(t)")}+C.$$
+      Comme $\\cos(0)=1$, la condition $F(0)=${coefficient + constant}$ donne $C=${constant}$.`,
       `The antiderivatives are
-      $$F(t)=${latexScaled(coefficient, "\\cos t")}+C.$$
-      Since $\\cos 0=1$, the condition $F(0)=${coefficient + constant}$ gives $C=${constant}$.`,
+      $$F(t)=${latexScaled(coefficient, "\\cos(t)")}+C.$$
+      Since $\\cos(0)=1$, the condition $F(0)=${coefficient + constant}$ gives $C=${constant}$.`,
     ),
     courseHintIds: [],
   });
@@ -1329,10 +1307,10 @@ function composedInitialCondition(rng) {
       explanation: translated(
         `Les primitives sont de la forme
         $$F(t)=${latexScaled(multiplier, latexPower(inner.latex, exponent))}+C.$$
-        Comme $u(0)=0$, la condition $F(0)=${constant}$ donne $C=${constant}$.`,
+        La condition $F(0)=${constant}$ donne $C=${constant}$.`,
         `The antiderivatives are
         $$F(t)=${latexScaled(multiplier, latexPower(inner.latex, exponent))}+C.$$
-        Since $u(0)=0$, the condition $F(0)=${constant}$ gives $C=${constant}$.`,
+        The condition $F(0)=${constant}$ gives $C=${constant}$.`,
       ),
       courseHintIds: [],
     });
@@ -1382,10 +1360,10 @@ function composedInitialCondition(rng) {
     explanation: translated(
       `Les primitives sont de la forme
       $$F(t)=${latexScaled(2 * multiplier, latexPower(shifted.latex, "3/2"))}+C.$$
-      Comme ${shifted.latex}=1 au point $t=${root + 1}$, la condition $F(${root + 1})=${2 * multiplier + constant}$ donne $C=${constant}$.`,
+      Comme $${shifted.latex}=1$ au point $t=${root + 1}$, la condition $F(${root + 1})=${2 * multiplier + constant}$ donne $C=${constant}$.`,
       `The antiderivatives are
       $$F(t)=${latexScaled(2 * multiplier, latexPower(shifted.latex, "3/2"))}+C.$$
-      Since ${shifted.latex}=1 at $t=${root + 1}$, the condition $F(${root + 1})=${2 * multiplier + constant}$ gives $C=${constant}$.`,
+      Since $${shifted.latex}=1$ at $t=${root + 1}$, the condition $F(${root + 1})=${2 * multiplier + constant}$ gives $C=${constant}$.`,
     ),
     courseHintIds: [],
     domain: interval.latex,
@@ -1401,10 +1379,10 @@ function advancedInitialCondition(rng) {
   if (kind === "parts") {
     const a = randomNonZero(-3, 3, rng);
     const inner = linearForms(a, 0);
-    const integrand = { plain: `${multiplier * a * a}*t*exp(${inner.plain})`, latex: `${multiplier * a * a}t\\mathrm e^{${inner.latex}}` };
-    const basePrimitive = { plain: `${multiplier}*(${a}*t-1)*exp(${inner.plain})`, latex: `${multiplier}(${a}t-1)\\mathrm e^{${inner.latex}}` };
+    const integrand = { plain: `${multiplier * a * a}*t*exp(${inner.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\mathrm e^{${inner.latex}}` };
+    const basePrimitive = { plain: `${multiplier}*(${a}*t-1)*exp(${inner.plain})`, latex: latexScaled(multiplier, `(${latexScaled(a, "t")}-1)\\mathrm e^{${inner.latex}}`) };
     const primitive = joinTerms([
-      scaledTerm(multiplier, `(${a}*t-1)*exp(${inner.plain})`, `(${a}t-1)\\mathrm e^{${inner.latex}}`),
+      scaledTerm(multiplier, `(${a}*t-1)*exp(${inner.plain})`, `(${latexScaled(a, "t")}-1)\\mathrm e^{${inner.latex}}`),
       scaledTerm(constant),
     ]);
     return uniquePrimitiveQuestion({
@@ -1432,17 +1410,17 @@ function advancedInitialCondition(rng) {
   const integrand = joinTerms([
     scaledTerm(2 * polynomialCoefficient, "t", "t"),
     scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(-multiplier, "sin(t)", "\\sin t"),
+    scaledTerm(-multiplier, "sin(t)", "\\sin(t)"),
   ]);
   const basePrimitive = joinTerms([
     scaledTerm(polynomialCoefficient, "t^2", "t^2"),
     scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(multiplier, "cos(t)", "\\cos t"),
+    scaledTerm(multiplier, "cos(t)", "\\cos(t)"),
   ]);
   const primitive = joinTerms([
     scaledTerm(polynomialCoefficient, "t^2", "t^2"),
     scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(multiplier, "cos(t)", "\\cos t"),
+    scaledTerm(multiplier, "cos(t)", "\\cos(t)"),
     scaledTerm(constant),
   ]);
   const baseAtZero = exponentialCoefficient + multiplier;

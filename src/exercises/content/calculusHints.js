@@ -9,8 +9,8 @@ export const calculusCourseHints = [
       {
         type: "formula",
         content: translated(
-          "$$(t^\\alpha)'=\\alpha t^{\\alpha-1},\\qquad (\\mathrm e^t)'=\\mathrm e^t,$$ $$(\\sin t)'=\\cos t,\\qquad(\\cos t)'=-\\sin t.$$",
-          "$$(t^\\alpha)'=\\alpha t^{\\alpha-1},\\qquad (\\mathrm e^t)'=\\mathrm e^t,$$ $$(\\sin t)'=\\cos t,\\qquad(\\cos t)'=-\\sin t.$$",
+          "$$(t^\\alpha)'=\\alpha t^{\\alpha-1},\\qquad (\\mathrm e^t)'=\\mathrm e^t,$$ $$(\\sin(t))'=\\cos(t),\\qquad(\\cos(t))'=-\\sin(t).$$",
+          "$$(t^\\alpha)'=\\alpha t^{\\alpha-1},\\qquad (\\mathrm e^t)'=\\mathrm e^t,$$ $$(\\sin(t))'=\\cos(t),\\qquad(\\cos(t))'=-\\sin(t).$$",
         ),
       },
       {
@@ -53,8 +53,8 @@ export const calculusCourseHints = [
       {
         type: "formula",
         content: translated(
-          "Si $f=\\varphi\\circ u$, alors $$f'=u'\\,\\varphi'(u).$$ En particulier, $$(\\mathrm e^u)'=u'\\mathrm e^u,\\quad(\\sin u)'=u'\\cos u,\\quad(\\sqrt u)'=\\frac{u'}{2\\sqrt u}.$$",
-          "If $f=\\varphi\\circ u$, then $$f'=u'\\,\\varphi'(u).$$ In particular, $$(\\mathrm e^u)'=u'\\mathrm e^u,\\quad(\\sin u)'=u'\\cos u,\\quad(\\sqrt u)'=\\frac{u'}{2\\sqrt u}.$$",
+          "Si $f=\\varphi\\circ u$, alors $$f'=u'\\,\\varphi'(u).$$ En particulier, $$(\\mathrm e^u)'=u'\\mathrm e^u,\\quad(\\sin(u))'=u'\\cos(u),\\quad(\\sqrt u)'=\\frac{u'}{2\\sqrt u}.$$",
+          "If $f=\\varphi\\circ u$, then $$f'=u'\\,\\varphi'(u).$$ In particular, $$(\\mathrm e^u)'=u'\\mathrm e^u,\\quad(\\sin(u))'=u'\\cos(u),\\quad(\\sqrt u)'=\\frac{u'}{2\\sqrt u}.$$",
         ),
       },
       {
@@ -77,8 +77,8 @@ export const calculusCourseHints = [
       {
         type: "formula",
         content: translated(
-          "$$\\int\\cos t\\,dt=\\sin t+C,\\qquad\\int\\sin t\\,dt=-\\cos t+C.$$",
-          "$$\\int\\cos t\\,dt=\\sin t+C,\\qquad\\int\\sin t\\,dt=-\\cos t+C.$$",
+          "$$\\int\\cos(t)\\,dt=\\sin(t)+C,\\qquad\\int\\sin(t)\\,dt=-\\cos(t)+C.$$",
+          "$$\\int\\cos(t)\\,dt=\\sin(t)+C,\\qquad\\int\\sin(t)\\,dt=-\\cos(t)+C.$$",
         ),
       },
       {
@@ -97,7 +97,7 @@ export const calculusCourseHints = [
       },
       {
         type: "example",
-        content: translated("$$\\int(6t^2-4\\sin t)\\,dt=2t^3+4\\cos t+C.$$", "$$\\int(6t^2-4\\sin t)\\,dt=2t^3+4\\cos t+C.$$"),
+        content: translated("$$\\int(6t^2-4\\sin(t))\\,dt=2t^3+4\\cos(t)+C.$$", "$$\\int(6t^2-4\\sin(t))\\,dt=2t^3+4\\cos(t)+C.$$"),
       },
     ],
   },
@@ -108,8 +108,8 @@ export const calculusCourseHints = [
       {
         type: "formula",
         content: translated(
-          "Chercher simultanément une fonction $u$ et son facteur $u'$ : $$\\int u'\\mathrm e^u=\\mathrm e^u+C,\\quad\\int u'\\cos u=\\sin u+C,$$ $$\\int\\frac{u'}u=\\ln|u|+C.$$",
-          "Look for both a function $u$ and its derivative $u'$: $$\\int u'\\mathrm e^u=\\mathrm e^u+C,\\quad\\int u'\\cos u=\\sin u+C,$$ $$\\int\\frac{u'}u=\\ln|u|+C.$$",
+          "Chercher simultanément une fonction $u$ et son facteur $u'$ : $$\\int u'\\mathrm e^u=\\mathrm e^u+C,\\quad\\int u'\\cos(u)=\\sin(u)+C,$$ $$\\int\\frac{u'}u=\\ln|u|+C.$$",
+          "Look for both a function $u$ and its derivative $u'$: $$\\int u'\\mathrm e^u=\\mathrm e^u+C,\\quad\\int u'\\cos(u)=\\sin(u)+C,$$ $$\\int\\frac{u'}u=\\ln|u|+C.$$",
         ),
       },
       {

@@ -1,5 +1,5 @@
 .linear-map-page .showcase-shell{
-  max-width: 1280px;
+  max-width:var(--site-shell-max);
 }
 
 .linear-map-input-grid{

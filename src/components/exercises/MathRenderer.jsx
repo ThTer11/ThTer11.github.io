@@ -29,6 +29,7 @@ export default function MathRenderer({
       html={html}
       className={className}
       enableMathCopy={enableMathCopy}
+      responsiveMath
     />
   );
 }

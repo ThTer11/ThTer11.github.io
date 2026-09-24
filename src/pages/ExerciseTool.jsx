@@ -28,7 +28,7 @@ export default function ExerciseTool() {
 
   return (
     <div className={`showcase-page showcase-page-teaching exercise-page min-w-screen min-h-screen pb-10${trainingInProgress ? " exercise-page-session" : ""}${practiceSetupVisible ? " exercise-page-setup" : ""}`}>
-      <NavBar />
+      {!trainingInProgress && <NavBar />}
       <main className="showcase-shell exercise-tool-shell">
         {enginePhase === "complete" ? null : trainingInProgress ? (
           <button type="button" className="exercise-back-link" onClick={returnToToolSetup}>
@@ -48,7 +48,6 @@ export default function ExerciseTool() {
           <>
             {enginePhase === "setup" && (
               <section className="showcase-panel showcase-card exercise-tool-hero">
-                <p className="showcase-eyebrow">{localize(category.title, lang)}</p>
                 <MathRenderer as="h1" className="showcase-title" content={localize(tool.title, lang)} />
                 <MathRenderer as="p" className="showcase-lead" content={localize(tool.description, lang)} />
               </section>

@@ -1,5 +1,5 @@
 .gauss-page .showcase-shell{
-  max-width:1240px;
+  max-width:var(--site-shell-max);
 }
 
 .gauss-layout{

@@ -64,7 +64,6 @@ export default function CourseHintModal({ hint, hints, lang, labels, onClose }) 
       >
         <header className="showcase-modal-header">
           <div>
-            <p className="showcase-modal-kicker">{labels.courseReminder}</p>
             <h2 id="exercise-course-title">
               <MathRenderer as="span" content={dialogTitle} />
             </h2>
@@ -82,7 +81,7 @@ export default function CourseHintModal({ hint, hints, lang, labels, onClose }) 
         </header>
 
         <div className="exercise-course-content">
-          {overviewMode && <p className="exercise-course-overview-lead">{labels.courseOverviewLead}</p>}
+          {overviewMode}
           {reminders.map((reminder) => (
             <article key={reminder.id} className={overviewMode ? "exercise-course-overview-item" : undefined}>
               {overviewMode && (

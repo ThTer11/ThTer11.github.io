@@ -145,7 +145,6 @@ export default function Recherche() {
 
         <section className="research-panel research-hero animate-defil">
           <div className="research-hero-copy">
-            <p className="research-eyebrow">2024 - 2026</p>
             <h1 className="research-title">{t.research.title}</h1>
             <p className="research-lead">{t.research.lead}</p>
           </div>

@@ -1,0 +1,5 @@
+/* Shared page width: grow on large screens, keep gutters and a readable upper limit. */
+:root{
+  --site-shell-max:clamp(1180px,calc(46vw + 590px),1680px);
+  --site-tool-max:clamp(1040px,calc(45vw + 520px),1480px);
+}

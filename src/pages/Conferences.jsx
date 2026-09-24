@@ -40,7 +40,6 @@ export default function Conferences() {
         <div className="showcase-orb showcase-orb-b" />
 
         <section className="showcase-panel showcase-card animate-defil">
-          <p className="showcase-eyebrow">{t.conferences.title}</p>
           <h1 className="showcase-title">{t.conferences.title}</h1>
           <p className="showcase-lead">{t.conferences.lead}</p>
         </section>

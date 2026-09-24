@@ -297,11 +297,63 @@ function enhanceMathControls(element, enableMathCopy) {
     });
 }
 
+
+/** Keep short math inline; only the formula owns horizontal scrolling. */
+function observeResponsiveMath(element) {
+    let frame;
+    let lastWidth = -1;
+    const measure = () => {
+        frame = null;
+        element.querySelectorAll(".rich-content-math").forEach((wrapper) => {
+            const math = wrapper.querySelector("mjx-container");
+            if (!math) return;
+            let parent = wrapper.parentElement;
+            while (parent.parentElement && (
+                !parent.clientWidth || ["inline", "contents"].includes(window.getComputedStyle(parent).display)
+            )) parent = parent.parentElement;
+            const style = window.getComputedStyle(parent);
+            const available = parent.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
+            const svg = math.querySelector("svg");
+            const naturalWidth = svg?.getBoundingClientRect().width ?? math.scrollWidth;
+            const isWide = naturalWidth > available - 4;
+            wrapper.classList.toggle("rich-content-math-wide", isWide);
+            if (isWide) {
+                wrapper.tabIndex = 0;
+                wrapper.setAttribute("role", "region");
+                wrapper.setAttribute("aria-label", document.documentElement.lang === "en" ? "Scrollable formula" : "Formule défilante");
+            } else {
+                wrapper.removeAttribute("tabindex");
+                wrapper.removeAttribute("role");
+                wrapper.removeAttribute("aria-label");
+            }
+        });
+    };
+    const schedule = () => {
+        if (frame != null) window.cancelAnimationFrame(frame);
+        frame = window.requestAnimationFrame(measure);
+    };
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(([entry]) => {
+        if (entry.contentRect.width !== lastWidth) {
+            lastWidth = entry.contentRect.width;
+            schedule();
+        }
+    });
+    observer?.observe(element.clientWidth ? element : element.parentElement);
+    window.addEventListener("resize", schedule);
+    schedule();
+    return { schedule, disconnect: () => {
+        observer?.disconnect();
+        window.removeEventListener("resize", schedule);
+        if (frame != null) window.cancelAnimationFrame(frame);
+    } };
+}
+
 export default function RichContent({
     as = "div",
     html = "",
     className,
     enableMathCopy = true,
+    responsiveMath = false,
 }) {
     const ref = useRef(null);
 
@@ -322,9 +374,11 @@ export default function RichContent({
         annotateMathSources(element);
 
         let cancelled = false;
+        const responsive = responsiveMath ? observeResponsiveMath(element) : null;
 
         if (!mathJax) {
             enhanceMathControls(element, enableMathCopy);
+            responsive?.schedule();
             let attempts = 0;
             const retryTimer = window.setInterval(() => {
                 attempts += 1;
@@ -343,6 +397,7 @@ export default function RichContent({
                     .then(() => {
                         if (!cancelled) {
                             enhanceMathControls(element, enableMathCopy);
+                            responsive?.schedule();
                         }
                     })
                     .catch(() => {});
@@ -350,6 +405,7 @@ export default function RichContent({
 
             return () => {
                 cancelled = true;
+                responsive?.disconnect();
                 window.clearInterval(retryTimer);
                 clearCopyTimers(element);
             };
@@ -360,22 +416,25 @@ export default function RichContent({
             .then(() => {
                 if (!cancelled) {
                     enhanceMathControls(element, enableMathCopy);
+                    responsive?.schedule();
                 }
             })
             .catch(() => {
                 if (!cancelled) {
                     enhanceMathControls(element, enableMathCopy);
+                    responsive?.schedule();
                 }
             });
 
         return () => {
             cancelled = true;
+            responsive?.disconnect();
             clearCopyTimers(element);
         };
-    }, [enableMathCopy, html]);
+    }, [enableMathCopy, html, responsiveMath]);
 
     return createElement(as, {
         ref,
-        className,
+        className: [className, responsiveMath && "responsive-math"].filter(Boolean).join(" "),
     });
 }

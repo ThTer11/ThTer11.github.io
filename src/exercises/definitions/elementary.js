@@ -1918,7 +1918,10 @@ function identityQuestion(difficulty, rng, exerciseLevel = null) {
       ),
       expected,
       answer: { type: "boolean" },
-      answerDisplay: translated(expected ? "Vrai" : "Faux", expected ? "True" : "False"),
+     answerDisplay: translated(
+  expected ? '<div style="text-align:center">Vrai</div>' : '<div style="text-align:center">Faux</div>',
+  expected ? '<div style="text-align:center">True</div>' : '<div style="text-align:center">False</div>'
+),
       explanation: selected.explanation,
       courseHintIds: ["elementary-identities"],
     };

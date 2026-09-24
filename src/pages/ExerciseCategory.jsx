@@ -17,7 +17,7 @@ export default function ExerciseCategory() {
   const tools = getToolsForCategory(categoryId);
 
   return (
-    <div className="showcase-page showcase-page-teaching exercise-page min-w-screen min-h-screen pb-10">
+    <div className="showcase-page showcase-page-teaching exercise-page exercise-page-category min-w-screen min-h-screen pb-10">
       <NavBar />
       <main className="showcase-shell">
         <Link to={`/${lang}/entrainements`} className="exercise-back-link">
@@ -28,7 +28,6 @@ export default function ExerciseCategory() {
         {category ? (
           <>
             <section className="showcase-panel showcase-card exercise-category-hero">
-              <p className="showcase-eyebrow">{labels.catalogEyebrow}</p>
               <h1 className="showcase-title">{localize(category.title, lang)}</h1>
               <p className="showcase-lead">{localize(category.description, lang)}</p>
             </section>
@@ -68,13 +67,15 @@ export default function ExerciseCategory() {
                       </div>
                     )}
 
-                    <Link
-                      to={`/${lang}/entrainements/${category.id}/${tool.id}`}
-                      className="showcase-action showcase-action-link"
-                    >
-                      {labels.openTool}
-                      <ArrowRightIcon className="exercise-small-icon" />
-                    </Link>
+                    <div className="exercise-card-footer">
+                      <Link
+                        to={`/${lang}/entrainements/${category.id}/${tool.id}`}
+                        className="showcase-action showcase-action-link"
+                      >
+                        {labels.openTool}
+                        <ArrowRightIcon className="exercise-small-icon" />
+                      </Link>
+                    </div>
                   </article>
                 ))}
               </div>

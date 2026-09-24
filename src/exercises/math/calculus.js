@@ -192,7 +192,7 @@ export function parseCalculusExpression(rawValue) {
     if (!token) throw new Error("Expression incomplète.");
 
     if (token.type === "number") {
-      return { type: "number", value: Number(token.value) };
+      return { type: "number", value: Number(token.value), raw: token.value };
     }
 
     if (token.type === "identifier") {
@@ -272,6 +272,49 @@ export function parseCalculusExpression(rawValue) {
   }
 
   return result;
+}
+
+
+/** Render the parsed expression, without simplifying a potentially wrong answer. */
+export function calculusExpressionToLatex(expression) {
+  const ast = typeof expression === "string" ? parseCalculusExpression(expression) : expression;
+  const precedence = (node) => node.type === "binary"
+    ? ({ "+": 1, "-": 1, "*": 2, "/": 2, "^": 4 }[node.operator])
+    : node.type === "unary" ? 3 : 5;
+  const group = (value) => `\\left(${value}\\right)`;
+  const render = (node) => {
+    if (node.type === "number") {
+      if (node.raw !== undefined) return node.raw;
+      const [coefficient, exponent] = String(node.value).split("e");
+      return exponent === undefined ? coefficient : group(coefficient + "\\times 10^{" + Number(exponent) + "}");
+    }
+    if (node.type === "symbol") return node.name === "pi" ? "\\pi"
+      : node.name === "e" ? "\\mathrm{e}"
+        : FREE_CONSTANT_NAMES.has(node.name) ? node.name.toUpperCase() : node.name;
+    if (node.type === "unary") {
+      const value = render(node.value);
+      return node.operator + (precedence(node.value) < 3 ? group(value) : value);
+    }
+    if (node.type === "call") {
+      const value = render(node.argument);
+      if (node.name === "sqrt") return `\\sqrt{${value}}`;
+      if (node.name === "abs") return `\\left|${value}\\right|`;
+      return `\\${node.name}\\left(${value}\\right)`;
+    }
+    const left = render(node.left);
+    const right = render(node.right);
+    if (node.operator === "/") return `\\frac{${left}}{${right}}`;
+    if (node.operator === "^") {
+      return `${precedence(node.left) <= 4 ? group(left) : left}^{${right}}`;
+    }
+    const p = precedence(node);
+    const lhs = precedence(node.left) < p ? group(left) : left;
+    const rhs = precedence(node.right) < p
+      || (node.operator === "-" && precedence(node.right) === p)
+      ? group(right) : right;
+    return `${lhs}${node.operator === "*" ? "\\cdot " : node.operator}${rhs}`;
+  };
+  return render(ast);
 }
 
 function evaluateNode(node, context) {
@@ -377,11 +420,39 @@ export function validateCalculusAnswer(rawValue, { expected, question, lang = "f
   try {
     const upToConstant = question.validationMode === "primitive";
     const actual = parseCalculusExpression(rawValue);
-    const correct = areCalculusExpressionsEquivalent(rawValue, expected, {
+    const points = question.validationPoints ?? DEFAULT_SAMPLE_POINTS;
+    if (points.some((t) => !Number.isFinite(evaluateCalculusExpression(actual, t)))) {
+      return {
+        correct: false,
+        status: "incorrect",
+        reason: "domain",
+        message: lang === "en"
+          ? "Your expression is not defined throughout the requested interval. In particular, a real logarithm requires a strictly positive argument."
+          : "Ton expression n’est pas définie sur tout l’intervalle demandé. En particulier, l’argument d’un logarithme réel doit être strictement positif.",
+      };
+    }
+
+    const hasCondition = question.conditionPoint !== undefined && question.conditionValue !== undefined;
+    const conditionOk = !hasCondition || (!containsFreeConstant(actual) && closeEnough(
+      evaluateCalculusExpression(actual, question.conditionPoint),
+      Number(question.conditionValue),
+    ));
+    const correct = conditionOk && areCalculusExpressionsEquivalent(rawValue, expected, {
       samplePoints: question.validationPoints ?? DEFAULT_SAMPLE_POINTS,
       upToConstant,
       allowFreeConstant: upToConstant,
     });
+
+    if (!conditionOk) {
+      return {
+        correct: false,
+        status: "incorrect",
+        reason: "condition",
+        message: lang === "en"
+          ? "Your expression does not satisfy the initial condition. Substitute the given point into $F$ and check the constant."
+          : "Ton expression ne vérifie pas la condition initiale. Remplace la variable par le point donné dans $F$ et vérifie la constante.",
+      };
+    }
 
     if (correct && question.requireIntegrationConstant && !containsFreeConstant(actual)) {
       return {

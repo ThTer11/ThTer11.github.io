@@ -124,7 +124,7 @@ export default function ExerciseQuestionPrompt({
                 {customIcon}
               </span>
             )}
-            {compact.label}
+            <MathRenderer as="span" content={compact.label} />
           </span>
         )}
         {compact.detail && (

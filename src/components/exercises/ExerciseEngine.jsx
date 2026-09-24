@@ -14,6 +14,8 @@ import { createQuestionAvoidingDuplicates, pickStudyExercise } from "../../exerc
 import { resolveAnswerSpec } from "../../exercises/core/answerSpec";
 import { localize } from "../../exercises/core/localize";
 import { createSession, recordAttempt } from "../../exercises/core/session";
+import { formatAnswerDisplay } from "../../exercises/core/answerDisplay";
+import { resolveQuestionPromptUi } from "./ExerciseQuestionPrompt";
 import { formatExpectedAnswer, validateAnswer } from "../../exercises/core/validators";
 import { getExerciseUiText } from "../../exercises/content/uiText";
 import { collectToolCourseHints } from "../../exercises/core/courseHints";
@@ -545,6 +547,9 @@ export default function ExerciseEngine({
       const startedAt = Date.now();
       const nextTimer = getTimer(tool, nextQuestion, difficulty);
       const durationMs = resolveTimerSeconds(nextTimer, difficulty, selectedExerciseLevel) * 1000;
+      if (durationMs > 0) {
+        setSession((current) => ({ ...current, isTimed: true }));
+      }
 
       if (nextTimer?.mode === "series") {
         if (!seriesDeadlineRef.current && durationMs > 0) {
@@ -603,11 +608,13 @@ export default function ExerciseEngine({
       prompt: question?.prompt,
       trustedHtml: Boolean(question?.trustedHtml),
       submittedAnswer: answer,
+      submittedAnswerDisplay: formatAnswerDisplay(answer, answerSpec, question, lang),
+      promptUi: resolveQuestionPromptUi(question?.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi, lang),
       expectedAnswer: formatExpectedAnswer(question?.expected, answerSpec, question, lang),
     }));
     setPhase("feedback");
     submittingRef.current = true;
-  }, [answer, answerSpec, lang, question, questionStartedAt]);
+  }, [answer, answerSpec, lang, question, questionStartedAt, selectedExerciseVariant, tool.promptUi]);
 
   const submit = (event) => {
     event?.preventDefault();
@@ -782,7 +789,6 @@ export default function ExerciseEngine({
     : phase !== "active";
   const liveScorePanel = (scoreEnabled || statisticsEnabled) && (
     <div className="exercise-live-score">
-      <h2>{scoreEnabled ? labels.score : labels.statistics}</h2>
       {statisticsEnabled ? (
         <ScorePanel session={session} labels={labels} compact />
       ) : (

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 // Keep the desktop correction beside the question; give it the viewport on mobile.
-export default function ResponsiveFeedback({ children, labels, lang, nestedModalOpen = false }) {
+export default function ResponsiveFeedback({ children, labels, lang, nestedModalOpen = false, Icon, tone}) {
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 860px)").matches);
   const [open, setOpen] = useState(true);
   const dialogRef = useRef(null);
@@ -83,10 +83,11 @@ export default function ResponsiveFeedback({ children, labels, lang, nestedModal
             tabIndex={-1}
           >
             <header className="exercise-feedback-dialog-header">
-              <span>{dialogLabel}</span>
-              <button type="button" className="exercise-feedback-close" onClick={close} aria-label={labels.close}>
-                <XMarkIcon aria-hidden="true" />
-              </button>
+              {Icon && (
+                <span className={`exercise-feedback-mobile-icon exercise-feedback-mobile-icon-${tone}`}>
+                  <Icon aria-hidden="true" />
+                </span>
+              )}
             </header>
             {children}
           </section>

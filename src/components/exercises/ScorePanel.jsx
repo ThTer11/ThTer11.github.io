@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FireIcon } from "@heroicons/react/24/solid";
+import { CheckIcon, XMarkIcon, ClockIcon, FireIcon } from "@heroicons/react/24/solid";
 import { sessionSummary } from "../../exercises/core/session";
 
 function formatTime(milliseconds) {
@@ -22,8 +22,9 @@ function StreakValue({ value, lost = false }) {
   );
 }
 
-export default function ScorePanel({ session, labels, compact = false }) {
+export default function ScorePanel({ session, labels, compact = false, final = false }) {
   const summary = sessionSummary(session);
+  const isTimed = session.isTimed || summary.timedCompleted > 0;
   const previousStreak = useRef(summary.streak);
   const [streakLost, setStreakLost] = useState(false);
 
@@ -42,27 +43,26 @@ export default function ScorePanel({ session, labels, compact = false }) {
   }, [summary.streak]);
 
   if (compact) {
+    const counters = [
+      { kind: "correct", value: summary.correct, label: labels.correct, Icon: CheckIcon },
+      { kind: "streak", value: final ? summary.bestStreak : summary.streak, label: final ? labels.bestStreak : labels.streak, Icon: FireIcon },
+      { kind: "error", value: summary.incorrect, label: labels.errors, Icon: XMarkIcon },
+      ...(isTimed ? [{ kind: "timeout", value: summary.timedOut, label: labels.outOfTime, Icon: ClockIcon }] : []),
+    ];
     return (
-      <div className="exercise-score-grid exercise-score-grid-compact">
-        <div className="exercise-score-item exercise-score-item-correct">
-          <strong>{summary.correct}</strong>
-          <span>{labels.correct}</span>
-        </div>
-
-        <div className={`exercise-score-item exercise-score-item-streak${streakLost ? " exercise-score-item-streak-lost" : ""}`}>
-          <StreakValue value={summary.streak} lost={streakLost} />
-          <span>{labels.streak}</span>
-        </div>
-
-        <div className="exercise-score-item exercise-score-item-error">
-          <strong>{summary.incorrect}</strong>
-          <span>{labels.errors}</span>
-        </div>
-
-        <div className="exercise-score-item exercise-score-item-timeout">
-          <strong>{summary.timedOut}</strong>
-          <span>{labels.outOfTime}</span>
-        </div>
+      <div className="exercise-score-grid exercise-score-grid-compact" style={{ "--exercise-score-columns": counters.length }}>
+        {counters.map(({ kind, value, label, Icon }) => (
+          <div
+            key={kind}
+            className={`exercise-score-item exercise-score-item-${kind}${kind === "streak" && streakLost ? " exercise-score-item-streak-lost" : ""}`}
+            role="group"
+            aria-label={`${label} : ${value}`}
+            title={label}
+          >
+            <strong aria-hidden="true">{value}</strong>
+            <Icon className={`exercise-score-counter-icon${kind === "streak" ? " exercise-streak-flame" : ""}`} aria-hidden="true" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function ScorePanel({ session, labels, compact = false }) {
         <span>{labels.correct}</span>
       </div>
 
-      {summary.timedCompleted >= 0 && (
+      {isTimed && (
         <div className="exercise-score-item exercise-score-item-on-time">
           <strong>{summary.correctOnTime}</strong>
           <span>{labels.correctOnTime}</span>
@@ -86,7 +86,7 @@ export default function ScorePanel({ session, labels, compact = false }) {
         <span>{labels.errors}</span>
       </div>
 
-      {summary.timedOut >= 0 && (
+      {isTimed && (
         <div className="exercise-score-item exercise-score-item-timeout">
           <strong>{summary.timedOut}</strong>
           <span>{labels.outOfTime}</span>
