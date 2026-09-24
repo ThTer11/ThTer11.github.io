@@ -3741,6 +3741,32 @@
   justify-content:center;
 }
 
+.exercise-feedback-dialog:has(.exercise-feedback-danger),
+.exercise-feedback-dialog > .exercise-feedback-danger {
+  background: color-mix(in srgb, #cf6268 40%, white);
+  color: #334155;
+}
+
+.exercise-feedback-dialog:has(.exercise-feedback-success),
+.exercise-feedback-dialog > .exercise-feedback-success {
+  background: color-mix(in srgb, #199b70 40%, white);
+  color: #334155;
+}
+
+.exercise-feedback-dialog:has(.exercise-feedback-warning),
+.exercise-feedback-dialog > .exercise-feedback-warning,
+.exercise-feedback-dialog:has(.exercise-feedback-late),
+.exercise-feedback-dialog > .exercise-feedback-late {
+  background: color-mix(in srgb, #c98228 40%, white);
+  color: #334155;
+}
+
+.exercise-feedback-dialog:has(.exercise-feedback-timeout),
+.exercise-feedback-dialog > .exercise-feedback-timeout {
+  background: color-mix(in srgb, #8064c7 40%, white);
+  color: #334155;
+}
+
 .dark .exercise-feedback-dialog:has(.exercise-feedback-danger),
 .dark .exercise-feedback-dialog > .exercise-feedback-danger {
   background: color-mix(in srgb, #cf6268 25%, #0f172a);

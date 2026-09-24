@@ -726,7 +726,7 @@ function compositeProductDerivative(rng) {
     explanation: translated(
       `On pose $u(t)=\\mathrm e^{${exponentialInner.latex}}$ et $v(t)=\\sin(${trigInner.latex})$. Alors
       $$u'(t)=${latexScaled(a, `\\mathrm e^{${exponentialInner.latex}}`)}
-      \\qquad\\text{et}\\qquad
+      \\quad\\text{et}\\quad
       v'(t)=${latexScaled(c, `\\cos(${trigInner.latex})`)}.$$
       On obtient
       $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
@@ -734,7 +734,7 @@ function compositeProductDerivative(rng) {
       $$f'(t)=${derivative.latex}.$$`,
       `Let $u(t)=\\mathrm e^{${exponentialInner.latex}}$ and $v(t)=\\sin(${trigInner.latex})$. Then
       $$u'(t)=${latexScaled(a, `\\mathrm e^{${exponentialInner.latex}}`)}
-      \\qquad\\text{and}\\qquad
+      \\quad\\text{and}\\quad
       v'(t)=${latexScaled(c, `\\cos(${trigInner.latex})`)}.$$
       Thus
       $$f'(t)=u'(t)v(t)+u(t)v'(t).$$
