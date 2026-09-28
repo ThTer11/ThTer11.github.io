@@ -83,11 +83,13 @@ export default function VariationTableEditor({
               <ResizeHandle
                 className="variation-label-resize"
                 axis="x"
+                label={labelFor("resize", "Redimensionner")}
             onResize={(delta) => updateTable((current) => ({ ...current, labelColumnWidth: Math.max(8, Math.min(20, (current.labelColumnWidth || 11) + delta / 16)) }))}
               />
               <ResizeHandle
                 className="variation-interval-resize"
                 axis="x"
+                label={labelFor("resize", "Redimensionner")}
             onResize={(delta) => updateTable((current) => ({ ...current, intervalWidth: Math.max(7, Math.min(16, (current.intervalWidth || 9.5) + delta / 16)) }))}
               />
               <div className="variation-label-cell variation-header-label">
@@ -174,7 +176,7 @@ function VariationPropertiesPanel({ table, selected, labels, labelFor, updateCol
   if (!selected) {
     return (
       <div className="showcase-panel tikz-variation-properties">
-        <span className="tikz-muted">Cliquer une valeur, un signe, une flèche ou un nom de ligne pour modifier ses options.</span>
+        <span className="tikz-muted">{labelFor("selectionHelp", "Cliquer une valeur, un signe, une flèche ou un nom de ligne pour modifier ses options.")}</span>
       </div>
     );
   }
@@ -253,7 +255,7 @@ function VariationPropertiesPanel({ table, selected, labels, labelFor, updateCol
           <div className="tikz-variation-quick-actions">
             {["$+$", "$-$", "$0$", ""].map((value) => (
               <button type="button" className="tikz-pill" key={value || "empty"} onClick={() => updateInterval(row.id, selected.index, { value })}>
-                <ButtonMathLabel value={value || "vide"} />
+                <ButtonMathLabel value={value || labelFor("emptyLabel", "vide")} />
               </button>
             ))}
           </div>
@@ -365,6 +367,7 @@ function VariationVisualRow({ row, columns, labels, labelFor, intervalCount, upd
         <ResizeHandle
           className="variation-row-resize"
           axis="y"
+          label={labelFor("resize", "Redimensionner")}
           onResize={(delta) => updateRow(row.id, { height: Math.max(row.type === "variation" ? 6.2 : 4.3, Math.min(14, (row.height || (row.type === "variation" ? 8.2 : 5.2)) + delta / 16)) })}
         />
       </div>
@@ -372,7 +375,7 @@ function VariationVisualRow({ row, columns, labels, labelFor, intervalCount, upd
   );
 }
 
-function ResizeHandle({ className, axis, onResize }) {
+function ResizeHandle({ className, axis, label, onResize }) {
   const startDrag = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -392,7 +395,7 @@ function ResizeHandle({ className, axis, onResize }) {
     window.addEventListener("pointerup", handleUp);
   };
 
-  return <button type="button" className={`variation-resize-handle ${className}`} onPointerDown={startDrag} aria-label="Redimensionner" />;
+  return <button type="button" className={`variation-resize-handle ${className}`} onPointerDown={startDrag} aria-label={label} />;
 }
 
 function VariationArrowLayer({ row, columns, intervalCount, labelFor, updateInterval }) {

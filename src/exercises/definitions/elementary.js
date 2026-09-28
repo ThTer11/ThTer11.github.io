@@ -605,7 +605,7 @@ function multiplicationQuestion(difficulty, rng, exerciseLevel = null) {
       "Deux facteurs de même signe donnent un produit positif ; deux facteurs de signes contraires donnent un produit négatif.",
       "Factors with the same sign give a positive product; factors with different signs give a negative product.",
     ),
-    courseHintIds: ["elementary-multiplication-strategies"],
+    courseHintIds: [],
   };
 }
 
@@ -1633,7 +1633,6 @@ function fractionQuestion(
 
   return {
     courseHintIds: [
-      "elementary-fractions",
     ],
 
     insight:
@@ -2443,7 +2442,7 @@ const guidedMethodsTool = {
           "By associativity, $$199+347-99=(199-99)+347=447.$$",
         ),
         insight: translated("L'ordre des additions peut être choisi pour faire apparaître des nombres ronds.", "Reorder additions to create round numbers."),
-        courseHintIds: ["elementary-addition-strategies"],
+        courseHintIds: [],
       },
       {
         id: "product-48-25",
@@ -3078,7 +3077,7 @@ function linearEquationQuestion(difficulty, rng) {
       `After isolating ${coefficient}x, divide by ${coefficient} and reduce: $$x=${expected.toLatex()}.$$`,
     ),
     insight: translated("Garde la valeur exacte sous forme de fraction : aucune approximation décimale n'est nécessaire.", "Keep the exact fractional value; no decimal approximation is needed."),
-    courseHintIds: ["elementary-linear-equations", "elementary-fractions"],
+    courseHintIds: [],
   };
 }
 

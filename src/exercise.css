@@ -1615,8 +1615,12 @@
 }
 
 .exercise-feedback-next{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   min-width:10.5rem;
   margin-left:auto;
+  text-align:center;
 }
 
 @keyframes exercise-feedback-in{
@@ -2538,7 +2542,9 @@
 .dark .exercise-study-hint strong{color:#93c5fd}
 
 .exercise-course-modal{
-  width:min(720px,100%);
+  width:min(960px,calc(100vw - 2rem));
+  overflow-x:hidden;
+  overflow-y:auto;
 }
 
 .exercise-course-modal .showcase-modal-header{
@@ -2565,6 +2571,7 @@
 
 .exercise-course-content{
   display:grid;
+  min-width:0;
   gap:.8rem;
   padding:1rem 1.25rem 1.25rem;
 }
@@ -2579,6 +2586,7 @@
 
 .exercise-course-overview-item{
   display:grid;
+  min-width:0;
   gap:.7rem;
   border-top:1px solid rgba(148,163,184,.2);
   padding-top:1rem;
@@ -2594,16 +2602,34 @@
 
 .exercise-course-overview-blocks{
   display:grid;
+  min-width:0;
   gap:.65rem;
 }
 
 .exercise-course-block{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
   border:1px solid rgba(148,163,184,.2);
   border-radius:1rem;
   background:rgba(255,255,255,.7);
   color:#334155;
   padding:1rem;
   line-height:1.7;
+}
+
+.exercise-course-block .responsive-math{
+  min-width:0;
+  max-width:100%;
+}
+
+.exercise-course-block .rich-content-math-display,
+.exercise-course-block .rich-content-math-wide{
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
 }
 
 .exercise-course-block-formula,
@@ -2950,14 +2976,15 @@
   }
 
   .exercise-question-prompt[data-mobile-layout="stack"] .exercise-question-action{
-    width:max-content;
+    width:auto;
+    max-width:100%;
   }
 
   .exercise-question-prompt[data-mobile-layout="stack"] .exercise-question-detail{
     display:block;
     overflow:visible;
-    font-size:.72rem;
-    line-height:1.32;
+    font-size:.85rem;
+    line-height:1.4;
     -webkit-line-clamp:unset;
   }
 
@@ -3799,4 +3826,14 @@
   border-color:rgba(148,163,184,.3);
   background:#1e293b;
   color:#e2e8f0;
+}
+
+/* Short numbered corrections: separate steps without nested cards. */
+.exercise-feedback-details .responsive-math>section+section{
+  margin-top:1rem;
+}
+.exercise-feedback-details .responsive-math>section>h4{
+  font-size:.92rem;
+  font-weight:750;
+  margin-bottom:.35rem;
 }

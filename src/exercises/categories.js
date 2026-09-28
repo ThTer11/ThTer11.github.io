@@ -19,6 +19,16 @@ export const exerciseCategories = [
     audience: "",
     accent: "cobalt",
   },
+  {
+    id: "equations-differentielles",
+    title: { fr: "Équations différentielles", en: "Differential equations" },
+    description: {
+      fr: "Équations linéaires d’ordre 1, solutions générales et conditions initiales.",
+      en: "First-order linear equations, general solutions and initial conditions.",
+    },
+    audience: "",
+    accent: "gold",
+  },
   // {
   //   id: "second-degre",
   //   title: { fr: "Équations du second degré", en: "Quadratic equations" },

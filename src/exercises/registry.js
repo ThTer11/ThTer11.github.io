@@ -1,3 +1,5 @@
+import { differentialEquationsTools } from "./definitions/differentialEquations";
+import { differentialEquationsCourseHints } from "./content/differentialEquationsHints";
 import exerciseCategories from "./categories";
 import { elementaryTools } from "./definitions/elementary";
 import { calculusTools } from "./definitions/calculus";
@@ -11,6 +13,7 @@ import { matrixCourseHints } from "./content/matrixHints";
 import { systemCourseHints } from "./content/systemHints";
 
 export const exerciseTools = [
+  ...differentialEquationsTools,
   ...elementaryTools,
   ...calculusTools,
   ...quadraticTools,
@@ -19,6 +22,7 @@ export const exerciseTools = [
 ];
 
 export const courseHints = [
+  ...differentialEquationsCourseHints,
   ...elementaryCourseHints,
   ...calculusCourseHints,
   ...quadraticCourseHints,

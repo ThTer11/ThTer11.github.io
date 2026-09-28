@@ -988,7 +988,7 @@ export default function TikzEditor() {
               </button>
               <label className="tikz-inline-select">
                 <span>{tt.segments}</span>
-                <ArrowPicker value={segmentArrow} onChange={setSegmentArrow} />
+                <ArrowPicker value={segmentArrow} onChange={setSegmentArrow} label={tt.segments} />
               </label>
             </div>
           )}
@@ -1039,7 +1039,7 @@ export default function TikzEditor() {
                 className="tikz-canvas"
                 viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
                 role="img"
-                aria-label="Zone de dessin TikZ"
+                aria-label={tt.canvasLabel}
                 onClick={handleCanvasClick}
                 onPointerDown={handleCanvasPointerDown}
                 onPointerMove={handlePointerMove}
@@ -1453,9 +1453,9 @@ function FieldLabel({ math, text }) {
   );
 }
 
-function ArrowPicker({ value, onChange }) {
+function ArrowPicker({ value, onChange, label }) {
   return (
-    <div className="tikz-arrow-picker" role="group" aria-label="Flèche du segment">
+    <div className="tikz-arrow-picker" role="group" aria-label={label}>
       {ARROW_OPTIONS.map((option) => (
         <button
           type="button"
@@ -1470,9 +1470,9 @@ function ArrowPicker({ value, onChange }) {
   );
 }
 
-function MarkPicker({ value, onChange }) {
+function MarkPicker({ value, onChange, label }) {
   return (
-    <div className="tikz-mark-picker" role="group" aria-label="Marques au milieu du segment">
+    <div className="tikz-mark-picker" role="group" aria-label={label}>
       {SEGMENT_MARK_OPTIONS.map((option) => (
         <button
           type="button"
@@ -1664,7 +1664,7 @@ function ObjectEditor({ selection, selectionGroup, object, updateSelected, updat
           )}
           <label className="tikz-field-label">
             {e.arrow}
-            <ArrowPicker value={object.arrow || ""} onChange={(arrow) => updateSelected({ arrow })} />
+            <ArrowPicker value={object.arrow || ""} onChange={(arrow) => updateSelected({ arrow })} label={e.arrow} />
           </label>
           <div className="tikz-two-cols">
             <label className="tikz-field-label">
@@ -1686,7 +1686,7 @@ function ObjectEditor({ selection, selectionGroup, object, updateSelected, updat
           </label>
           <label className="tikz-field-label">
             {e.midMarks}
-            <MarkPicker value={object.midMark || ""} onChange={(midMark) => updateSelected({ midMark })} />
+            <MarkPicker value={object.midMark || ""} onChange={(midMark) => updateSelected({ midMark })} label={e.midMarks} />
           </label>
           {object.midMark && (
             <label className="tikz-field-label">

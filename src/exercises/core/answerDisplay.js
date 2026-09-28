@@ -1,3 +1,4 @@
+import { odeAnswerToLatex } from "../math/differentialEquations";
 import { calculusExpressionToLatex } from "../math/calculus";
 import { localize } from "./localize";
 
@@ -31,7 +32,9 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
   }
   try {
     let latex;
-    if (type === "matrix" || (Array.isArray(value) && Array.isArray(value[0]))) {
+    if (question.validationMode === "ode") {
+      latex = odeAnswerToLatex(value);
+    } else if (type === "matrix" || (Array.isArray(value) && Array.isArray(value[0]))) {
       latex = `\\begin{pmatrix}${value.map((row) => row.map(expression).join(" & ")).join(" \\\\ ")}\\end{pmatrix}`;
     } else if (["vector", "coordinates", "solution-set"].includes(type) || Array.isArray(value)) {
       const entries = value.map(expression).join(";\\,");
