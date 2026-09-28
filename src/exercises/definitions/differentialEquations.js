@@ -41,8 +41,8 @@ function coefficient(level, rng) {
       const intervalPrimitive = mul(k, `ln(${positiveDistance})`);
       h = `(${positiveDistance})^(${-k})`;
       work = tr(
-        `Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(A)}=${tex(intervalPrimitive)}.$$`,
-        `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(A)}=${tex(intervalPrimitive)}.$$`,
+        `Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(A)}=${tex(opposite(intervalPrimitive))}.$$`,
+        `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(A)}=${tex(opposite(intervalPrimitive))}.$$`,
       );
     } else if (kind === "root") {
       a = `${k}/sqrt(t)`;
@@ -75,7 +75,7 @@ function coefficient(level, rng) {
     if (kind === "chain-sin") {
       a = mul(2 * k, "t*cos(t^2)");
       A = mul(k, "sin(t^2)");
-      const pattern = scaledPattern(k, "u'\\cos(u)");
+      const pattern = scaledPattern(-k, "u'\\cos(u)");
       work = tr(
         `On reconnaît une forme composée du type $${pattern}$ avec $u:t\\mapsto t^2$. Une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`,
         `Recognise the composite form $${pattern}$ with $u:t\\mapsto t^2$. Therefore an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`,
@@ -83,7 +83,7 @@ function coefficient(level, rng) {
     } else if (kind === "chain-exp") {
       a = mul(k * r, `exp(${mul(r, "t")})`);
       A = mul(k, `exp(${mul(r, "t")})`);
-      const pattern = scaledPattern(k, "u'e^u");
+      const pattern = scaledPattern(-k, "u'e^u");
       work = tr(
         `On reconnaît une forme composée du type $${pattern}$ avec $u:t\\mapsto ${tex(mul(r, "t"))}$. Une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`,
         `Recognise the composite form $${pattern}$ with $u:t\\mapsto ${tex(mul(r, "t"))}$. Therefore an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`,
@@ -92,7 +92,7 @@ function coefficient(level, rng) {
       const d = randomInteger(1, 4, rng);
       a = `${2 * k}*t/(t^2+${d})`;
       A = mul(k, `ln(t^2+${d})`);
-      const pattern = scaledPattern(k, "\\frac{u'}{u}");
+      const pattern = scaledPattern(-k, "\\frac{u'}{u}");
       work = tr(
         `On reconnaît une forme composée du type $${pattern}$ avec $u:t\\mapsto t^2+${d}$. Une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`,
         `Recognise the composite form $${pattern}$ with $u:t\\mapsto t^2+${d}$. Therefore an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`,
@@ -116,10 +116,10 @@ function coefficient(level, rng) {
       work = tr(
         `On intègre par parties avec $u:t\\mapsto t$ et $v':t\\mapsto ${tex(vp)}$. Ainsi,
 $$\\int t\\,${tex(vp)}\\,dt=t\\,${tex(v)}-\\int ${tex(v)}\\,dt.$$
-Après multiplication par $${k}$, une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`,
+On en déduit qu’une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`,
         `Integrate by parts with $u:t\\mapsto t$ and $v':t\\mapsto ${tex(vp)}$. Thus,
 $$\\int t\\,${tex(vp)}\\,dt=t\\,${tex(v)}-\\int ${tex(v)}\\,dt.$$
-After multiplying by $${k}$, an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`,
+It follows that an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`,
       );
     }
   }

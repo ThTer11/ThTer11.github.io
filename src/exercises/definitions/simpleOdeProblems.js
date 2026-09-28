@@ -41,7 +41,7 @@ export function simpleForcingProblem(level, rng) {
       base.interval = `]${c},+\\infty[`;
       base.t0 = c + 1;
       base.points = [.19, .41, .67, 1, 1.31, 1.79, 2.17].map((value) => c + value);
-      work = tr(`Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(`ln(abs(${z}))`)}=${tex(A)}.$$`, `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(`ln(abs(${z}))`)}=${tex(A)}.$$`);
+      work = tr(`Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(opposite(`ln(abs(${z}))`))}=${tex(opposite(A))}.$$`, `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(opposite(`ln(abs(${z}))`))}=${tex(opposite(A))}.$$`);
     } else {
       const k = kind === "linear" ? pickRandom([-4, -2, 2, 4], rng) : nz(rng);
       if (kind === "linear") {
@@ -78,7 +78,8 @@ export function simpleForcingProblem(level, rng) {
     } else if (kind === "composition") {
       a = mul(2 * k, "t*cos(t^2)");
       A = mul(k, "sin(t^2)");
-      const pattern = k === 1 ? "u'\\cos(u)" : k === -1 ? "-u'\\cos(u)" : `${k}u'\\cos(u)`;
+      const resolvedK = -k;
+      const pattern = resolvedK === 1 ? "u'\\cos(u)" : resolvedK === -1 ? "-u'\\cos(u)" : `${resolvedK}u'\\cos(u)`;
       work = tr(`On reconnaît une forme composée du type $${pattern}$ avec $u:t\\mapsto t^2$. Une primitive de $a:t\\mapsto ${tex(a)}$ est donc $$A:t\\mapsto ${tex(A)}.$$`, `Recognise the composite form $${pattern}$ with $u:t\\mapsto t^2$. Therefore an antiderivative of $a:t\\mapsto ${tex(a)}$ is $$A:t\\mapsto ${tex(A)}.$$`);
     } else {
       a = mul(k, "t*cos(t)");
@@ -110,7 +111,7 @@ export function simpleForcingProblem(level, rng) {
     b = String(m * (k + 1));
     form = `M(${z})`;
     parameters = parameterValues([{ name: "M", value: String(m) }]);
-    work = tr(`Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(A)}=${tex(intervalPrimitive)}.$$`, `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(A)}=${tex(intervalPrimitive)}.$$`);
+    work = tr(`Sur $I$, une primitive de $a:t\\mapsto ${tex(a)}$ s’écrit $$A:t\\mapsto ${tex(A)}=${tex(opposite(intervalPrimitive))}.$$`, `On $I$, an antiderivative of $a:t\\mapsto ${tex(a)}$ can be written as $$A:t\\mapsto ${tex(A)}=${tex(opposite(intervalPrimitive))}.$$`);
   } else {
     const k = nz(rng);
     p = String(m);
