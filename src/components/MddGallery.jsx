@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
     ArrowsPointingOutIcon,
-    MinusIcon, PlusIcon, XMarkIcon,
+    XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 const MDD_STATE_KEY = "home-mdd-state";
@@ -25,6 +25,8 @@ function readStoredState() {
 function DiagramViewport({ item, showDual, labels, diagramLabel, dualLabel, onExpand }) {
     const frameRef = useRef(null);
     const dragRef = useRef(null);
+    const pointersRef = useRef(new Map());
+    const pinchRef = useRef(null);
     const centerRef = useRef(null);
     const [zoom, setZoom] = useState(1);
     const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
@@ -50,8 +52,8 @@ function DiagramViewport({ item, showDual, labels, diagramLabel, dualLabel, onEx
         const frame = frameRef.current;
         const center = centerRef.current;
         if (center) {
-            frame.scrollLeft = center.x * frame.scrollWidth - frame.clientWidth / 2;
-            frame.scrollTop = center.y * frame.scrollHeight - frame.clientHeight / 2;
+            frame.scrollLeft = center.x * frame.scrollWidth - center.offsetX;
+            frame.scrollTop = center.y * frame.scrollHeight - center.offsetY;
             centerRef.current = null;
         } else if (zoom === 1) {
             frame.scrollLeft = 0;
@@ -59,17 +61,35 @@ function DiagramViewport({ item, showDual, labels, diagramLabel, dualLabel, onEx
         }
     }, [zoom, width, height]);
 
-    const changeZoom = (value) => {
+    const changeZoom = (value, point) => {
         const frame = frameRef.current;
+        const nextZoom = Math.min(8, Math.max(1, value));
+        if (!frame || !imageSize || nextZoom === zoom) return;
+        const rect = frame.getBoundingClientRect();
+        const offsetX = point ? point.x - rect.left : frame.clientWidth / 2;
+        const offsetY = point ? point.y - rect.top : frame.clientHeight / 2;
         centerRef.current = {
-            x: (frame.scrollLeft + frame.clientWidth / 2) / frame.scrollWidth,
-            y: (frame.scrollTop + frame.clientHeight / 2) / frame.scrollHeight,
+            x: (frame.scrollLeft + offsetX) / Math.max(frame.scrollWidth, 1),
+            y: (frame.scrollTop + offsetY) / Math.max(frame.scrollHeight, 1),
+            offsetX,
+            offsetY,
         };
-        setZoom(Math.min(8, Math.max(1, value)));
+        setZoom(nextZoom);
     };
     const endDrag = () => {
         dragRef.current = null;
         frameRef.current?.classList.remove("is-dragging");
+    };
+    const finishPointer = (event) => {
+        pointersRef.current.delete(event.pointerId);
+        pinchRef.current = null;
+        endDrag();
+        if (pointersRef.current.size === 1 && zoom > 1) {
+            const [pointerId, point] = [...pointersRef.current.entries()][0];
+            const frame = frameRef.current;
+            dragRef.current = { pointerId, x: point.x, y: point.y, left: frame.scrollLeft, top: frame.scrollTop };
+            frame.classList.add("is-dragging");
+        }
     };
 
     return (
@@ -81,22 +101,71 @@ function DiagramViewport({ item, showDual, labels, diagramLabel, dualLabel, onEx
                 role="region"
                 aria-label={`${item.label} — ${showDual ? dualLabel : diagramLabel}. ${labels.pan}`}
                 onPointerDown={(event) => {
-                    if (event.pointerType !== "mouse" || event.button !== 0 || zoom <= 1) return;
                     const frame = frameRef.current;
+                    if (event.pointerType === "touch") {
+                        pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                        frame.setPointerCapture(event.pointerId);
+                        if (pointersRef.current.size === 2) {
+                            const [first, second] = [...pointersRef.current.values()];
+                            pinchRef.current = { distance: Math.hypot(second.x - first.x, second.y - first.y), zoom };
+                            endDrag();
+                        } else if (zoom > 1) {
+                            dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: frame.scrollLeft, top: frame.scrollTop };
+                            frame.classList.add("is-dragging");
+                        }
+                        return;
+                    }
+                    if (event.pointerType !== "mouse" || event.button !== 0 || zoom <= 1) return;
                     event.preventDefault();
                     frame.setPointerCapture(event.pointerId);
-                    dragRef.current = { x: event.clientX, y: event.clientY, left: frame.scrollLeft, top: frame.scrollTop };
+                    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: frame.scrollLeft, top: frame.scrollTop };
                     frame.classList.add("is-dragging");
                 }}
                 onPointerMove={(event) => {
+                    if (event.pointerType === "touch" && pointersRef.current.has(event.pointerId)) {
+                        pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                        if (pointersRef.current.size >= 2) {
+                            event.preventDefault();
+                            const [first, second] = [...pointersRef.current.values()];
+                            const distance = Math.hypot(second.x - first.x, second.y - first.y);
+                            if (pinchRef.current?.distance) {
+                                changeZoom(pinchRef.current.zoom * distance / pinchRef.current.distance, {
+                                    x: (first.x + second.x) / 2,
+                                    y: (first.y + second.y) / 2,
+                                });
+                            }
+                            return;
+                        }
+                    }
                     const drag = dragRef.current;
-                    if (!drag) return;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    event.preventDefault();
                     frameRef.current.scrollLeft = drag.left - (event.clientX - drag.x);
                     frameRef.current.scrollTop = drag.top - (event.clientY - drag.y);
                 }}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
-                onLostPointerCapture={endDrag}
+                onPointerUp={finishPointer}
+                onPointerCancel={finishPointer}
+                onLostPointerCapture={finishPointer}
+                onWheel={(event) => {
+                    if (!imageSize || (!event.ctrlKey && !event.metaKey)) return;
+                    event.preventDefault();
+                    changeZoom(zoom * Math.exp(-event.deltaY * .01), { x: event.clientX, y: event.clientY });
+                }}
+                onDoubleClick={(event) => changeZoom(zoom > 1 ? 1 : 2, { x: event.clientX, y: event.clientY })}
+                onKeyDown={(event) => {
+                    if (["+", "="].includes(event.key)) changeZoom(zoom + .5);
+                    else if (event.key === "-") changeZoom(zoom - .5);
+                    else if (event.key === "0") changeZoom(1);
+                    else if (event.key.startsWith("Arrow")) {
+                        event.preventDefault();
+                        const distance = 48;
+                        frameRef.current.scrollBy({
+                            left: event.key === "ArrowLeft" ? -distance : event.key === "ArrowRight" ? distance : 0,
+                            top: event.key === "ArrowUp" ? -distance : event.key === "ArrowDown" ? distance : 0,
+                        });
+                    } else return;
+                    event.preventDefault();
+                }}
             >
                 {!imageSize && !failed && <p className="home-mdd-image-status" role="status">{labels.loading}</p>}
                 {failed ? (
@@ -115,14 +184,11 @@ function DiagramViewport({ item, showDual, labels, diagramLabel, dualLabel, onEx
                     </div>
                 )}
             </div>
-            <div className="home-mdd-viewer-footer">
-                <div className="home-mdd-zoom-controls" role="group" aria-label={labels.zoom}>
-                    <button type="button" onClick={() => changeZoom(zoom - .5)} disabled={zoom <= 1 || !imageSize} aria-label={labels.zoomOut} title={labels.zoomOut}><MinusIcon /></button>
-                    <button type="button" onClick={() => changeZoom(1)} className="home-mdd-fit" title={labels.fit} aria-label={labels.fit}>{zoom === 1 ? labels.fit : `${Math.round(zoom * 100)} %`}</button>
-                    <button type="button" onClick={() => changeZoom(zoom + .5)} disabled={zoom >= 8 || !imageSize} aria-label={labels.zoomIn} title={labels.zoomIn}><PlusIcon /></button>
+            {onExpand && (
+                <div className="home-mdd-viewer-footer">
+                    <button type="button" className="home-mdd-expand" onClick={onExpand}><ArrowsPointingOutIcon />{labels.expand}</button>
                 </div>
-                {onExpand && <button type="button" className="home-mdd-expand" onClick={onExpand}><ArrowsPointingOutIcon />{labels.expand}</button>}
-            </div>
+            )}
         </div>
     );
 }
