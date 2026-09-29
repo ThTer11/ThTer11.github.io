@@ -71,6 +71,8 @@ export function normalizeCalculusInput(rawValue) {
     .replace(/\$/g, "")
     .replace(/\\(?:dfrac|tfrac)/g, "\\frac")
     .replace(/\\operatorname\s*\{(exp|ln|log|sin|cos|sqrt|abs)\}/gi, "$1")
+    .replace(/([0-9a-z)\]}])\s*\\mathrm\s*\{?e\}?/gi, "$1*e")
+    .replace(/([0-9a-z)\]}])\s*\\(sin|cos|exp|ln|log|sqrt)\b/gi, "$1*\\$2")
     .replace(/\\mathrm\s*\{?e\}?/gi, "e")
     .replace(/\\left|\\right/g, "")
     .replace(/\\(?:cdot|times)/g, "*")

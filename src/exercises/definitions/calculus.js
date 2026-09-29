@@ -1,5 +1,5 @@
 import { pickRandom, randomInteger, weightedPick } from "../core/random";
-import { validateCalculusAnswer } from "../math/calculus";
+import { evaluateCalculusExpression, validateCalculusAnswer } from "../math/calculus";
 
 const CATEGORY_ID = "analyse";
 const translated = (fr, en) => ({ fr, en: en ?? fr });
@@ -24,7 +24,6 @@ const promptUi = {
   derivativeQuotient: derivativePrompt,
   derivativeComposition: derivativePrompt,
   primitiveUsual: primitivePrompt,
-  primitiveSum: primitivePrompt,
   primitiveComposition: primitivePrompt,
   primitiveParts: {
     ...primitivePrompt,
@@ -64,6 +63,30 @@ function scaledTerm(coefficient, plainBody = "", latexBody = plainBody) {
     : String(absolute);
 
   return { coefficient, plainMagnitude, latexMagnitude };
+}
+
+function rationalScaledTerm(numerator, denominator, plainBody, latexBody = plainBody) {
+  const isWhole = Math.abs(numerator) % denominator === 0;
+  const reducedNumerator = isWhole ? numerator / denominator : numerator;
+  const reducedDenominator = isWhole ? 1 : denominator;
+
+  if (reducedDenominator === 1) {
+    return scaledTerm(reducedNumerator, plainBody, latexBody);
+  }
+
+  const absoluteNumerator = Math.abs(reducedNumerator);
+  const plainCoefficient = absoluteNumerator === 1
+    ? `1/${reducedDenominator}`
+    : `${absoluteNumerator}/${reducedDenominator}`;
+  const latexCoefficient = absoluteNumerator === 1
+    ? `\\frac{1}{${reducedDenominator}}`
+    : `\\frac{${absoluteNumerator}}{${reducedDenominator}}`;
+
+  return {
+    coefficient: reducedNumerator,
+    plainMagnitude: `${plainCoefficient}*${plainBody}`,
+    latexMagnitude: `${latexCoefficient}${latexBody}`,
+  };
 }
 
 function joinTerms(terms) {
@@ -222,6 +245,9 @@ function primitiveQuestion({
     },
     expected: primitive.plain,
     sourceExpression: integrand.plain,
+    integrandExpression: integrand,
+    primitiveExpression: primitive,
+    domain,
     answerDisplay: `$$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     explanation,
     hints,
@@ -238,6 +264,7 @@ function uniquePrimitiveQuestion({
   primitive,
   conditionPoint,
   conditionValue,
+  conditionValueDisplay = conditionValue,
   explanation,
   hints = [],
   courseHintIds,
@@ -254,8 +281,8 @@ function uniquePrimitiveQuestion({
     promptUi: {
       ...promptUi.initialCondition,
       label: translated(
-        `Déterminer la primitive $F$ de $f$ sur $I=${domain}$ telle que $F(${conditionPoint})=${conditionValue}$.`,
-        `Find the antiderivative $F$ of $f$ on $I=${domain}$ such that $F(${conditionPoint})=${conditionValue}$.`,
+        `Déterminer la primitive $F$ de $f$ sur $I=${domain}$ telle que $F(${conditionPoint})=${conditionValueDisplay}$.`,
+        `Find the antiderivative $F$ of $f$ on $I=${domain}$ such that $F(${conditionPoint})=${conditionValueDisplay}$.`,
       ),
     },
     expected: primitive.plain,
@@ -877,43 +904,107 @@ function usualPrimitive(rng) {
   });
 }
 
-function sumPrimitive(rng) {
-  const exponent = randomInteger(1, 4, rng);
-  const polynomialMultiplier = randomNonZero(-3, 3, rng);
-  const exponentialCoefficient = randomNonZero(-5, 5, rng);
-  const trigCoefficient = randomNonZero(-4, 4, rng);
-  const integrand = joinTerms([
-    scaledTerm(polynomialMultiplier * (exponent + 1), powerBody(exponent).plain, powerBody(exponent).latex),
-    scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(trigCoefficient, "cos(t)", "\\cos(t)"),
-  ]);
-  const primitive = joinTerms([
-    scaledTerm(polynomialMultiplier, powerBody(exponent + 1).plain, powerBody(exponent + 1).latex),
-    scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(trigCoefficient, "sin(t)", "\\sin(t)"),
-  ]);
+function composedPrimitive(rng, { conditionFriendly = false } = {}) {
+  const kind = pickRandom([
+    "exp-sine", "exp-sine", "exp-sine",
+    "exp-cosine",
+    "quadratic-cosine", "quadratic-cosine", "quadratic-cosine",
+    "quadratic-exponential", "quadratic-exponential",
+    "power", "exponential", "cos", "sin", "log", "sqrt",
+  ], rng);
+  const rawMultiplier = randomNonZero(-3, 3, rng);
+  const multiplier = conditionFriendly && kind === "quadratic-exponential" && Math.abs(rawMultiplier) % 2 === 1
+    ? 2 * Math.sign(rawMultiplier)
+    : rawMultiplier;
 
-  return primitiveQuestion({
-    variant: "sum",
-    integrand,
-    primitive,
-    ui: promptUi.primitiveSum,
-    explanation: translated(
-      `Par linéarité, on cherche une primitive de chaque terme séparément. On obtient
-      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
-      `By linearity, integrate each term separately. Thus
-      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
-    ),
-    hints: [],
-    courseHintIds: [],
-  });
-}
+  if (kind === "exp-sine" || kind === "exp-cosine") {
+    const isSine = kind === "exp-sine";
+    const nestedInnerPlain = conditionFriendly ? "exp(t)-1" : "exp(t)";
+    const nestedInnerLatex = conditionFriendly ? "\\mathrm e^t-1" : "\\mathrm e^t";
+    const outerPlain = `${isSine ? "sin" : "cos"}(${nestedInnerPlain})`;
+    const outerLatex = `\\${isSine ? "sin" : "cos"}(${nestedInnerLatex})`;
+    const primitivePlain = `${isSine ? "cos" : "sin"}(${nestedInnerPlain})`;
+    const primitiveLatex = `\\${isSine ? "cos" : "sin"}(${nestedInnerLatex})`;
+    const primitiveCoefficient = isSine ? -multiplier : multiplier;
+    const integrand = joinTerms([
+      scaledTerm(multiplier, `exp(t)*${outerPlain}`, `\\mathrm e^t${outerLatex}`),
+    ]);
+    const primitive = joinTerms([
+      scaledTerm(primitiveCoefficient, primitivePlain, primitiveLatex),
+    ]);
 
-function composedPrimitive(rng) {
-  const kind = pickRandom(["power", "exponential", "cos", "sin", "log", "sqrt"], rng);
-  const a = kind === "sqrt" || kind === "log" ? randomInteger(1, 4, rng) : randomNonZero(-4, 4, rng);
-  const multiplier = randomNonZero(-3, 3, rng);
-  let b = randomInteger(-6, 6, rng);
+    return primitiveQuestion({
+      variant: isSine ? "composition-exp-sine" : "composition-exp-cosine",
+      integrand,
+      primitive,
+      ui: promptUi.primitiveComposition,
+      explanation: reverseChainExplanation({
+        factor: multiplier,
+        inner: nestedInnerLatex,
+        innerDerivative: "\\mathrm e^t",
+        outer: isSine ? "\\sin(x)" : "\\cos(x)",
+        outerPrimitive: isSine ? "-\\cos(x)" : "\\sin(x)",
+        result: primitive.latex,
+      }),
+      courseHintIds: [],
+    });
+  }
+
+  if (kind === "quadratic-cosine" || kind === "quadratic-exponential") {
+    const randomOffset = randomInteger(-4, 4, rng);
+    const offset = conditionFriendly ? 0 : randomOffset;
+    const innerPlain = offset === 0 ? "t^2" : `t^2${offset > 0 ? "+" : ""}${offset}`;
+    const innerLatex = offset === 0 ? "t^2" : `t^2${offset > 0 ? "+" : ""}${offset}`;
+    const isCosine = kind === "quadratic-cosine";
+    const outerPlain = isCosine ? `cos(${innerPlain})` : `exp(${innerPlain})`;
+    const outerLatex = isCosine ? `\\cos(${innerLatex})` : `\\mathrm e^{${innerLatex}}`;
+    const primitive = joinTerms([
+      rationalScaledTerm(
+        multiplier,
+        2,
+        isCosine ? `sin(${innerPlain})` : outerPlain,
+        isCosine ? `\\sin(${innerLatex})` : outerLatex,
+      ),
+    ]);
+    const integrand = joinTerms([
+      scaledTerm(multiplier, `t*${outerPlain}`, `t${outerLatex}`),
+    ]);
+    const transformedIntegrand = joinTerms([
+      rationalScaledTerm(multiplier, 2, "u'(t)*phi(u(t))", "u'(t)\\,\\varphi(u(t))"),
+    ]);
+
+    return primitiveQuestion({
+      variant: isCosine ? "composition-quadratic-cosine" : "composition-quadratic-exponential",
+      integrand,
+      primitive,
+      ui: promptUi.primitiveComposition,
+      explanation: translated(
+        `On pose $u(t)=${innerLatex}$. Alors $u'(t)=2t$ et
+        $$f(t)=${transformedIntegrand.latex},$$
+        où $\\varphi(x)=${isCosine ? "\\cos(x)" : "\\mathrm e^x"}$. Une primitive de $\\varphi$ est $\\Phi(x)=${isCosine ? "\\sin(x)" : "\\mathrm e^x"}$, donc
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
+        `Let $u(t)=${innerLatex}$. Then $u'(t)=2t$ and
+        $$f(t)=${transformedIntegrand.latex},$$
+        where $\\varphi(x)=${isCosine ? "\\cos(x)" : "\\mathrm e^x"}$. An antiderivative of $\\varphi$ is $\\Phi(x)=${isCosine ? "\\sin(x)" : "\\mathrm e^x"}$, hence
+        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
+      ),
+      courseHintIds: [],
+    });
+  }
+
+  const randomA = kind === "sqrt" || kind === "log" ? randomInteger(1, 4, rng) : randomNonZero(-4, 4, rng);
+  const a = conditionFriendly && kind === "sqrt"
+    ? 1
+    : conditionFriendly && ["cos", "sin"].includes(kind)
+      ? Math.abs(randomA)
+      : randomA;
+  const randomB = randomInteger(-6, 6, rng);
+  let b = conditionFriendly && kind === "power"
+    ? randomB < 0 ? -1 : 1
+    : conditionFriendly && kind !== "sqrt" && kind !== "log"
+      ? 0
+      : randomB;
+  if (kind === "power" && b === 0 && !conditionFriendly) b = randomNonZero(-6, 6, rng);
   let domain = REAL_DOMAIN;
   let points = DEFAULT_POINTS;
   let inner = linearForms(a, b);
@@ -928,8 +1019,9 @@ function composedPrimitive(rng) {
     points = interval.points;
 
     if (kind === "log") {
-      const positiveArgument = side === "right" ? inner : linearForms(-a, -b);
-      const integrand = { plain: `${multiplier * a}/(${inner.plain})`, latex: `\\frac{${multiplier * a}}{${inner.latex}}` };
+      const denominator = linearForms(1, -root);
+      const positiveArgument = side === "right" ? denominator : linearForms(-1, root);
+      const integrand = { plain: `${multiplier}/(${denominator.plain})`, latex: `\\frac{${multiplier}}{${denominator.latex}}` };
       const primitive = joinTerms([scaledTerm(multiplier, `ln(${positiveArgument.plain})`, `\\ln(${positiveArgument.latex})`)]);
       return primitiveQuestion({
         variant: "composition-logarithm",
@@ -938,8 +1030,8 @@ function composedPrimitive(rng) {
         ui: promptUi.primitiveComposition,
         explanation: reverseChainExplanation({
           factor: multiplier,
-          inner: inner.latex,
-          innerDerivative: a,
+          inner: denominator.latex,
+          innerDerivative: 1,
           outer: "\\dfrac1x",
           outerPrimitive: "\\ln|x|",
           result: primitive.latex,
@@ -952,7 +1044,7 @@ function composedPrimitive(rng) {
   }
 
   if (kind === "power") {
-    const exponent = randomInteger(1, 4, rng);
+    const exponent = randomInteger(2, 4, rng);
     const integrandCoefficient = multiplier * a * (exponent + 1);
     const integrand = joinTerms([scaledTerm(integrandCoefficient, `((${inner.plain})^${exponent})`, latexPower(inner.latex, exponent))]);
     const primitive = joinTerms([scaledTerm(multiplier, `((${inner.plain})^${exponent + 1})`, latexPower(inner.latex, exponent + 1))]);
@@ -1037,50 +1129,39 @@ function composedPrimitive(rng) {
 }
 
 function integrationByPartsPrimitive(rng) {
-  const kind = pickRandom(["exponential", "cos", "sin", "repeated-exponential"], rng);
+  const kind = pickRandom(["exponential", "cos", "sin"], rng);
   const multiplier = randomNonZero(-3, 3, rng);
+  const rawFrequency = randomNonZero(-3, 3, rng);
 
-  if (kind === "repeated-exponential") {
-    const integrand = joinTerms([scaledTerm(multiplier, "t^2*exp(t)", "t^2\\mathrm e^t")]);
-    const primitive = joinTerms([scaledTerm(multiplier, "(t^2-2*t+2)*exp(t)", "(t^2-2t+2)\\mathrm e^t")]);
+  if (kind === "exponential") {
+    const argument = linearForms(rawFrequency, 0);
+    const primitiveFactor = linearForms(multiplier * rawFrequency, -multiplier);
+    const integrand = joinTerms([
+      scaledTerm(
+        multiplier * rawFrequency * rawFrequency,
+        `t*exp(${argument.plain})`,
+        `t\\mathrm e^{${argument.latex}}`,
+      ),
+    ]);
+    const primitive = {
+      plain: `(${primitiveFactor.plain})*exp(${argument.plain})`,
+      latex: `(${primitiveFactor.latex})\\mathrm e^{${argument.latex}}`,
+    };
+
     return primitiveQuestion({
-      variant: "parts-repeated-exponential",
+      variant: "parts-exponential",
       integrand,
       primitive,
       ui: promptUi.primitiveParts,
       explanation: translated(
-        `On pose $u(t)=t^2$ et $v'(t)=\\mathrm e^t$. Alors $u'(t)=2t$ et $v(t)=\\mathrm e^t$. Une première IPP donne
-        $$\\int t^2\\mathrm e^t\\,dt=t^2\\mathrm e^t-\\int 2t\\mathrm e^t\\,dt.$$
-        En appliquant une seconde IPP à la dernière intégrale, on obtient
-        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
-        `Let $u(t)=t^2$ and $v'(t)=\\mathrm e^t$. Then $u'(t)=2t$ and $v(t)=\\mathrm e^t$. A first integration by parts gives
-        $$\\int t^2\\mathrm e^t\\,dt=t^2\\mathrm e^t-\\int 2t\\mathrm e^t\\,dt.$$
-        Applying integration by parts once more gives
-        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
-      ),
-      courseHintIds: [],
-    });
-  }
-
-  const a = randomNonZero(-3, 3, rng);
-  const argument = linearForms(a, 0);
-
-  if (kind === "exponential") {
-    const primitive = joinTerms([scaledTerm(multiplier, `(${a}*t-1)*exp(${argument.plain})`, `(${latexScaled(a, "t")}-1)\\mathrm e^{${argument.latex}}`)]);
-    return primitiveQuestion({
-      variant: "parts-exponential",
-      integrand: { plain: `${multiplier * a * a}*t*exp(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\mathrm e^{${argument.latex}}` },
-      primitive,
-      ui: promptUi.primitiveParts,
-      explanation: translated(
         `On pose $u(t)=t$ et $v'(t)=\\mathrm e^{${argument.latex}}$. Alors $u'(t)=1$ et
-        $$v(t)=\\frac{\\mathrm e^{${argument.latex}}}{${latexSignedNumber(a)}}.$$
+        $$v(t)=\\frac{\\mathrm e^{${argument.latex}}}{${latexSignedNumber(rawFrequency)}}.$$
         Par intégration par parties,
         $$\\int uv'=uv-\\int u'v,$$
         d'où
         $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Let $u(t)=t$ and $v'(t)=\\mathrm e^{${argument.latex}}$. Then $u'(t)=1$ and
-        $$v(t)=\\frac{\\mathrm e^{${argument.latex}}}{${latexSignedNumber(a)}}.$$
+        $$v(t)=\\frac{\\mathrm e^{${argument.latex}}}{${latexSignedNumber(rawFrequency)}}.$$
         By integration by parts,
         $$\\int uv'=uv-\\int u'v,$$
         hence
@@ -1090,26 +1171,36 @@ function integrationByPartsPrimitive(rng) {
     });
   }
 
+  const frequency = Math.abs(rawFrequency);
+  const argument = linearForms(frequency, 0);
+
   if (kind === "cos") {
-    const innerPrimitive = joinTerms([
-      scaledTerm(a, `t*sin(${argument.plain})`, `t\\sin(${argument.latex})`),
-      scaledTerm(1, `cos(${argument.plain})`, `\\cos(${argument.latex})`),
+    const integrand = joinTerms([
+      scaledTerm(
+        multiplier * frequency * frequency,
+        `t*cos(${argument.plain})`,
+        `t\\cos(${argument.latex})`,
+      ),
     ]);
-    const primitive = joinTerms([scaledTerm(multiplier, `(${innerPrimitive.plain})`, `(${innerPrimitive.latex})`)]);
+    const primitive = joinTerms([
+      scaledTerm(multiplier * frequency, `t*sin(${argument.plain})`, `t\\sin(${argument.latex})`),
+      scaledTerm(multiplier, `cos(${argument.plain})`, `\\cos(${argument.latex})`),
+    ]);
+
     return primitiveQuestion({
       variant: "parts-cosine",
-      integrand: { plain: `${multiplier * a * a}*t*cos(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\cos(${argument.latex})` },
+      integrand,
       primitive,
       ui: promptUi.primitiveParts,
       explanation: translated(
         `On pose $u(t)=t$ et $v'(t)=\\cos(${argument.latex})$. Alors $u'(t)=1$ et
-        $$v(t)=\\frac{\\sin(${argument.latex})}{${latexSignedNumber(a)}}.$$
+        $$v(t)=\\frac{\\sin(${argument.latex})}{${frequency}}.$$
         Par intégration par parties,
         $$\\int uv'=uv-\\int u'v,$$
         d'où
         $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
         `Let $u(t)=t$ and $v'(t)=\\cos(${argument.latex})$. Then $u'(t)=1$ and
-        $$v(t)=\\frac{\\sin(${argument.latex})}{${latexSignedNumber(a)}}.$$
+        $$v(t)=\\frac{\\sin(${argument.latex})}{${frequency}}.$$
         By integration by parts,
         $$\\int uv'=uv-\\int u'v,$$
         hence
@@ -1119,348 +1210,101 @@ function integrationByPartsPrimitive(rng) {
     });
   }
 
-  const innerPrimitive = joinTerms([
-    scaledTerm(-a, `t*cos(${argument.plain})`, `t\\cos(${argument.latex})`),
-    scaledTerm(1, `sin(${argument.plain})`, `\\sin(${argument.latex})`),
+  const signedMultiplier = multiplier * Math.sign(rawFrequency);
+  const integrand = joinTerms([
+    scaledTerm(
+      signedMultiplier * frequency * frequency,
+      `t*sin(${argument.plain})`,
+      `t\\sin(${argument.latex})`,
+    ),
   ]);
-  const primitive = joinTerms([scaledTerm(multiplier, `(${innerPrimitive.plain})`, `(${innerPrimitive.latex})`)]);
+  const primitive = joinTerms([
+    scaledTerm(-signedMultiplier * frequency, `t*cos(${argument.plain})`, `t\\cos(${argument.latex})`),
+    scaledTerm(signedMultiplier, `sin(${argument.plain})`, `\\sin(${argument.latex})`),
+  ]);
+
   return primitiveQuestion({
     variant: "parts-sine",
-    integrand: { plain: `${multiplier * a * a}*t*sin(${argument.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\sin(${argument.latex})` },
+    integrand,
     primitive,
     ui: promptUi.primitiveParts,
     explanation: translated(
       `On pose $u(t)=t$ et $v'(t)=\\sin(${argument.latex})$. Alors $u'(t)=1$ et
-        $$v(t)=-\\frac{\\cos(${argument.latex})}{${latexSignedNumber(a)}}.$$
-        Par intégration par parties,
-        $$\\int uv'=uv-\\int u'v,$$
-        d'où
-        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
+      $$v(t)=-\\frac{\\cos(${argument.latex})}{${frequency}}.$$
+      Par intégration par parties,
+      $$\\int uv'=uv-\\int u'v,$$
+      d'où
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
       `Let $u(t)=t$ and $v'(t)=\\sin(${argument.latex})$. Then $u'(t)=1$ and
-        $$v(t)=-\\frac{\\cos(${argument.latex})}{${latexSignedNumber(a)}}.$$
-        By integration by parts,
-        $$\\int uv'=uv-\\int u'v,$$
-        hence
-        $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
+      $$v(t)=-\\frac{\\cos(${argument.latex})}{${frequency}}.$$
+      By integration by parts,
+      $$\\int uv'=uv-\\int u'v,$$
+      hence
+      $$F(t)=${primitive.latex}+C,\\,\\,C\\in\\mathbb R.$$`,
     ),
     courseHintIds: [],
   });
 }
 
-function primitiveGenerator(level, rng) {
+function primitiveGenerator(level, rng, options = {}) {
   const pools = {
     1: [{ weight: 1, make: usualPrimitive }],
     2: [
-      { weight: 2, make: sumPrimitive },
-      { weight: 3, make: composedPrimitive },
-      { weight: 1, make: usualPrimitive },
+      { weight: 2, make: usualPrimitive },
+      { weight: 4, make: composedPrimitive },
     ],
     3: [
-      { weight: 4, make: integrationByPartsPrimitive },
-      { weight: 2, make: composedPrimitive },
-      { weight: 1, make: sumPrimitive },
+      { weight: 3, make: composedPrimitive },
+      { weight: 3, make: integrationByPartsPrimitive },
     ],
   };
-  return weightedPick(pools[levelNumber(level)], rng).make(rng);
-}
-
-function polynomialInitialCondition(rng) {
-  const exponent = randomInteger(2, 4, rng);
-  const coefficient = randomNonZero(-3, 3, rng);
-  const linearCoefficient = randomNonZero(-5, 5, rng);
-  const conditionPoint = randomInteger(-2, 2, rng);
-  const constant = randomInteger(-7, 7, rng);
-  const basePrimitive = joinTerms([
-    scaledTerm(coefficient, powerBody(exponent).plain, powerBody(exponent).latex),
-    scaledTerm(linearCoefficient, "t", "t"),
-  ]);
-  const integrand = joinTerms([
-    scaledTerm(coefficient * exponent, powerBody(exponent - 1).plain, powerBody(exponent - 1).latex),
-    scaledTerm(linearCoefficient),
-  ]);
-  const primitive = joinTerms([
-    scaledTerm(coefficient, powerBody(exponent).plain, powerBody(exponent).latex),
-    scaledTerm(linearCoefficient, "t", "t"),
-    scaledTerm(constant),
-  ]);
-  const conditionValue = coefficient * (conditionPoint ** exponent) + linearCoefficient * conditionPoint + constant;
-
-  return uniquePrimitiveQuestion({
-    variant: "initial-polynomial",
-    integrand,
-    primitive,
-    conditionPoint,
-    conditionValue,
-    explanation: translated(
-      `Les primitives sont de la forme
-      $$F(t)=${basePrimitive.latex}+C.$$
-      La condition $F(${conditionPoint})=${conditionValue}$ donne $C=${constant}$. Ainsi
-      $$F(t)=${primitive.latex}.$$`,
-      `The antiderivatives are
-      $$F(t)=${basePrimitive.latex}+C.$$
-      The condition $F(${conditionPoint})=${conditionValue}$ gives $C=${constant}$. Hence
-      $$F(t)=${primitive.latex}.$$`,
-    ),
-    courseHintIds: [],
-  });
-}
-
-function trigonometricInitialCondition(rng) {
-  const kind = pickRandom(["sine-primitive", "cosine-primitive"], rng);
-  const coefficient = randomNonZero(-5, 5, rng);
-  const constant = randomInteger(-7, 7, rng);
-  const conditionPoint = 0;
-
-  if (kind === "sine-primitive") {
-    const integrand = joinTerms([scaledTerm(coefficient, "cos(t)", "\\cos(t)")]);
-    const primitive = joinTerms([
-      scaledTerm(coefficient, "sin(t)", "\\sin(t)"),
-      scaledTerm(constant),
-    ]);
-    return uniquePrimitiveQuestion({
-      variant: "initial-sine",
-      integrand,
-      primitive,
-      conditionPoint,
-      conditionValue: constant,
-      explanation: translated(
-        `Les primitives sont de la forme
-        $$F(t)=${latexScaled(coefficient, "\\sin(t)")}+C.$$
-        Comme $\\sin(0)=0$, la condition $F(0)=${constant}$ donne $C=${constant}$.`,
-        `The antiderivatives are
-        $$F(t)=${latexScaled(coefficient, "\\sin(t)")}+C.$$
-        Since $\\sin(0)=0$, the condition $F(0)=${constant}$ gives $C=${constant}$.`,
-      ),
-      courseHintIds: [],
-    });
-  }
-
-  const integrand = joinTerms([scaledTerm(-coefficient, "sin(t)", "\\sin(t)")]);
-  const primitive = joinTerms([
-    scaledTerm(coefficient, "cos(t)", "\\cos(t)"),
-    scaledTerm(constant),
-  ]);
-  return uniquePrimitiveQuestion({
-    variant: "initial-cosine",
-    integrand,
-    primitive,
-    conditionPoint,
-    conditionValue: coefficient + constant,
-    explanation: translated(
-      `Les primitives sont de la forme
-      $$F(t)=${latexScaled(coefficient, "\\cos(t)")}+C.$$
-      Comme $\\cos(0)=1$, la condition $F(0)=${coefficient + constant}$ donne $C=${constant}$.`,
-      `The antiderivatives are
-      $$F(t)=${latexScaled(coefficient, "\\cos(t)")}+C.$$
-      Since $\\cos(0)=1$, the condition $F(0)=${coefficient + constant}$ gives $C=${constant}$.`,
-    ),
-    courseHintIds: [],
-  });
-}
-
-function composedInitialCondition(rng) {
-  const kind = pickRandom(["exponential", "power", "logarithm", "square-root"], rng);
-  const multiplier = randomNonZero(-3, 3, rng);
-  const constant = randomInteger(-7, 7, rng);
-
-  if (kind === "exponential") {
-    const a = randomNonZero(-3, 3, rng);
-    const inner = linearForms(a, 0);
-    const integrand = { plain: `${multiplier * a}*exp(${inner.plain})`, latex: latexScaled(multiplier * a, `\\mathrm e^{${inner.latex}}`) };
-    const primitive = joinTerms([
-      scaledTerm(multiplier, `exp(${inner.plain})`, `\\mathrm e^{${inner.latex}}`),
-      scaledTerm(constant),
-    ]);
-    return uniquePrimitiveQuestion({
-      variant: "initial-composed-exponential",
-      integrand,
-      primitive,
-      conditionPoint: 0,
-      conditionValue: multiplier + constant,
-      explanation: translated(
-        `Les primitives sont de la forme
-        $$F(t)=${latexScaled(multiplier, `\\mathrm e^{${inner.latex}}`)}+C.$$
-        Comme $\\mathrm e^0=1$, la condition $F(0)=${multiplier + constant}$ donne $C=${constant}$.`,
-        `The antiderivatives are
-        $$F(t)=${latexScaled(multiplier, `\\mathrm e^{${inner.latex}}`)}+C.$$
-        Since $\\mathrm e^0=1$, the condition $F(0)=${multiplier + constant}$ gives $C=${constant}$.`,
-      ),
-      courseHintIds: [],
-    });
-  }
-
-  if (kind === "power") {
-    const a = randomNonZero(-3, 3, rng);
-    const exponent = randomInteger(2, 4, rng);
-    const inner = linearForms(a, 0);
-    const integrand = { plain: `${multiplier * exponent * a}*((${inner.plain})^${exponent - 1})`, latex: latexScaled(multiplier * exponent * a, latexPower(inner.latex, exponent - 1)) };
-    const primitive = joinTerms([
-      scaledTerm(multiplier, `((${inner.plain})^${exponent})`, latexPower(inner.latex, exponent)),
-      scaledTerm(constant),
-    ]);
-    return uniquePrimitiveQuestion({
-      variant: "initial-composed-power",
-      integrand,
-      primitive,
-      conditionPoint: 0,
-      conditionValue: constant,
-      explanation: translated(
-        `Les primitives sont de la forme
-        $$F(t)=${latexScaled(multiplier, latexPower(inner.latex, exponent))}+C.$$
-        La condition $F(0)=${constant}$ donne $C=${constant}$.`,
-        `The antiderivatives are
-        $$F(t)=${latexScaled(multiplier, latexPower(inner.latex, exponent))}+C.$$
-        The condition $F(0)=${constant}$ gives $C=${constant}$.`,
-      ),
-      courseHintIds: [],
-    });
-  }
-
-  const root = randomInteger(-4, 4, rng);
-  const interval = intervalAround(root, "right");
-  const shifted = linearForms(1, -root);
-
-  if (kind === "logarithm") {
-    const integrand = { plain: `${multiplier}/(${shifted.plain})`, latex: `\\frac{${multiplier}}{${shifted.latex}}` };
-    const primitive = joinTerms([
-      scaledTerm(multiplier, `ln(${shifted.plain})`, `\\ln(${shifted.latex})`),
-      scaledTerm(constant),
-    ]);
-    return uniquePrimitiveQuestion({
-      variant: "initial-logarithm",
-      integrand,
-      primitive,
-      conditionPoint: root + 1,
-      conditionValue: constant,
-      explanation: translated(
-        `Les primitives sont de la forme
-        $$F(t)=${latexScaled(multiplier, `\\ln(${shifted.latex})`)}+C.$$
-        Au point $t=${root + 1}$, on a $\\ln 1=0$. La condition $F(${root + 1})=${constant}$ donne donc $C=${constant}$.`,
-        `The antiderivatives are
-        $$F(t)=${latexScaled(multiplier, `\\ln(${shifted.latex})`)}+C.$$
-        At $t=${root + 1}$, $\\ln 1=0$. The condition $F(${root + 1})=${constant}$ therefore gives $C=${constant}$.`,
-      ),
-      courseHintIds: [],
-      domain: interval.latex,
-      points: interval.points,
-    });
-  }
-
-  const integrand = { plain: `${3 * multiplier}*sqrt(${shifted.plain})`, latex: `${3 * multiplier}\\sqrt{${shifted.latex}}` };
-  const primitive = joinTerms([
-    scaledTerm(2 * multiplier, `((${shifted.plain})^(3/2))`, latexPower(shifted.latex, "3/2")),
-    scaledTerm(constant),
-  ]);
-  return uniquePrimitiveQuestion({
-    variant: "initial-square-root",
-    integrand,
-    primitive,
-    conditionPoint: root + 1,
-    conditionValue: 2 * multiplier + constant,
-    explanation: translated(
-      `Les primitives sont de la forme
-      $$F(t)=${latexScaled(2 * multiplier, latexPower(shifted.latex, "3/2"))}+C.$$
-      Comme $${shifted.latex}=1$ au point $t=${root + 1}$, la condition $F(${root + 1})=${2 * multiplier + constant}$ donne $C=${constant}$.`,
-      `The antiderivatives are
-      $$F(t)=${latexScaled(2 * multiplier, latexPower(shifted.latex, "3/2"))}+C.$$
-      Since $${shifted.latex}=1$ at $t=${root + 1}$, the condition $F(${root + 1})=${2 * multiplier + constant}$ gives $C=${constant}$.`,
-    ),
-    courseHintIds: [],
-    domain: interval.latex,
-    points: interval.points,
-  });
-}
-
-function advancedInitialCondition(rng) {
-  const kind = pickRandom(["parts", "mixed"], rng);
-  const multiplier = randomNonZero(-3, 3, rng);
-  const constant = randomInteger(-7, 7, rng);
-
-  if (kind === "parts") {
-    const a = randomNonZero(-3, 3, rng);
-    const inner = linearForms(a, 0);
-    const integrand = { plain: `${multiplier * a * a}*t*exp(${inner.plain})`, latex: `${latexScaled(multiplier * a * a, "t")}\\mathrm e^{${inner.latex}}` };
-    const basePrimitive = { plain: `${multiplier}*(${a}*t-1)*exp(${inner.plain})`, latex: latexScaled(multiplier, `(${latexScaled(a, "t")}-1)\\mathrm e^{${inner.latex}}`) };
-    const primitive = joinTerms([
-      scaledTerm(multiplier, `(${a}*t-1)*exp(${inner.plain})`, `(${latexScaled(a, "t")}-1)\\mathrm e^{${inner.latex}}`),
-      scaledTerm(constant),
-    ]);
-    return uniquePrimitiveQuestion({
-      variant: "initial-parts",
-      integrand,
-      primitive,
-      conditionPoint: 0,
-      conditionValue: -multiplier + constant,
-      explanation: translated(
-        `Après intégration par parties, les primitives sont
-        $$F(t)=${basePrimitive.latex}+C.$$
-        La condition $F(0)=${-multiplier + constant}$ donne $C=${constant}$. Ainsi
-        $$F(t)=${primitive.latex}.$$`,
-        `After integration by parts, the antiderivatives are
-        $$F(t)=${basePrimitive.latex}+C.$$
-        The condition $F(0)=${-multiplier + constant}$ gives $C=${constant}$. Hence
-        $$F(t)=${primitive.latex}.$$`,
-      ),
-      courseHintIds: [],
-    });
-  }
-
-  const polynomialCoefficient = randomNonZero(-3, 3, rng);
-  const exponentialCoefficient = randomNonZero(-3, 3, rng);
-  const integrand = joinTerms([
-    scaledTerm(2 * polynomialCoefficient, "t", "t"),
-    scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(-multiplier, "sin(t)", "\\sin(t)"),
-  ]);
-  const basePrimitive = joinTerms([
-    scaledTerm(polynomialCoefficient, "t^2", "t^2"),
-    scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(multiplier, "cos(t)", "\\cos(t)"),
-  ]);
-  const primitive = joinTerms([
-    scaledTerm(polynomialCoefficient, "t^2", "t^2"),
-    scaledTerm(exponentialCoefficient, "exp(t)", "\\mathrm e^t"),
-    scaledTerm(multiplier, "cos(t)", "\\cos(t)"),
-    scaledTerm(constant),
-  ]);
-  const baseAtZero = exponentialCoefficient + multiplier;
-  return uniquePrimitiveQuestion({
-    variant: "initial-mixed-sum",
-    integrand,
-    primitive,
-    conditionPoint: 0,
-    conditionValue: baseAtZero + constant,
-    explanation: translated(
-      `Par linéarité, les primitives sont
-      $$F(t)=${basePrimitive.latex}+C.$$
-      La condition $F(0)=${baseAtZero + constant}$ donne $C=${constant}$. Ainsi
-      $$F(t)=${primitive.latex}.$$`,
-      `By linearity, the antiderivatives are
-      $$F(t)=${basePrimitive.latex}+C.$$
-      The condition $F(0)=${baseAtZero + constant}$ gives $C=${constant}$. Hence
-      $$F(t)=${primitive.latex}.$$`,
-    ),
-    courseHintIds: [],
-  });
+  return weightedPick(pools[levelNumber(level)], rng).make(rng, options);
 }
 
 function initialConditionGenerator(level, rng) {
-  const pools = {
-    1: [
-      { weight: 3, make: polynomialInitialCondition },
-      { weight: 2, make: trigonometricInitialCondition },
-    ],
-    2: [
-      { weight: 4, make: composedInitialCondition },
-      { weight: 1, make: polynomialInitialCondition },
-    ],
-    3: [
-      { weight: 4, make: advancedInitialCondition },
-      { weight: 2, make: composedInitialCondition },
-      { weight: 1, make: polynomialInitialCondition },
-    ],
-  };
-  return weightedPick(pools[levelNumber(level)], rng).make(rng);
+  const baseQuestion = primitiveGenerator(level, rng, { conditionFriendly: true });
+  const constant = randomNonZero(-4, 4, rng);
+  const conditionPoint = baseQuestion.domain === REAL_DOMAIN
+    ? 0
+    : baseQuestion.validationPoints[2];
+  const baseValue = evaluateCalculusExpression(baseQuestion.primitiveExpression.plain, conditionPoint);
+  const roundedBaseValue = Math.round(baseValue);
+
+  if (!Number.isFinite(baseValue) || Math.abs(baseValue - roundedBaseValue) > 1e-9) {
+    throw new Error(`La primitive ${baseQuestion.variant} n’a pas de valeur initiale entière simple.`);
+  }
+
+  const conditionValue = roundedBaseValue + constant;
+  const primitive = joinTerms([
+    {
+      coefficient: 1,
+      plainMagnitude: baseQuestion.primitiveExpression.plain,
+      latexMagnitude: baseQuestion.primitiveExpression.latex,
+    },
+    scaledTerm(constant),
+  ]);
+  const question = uniquePrimitiveQuestion({
+    variant: `initial-${baseQuestion.variant}`,
+    integrand: baseQuestion.integrandExpression,
+    primitive,
+    conditionPoint,
+    conditionValue,
+    conditionValueDisplay: String(conditionValue),
+    domain: baseQuestion.domain,
+    points: baseQuestion.validationPoints,
+    hints: baseQuestion.hints,
+    courseHintIds: baseQuestion.courseHintIds,
+    explanation: translated(
+      `${baseQuestion.explanation.fr}
+      La condition $F(${conditionPoint})=${conditionValue}$ donne $C=${constant}$. L’unique primitive cherchée est donc
+      $$F(t)=${primitive.latex}.$$`,
+      `${baseQuestion.explanation.en}
+      The condition $F(${conditionPoint})=${conditionValue}$ gives $C=${constant}$. Therefore the unique antiderivative is
+      $$F(t)=${primitive.latex}.$$`,
+    ),
+  });
+
+  return { ...question, integrationConstant: constant };
 }
 
 export function generateCalculusQuestion({ difficulty, level, rng = Math.random }) {
@@ -1512,7 +1356,7 @@ export const calculusTool = {
       levels: [1, 2, 3],
       defaultLevel: 1,
       label: translated("Déterminer des primitives", "Find antiderivatives"),
-      description: translated("Primitives usuelles, linéarité, compositions et intégration par parties.", "Standard antiderivatives, linearity, compositions and integration by parts."),
+      description: translated("Primitives usuelles, compositions et intégration par parties.", "Standard antiderivatives, compositions and integration by parts."),
       promptUi: promptUi.primitiveUsual,
     },
     {
