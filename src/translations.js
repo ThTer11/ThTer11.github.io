@@ -11,7 +11,7 @@ const translations = {
       job: "",
       workplace: "Inria Saclay",
       description:
-        'Actuellement doctorant au sein de l’équipe MATHEXP à l’Inria Saclay, sous la direction de <a class="text-blue-500" target="_blank" href="https://mathexp.eu/chyzak/" rel="noopener noreferrer">Frédéric Chyzak</a> et <a class="text-blue-500" target="_blank" href="https://mathexp.eu/lairez/" rel="noopener noreferrer">Pierre Lairez</a>, je m’intéresse au calcul formel, et plus particulièrement à l’étude des bases de Gröbner à signatures.',
+        'Actuellement doctorant au sein de l’équipe MATHEXP à l’Inria Saclay, sous la direction de <a class="text-blue-500" target="_blank" href="https://mathexp.eu/chyzak/" rel="noopener noreferrer">Frédéric Chyzak</a>, <a class="text-blue-500" target="_blank" href="https://mathexp.eu/lairez/" rel="noopener noreferrer">Pierre Lairez</a> et <a class="text-blue-500" target="_blank" href="https://rafaeldavidmohr.github.io/" rel="noopener noreferrer">Rafael Mohr</a>, je m’intéresse au calcul formel, et plus particulièrement à l’étude des bases de Gröbner à signatures.',
       heroKicker: "Calcul formel",
       focusTitle: "Axes de recherche",
       focusAreas: [
@@ -486,7 +486,7 @@ const translations = {
       job: "",
       workplace: "Inria Saclay",
       description:
-        'I am currently a PhD student in the MATHEXP team at Inria Saclay, under the supervision of <a class="text-blue-500" target="_blank" href="https://mathexp.eu/chyzak/" rel="noopener noreferrer">Frédéric Chyzak</a> and <a class="text-blue-500" target="_blank" href="https://mathexp.eu/lairez/" rel="noopener noreferrer">Pierre Lairez</a>. My research focuses on computer algebra, especially on signature Gröbner bases computations.',
+        'I am currently a PhD student in the MATHEXP team at Inria Saclay, under the supervision of <a class="text-blue-500" target="_blank" href="https://mathexp.eu/chyzak/" rel="noopener noreferrer">Frédéric Chyzak</a>, <a class="text-blue-500" target="_blank" href="https://mathexp.eu/lairez/" rel="noopener noreferrer">Pierre Lairez</a>, and <a class="text-blue-500" target="_blank" href="https://rafaeldavidmohr.github.io/" rel="noopener noreferrer">Rafael Mohr</a>. My research focuses on computer algebra, especially on signature Gröbner bases computations.',
       heroKicker: "Computer algebra",
       focusTitle: "Research areas",
       focusAreas: [
