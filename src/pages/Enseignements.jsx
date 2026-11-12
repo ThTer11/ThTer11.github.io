@@ -12,6 +12,7 @@ import { useLang } from "../App";
 import RichContent from "../components/RichContent";
 import { getTeachingResourceCards, getTeachingYears } from "../data/teachingContent";
 import "../showcase.css";
+import "../editorial.css";
 
 function TeachingActionButton({ action, onClick }) {
   if (action.kind === "internal") {
@@ -53,44 +54,6 @@ function TeachingActionButton({ action, onClick }) {
       {icon}
       <span>{action.label}</span>
     </a>
-  );
-}
-
-function TimelineBookCard({ book }) {
-  const label = book.alt || book.title || book.status;
-  const content = book.src ? (
-    <img src={book.src} alt={label} />
-  ) : (
-    <div className="timeline-book-placeholder">
-      {book.status && <span className="timeline-book-status">{book.status}</span>}
-      {book.title && <strong>{book.title}</strong>}
-      {book.subtitle && <span className="timeline-book-subtitle">{book.subtitle}</span>}
-      {book.note && <span className="timeline-book-note">{book.note}</span>}
-    </div>
-  );
-
-  if (book.href) {
-    return (
-      <a
-        href={book.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="timeline-image-link"
-        aria-label={label}
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return (
-    <div
-      className="timeline-image-link timeline-book-link timeline-book-link-upcoming"
-      aria-label={label}
-      role="img"
-    >
-      {content}
-    </div>
   );
 }
 
@@ -157,86 +120,20 @@ export default function Enseignements() {
     }
   };
 
-  const teachingYears = getTeachingYears(t);
+  const teachingYears = getTeachingYears(t).sort((left, right) => right.year.localeCompare(left.year));
   const resourceCards = getTeachingResourceCards({ t, lang, openTeX });
 
   return (
-    <div className="showcase-page showcase-page-teaching min-w-screen min-h-screen pb-10">
+    <div className="showcase-page showcase-page-teaching editorial-page min-w-screen min-h-screen pb-10">
       <NavBar />
 
       <div className="showcase-shell">
         <div className="showcase-orb showcase-orb-a" />
         <div className="showcase-orb showcase-orb-b" />
 
-        <section className="showcase-panel showcase-card animate-defil">
-          <h1 className="showcase-title">{t.teaching.title}</h1>
-          <p className="showcase-lead">{t.teaching.lead}</p>
-        </section>
-
-        {teachingYears.length > 0 && (
-          <section id="activities" className="showcase-section-block animate-defil">
-            <h2 className="showcase-section-title">{t.teaching.timelineTitle}</h2>
-
-            <div className="timeline-grid">
-              {teachingYears.map((yearBlock) => (
-                <article
-                  key={yearBlock.year}
-                  className={`showcase-panel timeline-card timeline-accent-${yearBlock.accent}`}
-                >
-                  <span className="timeline-year">{yearBlock.year}</span>
-
-                  <div className="timeline-items">
-                    {yearBlock.items.map((item) => (
-                      <div key={`${yearBlock.year}-${item.title}`} className="timeline-item">
-                        <h3 className="timeline-item-title">{item.title}</h3>
-                        {item.subtitle && (
-                          <p className="timeline-item-subtitle">{item.subtitle}</p>
-                        )}
-                        {item.description && (
-                          <p className="timeline-item-desc">{item.description}</p>
-                        )}
-                        {item.descriptionHtml && (
-                          <RichContent
-                            as="p"
-                            className="timeline-item-desc"
-                            html={item.descriptionHtml}
-                          />
-                        )}
-
-                        {item.imageLinks?.length > 0 && (
-                          <div
-                            key={`${item.title}-images-${item.imageLinks.length}`}
-                            className="timeline-image-grid"
-                            tabIndex={0}
-                          >
-                            {item.imageLinks.map((imageLink, imageIndex) => (
-                              <TimelineBookCard
-                                key={`${imageLink.title || imageLink.src}-${imageIndex}`}
-                                book={imageLink}
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        {item.actions.length > 0 && (
-                          <div className="resource-actions">
-                            {item.actions.map((action) => (
-                              <TeachingActionButton
-                                key={`${item.title}-${action.label}`}
-                                action={action}
-                                onClick={action.onClick}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+        <header className="editorial-heading">
+          <h1>{t.teaching.title}</h1>
+        </header>
 
         <section id="resources" className="showcase-section-block animate-defil">
           <h2 className="showcase-section-title">{t.teaching.resourcesTitle}</h2>
@@ -275,6 +172,56 @@ export default function Enseignements() {
             ))}
           </div>
         </section>
+
+        {teachingYears.length > 0 && (
+          <section id="activities" className="showcase-section-block animate-defil">
+            <h2 className="showcase-section-title">{t.teaching.timelineTitle}</h2>
+
+            <div className="teaching-years">
+              {teachingYears.map((yearBlock) => (
+                <section
+                  key={yearBlock.year}
+                  className="teaching-year"
+                >
+                  <h3 className="teaching-year-heading">{yearBlock.year}</h3>
+
+                  <ul className="teaching-year-content">
+                    {yearBlock.items.map((item) => (
+                      <li key={`${yearBlock.year}-${item.title}`} className="teaching-course">
+                        <h4 className="teaching-course-title">{item.title}</h4>
+                        {item.subtitle && (
+                          <p className="teaching-course-subtitle">{item.subtitle}</p>
+                        )}
+                        {item.description && (
+                          <p className="teaching-course-description">{item.description}</p>
+                        )}
+                        {item.descriptionHtml && (
+                          <RichContent
+                            as="p"
+                            className="teaching-course-description"
+                            html={item.descriptionHtml}
+                          />
+                        )}
+
+                        {item.actions.length > 0 && (
+                          <div className="resource-actions">
+                            {item.actions.map((action) => (
+                              <TeachingActionButton
+                                key={`${item.title}-${action.label}`}
+                                action={action}
+                                onClick={action.onClick}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {showModal && (

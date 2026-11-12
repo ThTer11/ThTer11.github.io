@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import NavBar from "../components/NavBar";
+import ToolPage, { ToolDetails } from "../components/ToolPage";
 import { useLang } from "../App";
 import RichContent from "../components/RichContent";
 import {
@@ -20,7 +20,6 @@ import {
   EyeSlashIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import "../showcase.css";
 import "../tikz-editor.css";
 import VariationTableEditor from "../tools/variation/VariationTableEditor";
 import { ButtonMathLabel, MathLabel } from "../tools/tikz/MathLabels";
@@ -240,6 +239,8 @@ export default function TikzEditor() {
     }
   });
   const [status, setStatus] = useState(tt.statusStart || "Cliquer sur la grille. Les points s'alignent sur les intersections.");
+
+  useEffect(() => { setStatus(tt.statusStart); }, [tt.statusStart]);
 
   const bodyCode = useMemo(
     () => (variationToolsEnabled && tikzMode === "variation" ? buildVariationTikz(variationTable) : buildTikz(scene, showGrid, unitScale)),
@@ -935,66 +936,13 @@ export default function TikzEditor() {
   const pendingPreview = lastPending && typeof lastPending.x === "number" ? toScreen(lastPending) : null;
 
   return (
-    <div className="showcase-page tikz-page min-w-screen min-h-screen pb-10">
-      <NavBar />
-      <div className="showcase-shell">
-        <section className="showcase-panel tikz-hero animate-defil">
-          <div>
-            <p className="showcase-eyebrow">TikZ</p>
-            <h1 className="showcase-title">{tt.title || "Outils TikZ"}</h1>
-            <p className="showcase-lead">
-              {tt.lead || "Construire des figures TikZ spécialisées, les modifier visuellement et récupérer le code en direct."}
-            </p>
-            <div className="tikz-tool-switcher" aria-label={tt.title}>
-              <button type="button" className={`tikz-tool-tab ${tikzMode === "figure" ? "tikz-tool-tab-active" : ""}`} onClick={() => setTikzMode("figure")}>
-                {tt.toolFigures || tt.toolOptics}
-              </button>
-              {variationToolsEnabled && (
-                <button type="button" className={`tikz-tool-tab ${tikzMode === "variation" ? "tikz-tool-tab-active" : ""}`} onClick={() => setTikzMode("variation")}>
-                  {tt.toolVariations || "Tableaux de variations"}
-                </button>
-              )}
-            </div>
-          </div>
-          {tikzMode === "figure" && (
-            <div className="tikz-top-actions">
-              <button type="button" className="tikz-pill" onClick={undo} disabled={!canUndo}>
-                <span>{tt.undo}</span>
-              </button>
-              <button type="button" className="tikz-pill" onClick={redo} disabled={!canRedo}>
-                <span>{tt.redo}</span>
-              </button>
-              <button type="button" className={`tikz-pill ${showGrid ? "tikz-pill-active" : ""}`} onClick={() => setShowGrid((value) => !value)}>
-                {showGrid ? <EyeIcon className="w-5 h-5" /> : <EyeSlashIcon className="w-5 h-5" />}
-                <span>{tt.exportedGrid}</span>
-              </button>
-              <button type="button" className={`tikz-pill ${snap ? "tikz-pill-active" : ""}`} onClick={() => setSnap((value) => !value)}>
-                <GridSnapIcon className="w-5 h-5" />
-                <span>{tt.snap}</span>
-              </button>
-              <label className="tikz-inline-number">
-                <span>{tt.unit}</span>
-                <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={unitScale}
-                  onChange={(event) => setUnitScale(Math.max(0.1, Number(event.target.value) || 1))}
-                />
-              </label>
-              <button type="button" className="tikz-danger-action" onClick={clearScene}>
-                <TrashIcon className="w-5 h-5" />
-                <span>{tt.clear}</span>
-              </button>
-              <label className="tikz-inline-select">
-                <span>{tt.segments}</span>
-                <ArrowPicker value={segmentArrow} onChange={setSegmentArrow} label={tt.segments} />
-              </label>
-            </div>
-          )}
-        </section>
+    <ToolPage title={tt.title} className="tikz-page">
+      {variationToolsEnabled && <div className="tikz-tool-switcher" role="group" aria-label={tt.title}>
+        <button type="button" className={`tikz-tool-tab ${tikzMode === "figure" ? "tikz-tool-tab-active" : ""}`} onClick={() => setTikzMode("figure")} aria-pressed={tikzMode === "figure"}>{tt.toolFigures}</button>
+        <button type="button" className={`tikz-tool-tab ${tikzMode === "variation" ? "tikz-tool-tab-active" : ""}`} onClick={() => setTikzMode("variation")} aria-pressed={tikzMode === "variation"}>{tt.toolVariations}</button>
+      </div>}
 
-        {tikzMode === "figure" && <section className="showcase-panel tikz-toolbar animate-defil">
+        {tikzMode === "figure" && <section className="research-panel tool-panel tikz-toolbar" aria-label={tt.toolFigures}>
           {TOOLS.map((item) => {
             const Icon = item.icon;
             const label = tt.tools?.[item.id] || item.id;
@@ -1003,6 +951,7 @@ export default function TikzEditor() {
                 type="button"
                 key={item.id}
                 className={`tikz-tool ${tool === item.id ? "tikz-tool-active" : ""}`}
+                aria-pressed={tool === item.id} title={label}
                 onClick={() => {
                   setTool(item.id);
                   setPending([]);
@@ -1018,8 +967,33 @@ export default function TikzEditor() {
           })}
         </section>}
 
-        {tikzMode === "figure" ? <section className="tikz-workbench animate-defil">
-          <aside className="showcase-panel tikz-panel tikz-controls">
+        {tikzMode === "figure" && <>
+          <div className="tikz-drawing-controls">
+            <div className="tikz-quick-actions">
+              <button type="button" className="tikz-pill" onClick={undo} disabled={!canUndo}>{tt.undo}</button>
+              <button type="button" className="tikz-pill" onClick={redo} disabled={!canRedo}>{tt.redo}</button>
+              <button type="button" className="tikz-danger-action" onClick={clearScene}><TrashIcon className="w-5 h-5" /><span>{tt.clear}</span></button>
+            </div>
+            <ToolDetails title={t.tools.settings} className="tikz-settings">
+              <div className="tikz-top-actions">
+                <button type="button" className={`tikz-pill ${showGrid ? "tikz-pill-active" : ""}`} onClick={() => setShowGrid(value => !value)} aria-pressed={showGrid}>
+                  {showGrid ? <EyeIcon className="w-5 h-5" /> : <EyeSlashIcon className="w-5 h-5" />}<span>{tt.exportedGrid}</span>
+                </button>
+                <button type="button" className={`tikz-pill ${snap ? "tikz-pill-active" : ""}`} onClick={() => setSnap(value => !value)} aria-pressed={snap}>
+                  <GridSnapIcon className="w-5 h-5" /><span>{tt.snap}</span>
+                </button>
+                <label className="tikz-inline-number"><span>{tt.unit}</span>
+                  <input type="number" min="0.1" step="0.1" value={unitScale} onChange={event => setUnitScale(Math.max(0.1, Number(event.target.value) || 1))} />
+                </label>
+                <div className="tikz-inline-select"><span>{tt.segments}</span><ArrowPicker value={segmentArrow} onChange={setSegmentArrow} label={tt.segments} /></div>
+              </div>
+            </ToolDetails>
+          </div>
+          <p className="tikz-status tikz-context-status" role="status" aria-live="polite">{status}</p>
+        </>}
+
+        {tikzMode === "figure" ? <section className={`tikz-workbench${selection || selectionGroup.length ? "" : " tikz-workbench-empty"}`}>
+          {(selection || selectionGroup.length > 0) && <aside className="research-panel tool-panel tikz-panel tikz-controls">
             <ObjectEditor
               selection={selection}
               selectionGroup={selectionGroup}
@@ -1031,10 +1005,10 @@ export default function TikzEditor() {
               status={status}
               labels={tt}
             />
-          </aside>
+          </aside>}
 
           <div className="tikz-main">
-            <div className="showcase-panel tikz-canvas-panel">
+            <div className="research-panel tool-panel tikz-canvas-panel">
               <svg
                 className="tikz-canvas"
                 viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -1354,49 +1328,26 @@ export default function TikzEditor() {
           />
         )}
 
-        <section className="showcase-panel tikz-code-panel animate-defil">
+        <section className="research-panel tool-panel tikz-code-panel">
           <div className="tikz-code-head">
-            <div>
-              <p className="showcase-eyebrow">{tt.generatedCode}</p>
-              <h2 className="tikz-code-title">{tt.liveTikz}</h2>
-            </div>
+            <h2 className="tool-panel-title">{tt.generatedCode}</h2>
             <div className="tikz-code-actions">
-              <button type="button" className={`tikz-pill ${includeDocument ? "tikz-pill-active" : ""}`} onClick={() => setIncludeDocument((value) => !value)}>
-                <span>{tt.fullDocument}</span>
-              </button>
-              <button type="button" className="tikz-pill" onClick={copyTikz}>
-                <ClipboardDocumentIcon className="w-5 h-5" />
-                <span>{copied ? copiedText : copyText}</span>
-              </button>
-              <button type="button" className="tikz-pill" onClick={() => downloadTextFile("figure-tikz.tex", tikzCode)}>
-                <ArrowDownTrayIcon className="w-5 h-5" />
-                <span>.tex</span>
-              </button>
+              <button type="button" className={`tikz-pill ${includeDocument ? "tikz-pill-active" : ""}`} onClick={() => setIncludeDocument(value => !value)} aria-pressed={includeDocument}>{tt.fullDocument}</button>
+              <button type="button" className="tikz-pill tikz-copy-action" onClick={copyTikz}><ClipboardDocumentIcon className="w-5 h-5" /><span>{copied ? copiedText : copyText}</span></button>
+              <button type="button" className="tikz-pill" onClick={() => downloadTextFile("figure-tikz.tex", tikzCode)}><ArrowDownTrayIcon className="w-5 h-5" /><span>.tex</span></button>
             </div>
           </div>
-          <pre className="tikz-code">{tikzCode}</pre>
+          <ToolDetails title={tt.liveTikz} className="tikz-source-details">
+            <pre className="tikz-code" tabIndex={0} aria-label={tt.generatedCode}>{tikzCode}</pre>
+          </ToolDetails>
+          <ToolDetails title={tt.importTitle} className="tikz-import-details">
+            <p className="tikz-muted" id="tikz-import-help">{tt.importLead}</p>
+            <textarea className="tikz-import-input" value={importCode} onChange={event => setImportCode(event.target.value)}
+              placeholder={tt.importPlaceholder} aria-label={tt.importTitle} aria-describedby="tikz-import-help" spellCheck="false" />
+            <button type="button" className="tikz-pill" onClick={importTikz}>{tt.importButton}</button>
+          </ToolDetails>
         </section>
-
-        <section className="showcase-panel tikz-code-panel animate-defil">
-          <div className="tikz-code-head">
-            <div>
-              <p className="showcase-eyebrow">TikZ</p>
-              <h2 className="tikz-code-title">{tt.importTitle}</h2>
-              <p className="tikz-muted">{tt.importLead}</p>
-            </div>
-            <button type="button" className="tikz-pill" onClick={importTikz}>
-              <span>{tt.importButton}</span>
-            </button>
-          </div>
-          <textarea
-            className="tikz-import-input"
-            value={importCode}
-            onChange={(event) => setImportCode(event.target.value)}
-            placeholder={tt.importPlaceholder}
-          />
-        </section>
-      </div>
-    </div>
+    </ToolPage>
   );
 }
 

@@ -8,6 +8,7 @@ import { useLang } from "../App";
 import { courseHintsById, getExerciseCategory, getExerciseTool } from "../exercises/registry";
 import { localize } from "../exercises/core/localize";
 import { getExerciseUiText } from "../exercises/content/uiText";
+import { practiceHref } from "../practice/catalog";
 import "../showcase.css";
 import "../exercise.css";
 
@@ -36,7 +37,7 @@ export default function ExerciseTool() {
             {labels.backToTool} {localize(tool.title, lang)}
           </button>
         ) : (
-          <Link to={`/${lang}/entrainements/${categoryId}`} className="exercise-back-link">
+          <Link to={practiceHref(lang, category ? categoryId : undefined)} className="exercise-back-link">
             <ArrowLeftIcon className="exercise-small-icon" />
             {category
               ? `${labels.backToTool} ${localize(category.title, lang)}`

@@ -3,7 +3,9 @@ import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { FaFilePdf } from "react-icons/fa";
 import { useLang } from "../App";
 import { getConferenceTalks } from "../data/conferenceContent";
-import "../showcase.css";
+import { RESEARCH_ACCENT_COLORS } from "../data/researchContent";
+import "../research.css";
+import "../editorial.css";
 
 function TalkAction({ action }) {
   const icon =
@@ -15,8 +17,8 @@ function TalkAction({ action }) {
 
   const className =
     action.kind === "pdf"
-      ? "showcase-action showcase-action-pdf"
-      : "showcase-action showcase-action-link";
+      ? "research-action research-action-pdf"
+      : "research-action research-action-link";
 
   return (
     <a href={action.href} target="_blank" rel="noopener noreferrer" className={className}>
@@ -30,43 +32,36 @@ export default function Conferences() {
   const { t } = useLang();
 
   const talks = getConferenceTalks(t);
+  const years = [...new Set(talks.map((talk) => talk.year))].sort((left, right) => right.localeCompare(left));
 
   return (
-    <div className="showcase-page showcase-page-conferences min-w-screen min-h-screen pb-10">
+    <div className="research-page editorial-page min-w-screen min-h-screen pb-10">
       <NavBar />
 
-      <div className="showcase-shell">
-        <div className="showcase-orb showcase-orb-a" />
-        <div className="showcase-orb showcase-orb-b" />
+      <div className="research-shell">
+        <header className="editorial-heading">
+          <h1 className="research-title">{t.conferences.title}</h1>
+        </header>
 
-        <section className="showcase-panel showcase-card animate-defil">
-          <h1 className="showcase-title">{t.conferences.title}</h1>
-          <p className="showcase-lead">{t.conferences.lead}</p>
-        </section>
-
-        <section className="talk-grid">
-          {talks.map((talk, index) => (
-            <article
-              key={talk.id}
-              className={`showcase-panel talk-card talk-accent-${talk.accent} animate-defil`}
-              style={{ animationDelay: `${index * 0.08}s` }}
-            >
-              <div className="talk-top">
-                <span className="talk-badge talk-badge-year">{talk.year}</span>
-                <span className="talk-badge talk-badge-type">{talk.type}</span>
-              </div>
-
-              <h2 className="talk-title">{talk.title}</h2>
-              <p className="talk-desc">{talk.description}</p>
-
-              <div className="resource-actions">
-                {talk.actions.map((action) => (
-                  <TalkAction key={`${talk.id}-${action.label}`} action={action} />
+        <div className="conference-years">
+          {years.map((year) => (
+            <section key={year} className="conference-year" aria-labelledby={`conference-year-${year}`}>
+              <h2 id={`conference-year-${year}`} className="conference-year-heading">{year}</h2>
+              <div className="research-list">
+                {talks.filter((talk) => talk.year === year).map((talk) => (
+                  <article key={talk.id} className="research-panel research-card"
+                    style={{ "--research-accent": RESEARCH_ACCENT_COLORS[talk.accent] }}>
+                    <h3 className="research-card-title">{talk.title}</h3>
+                    {talk.description && <p className="research-description">{talk.description}</p>}
+                    <div className="research-actions">
+                      {talk.actions.map((action) => <TalkAction key={`${talk.id}-${action.label}`} action={action} />)}
+                    </div>
+                  </article>
                 ))}
               </div>
-            </article>
+            </section>
           ))}
-        </section>
+        </div>
       </div>
     </div>
   );

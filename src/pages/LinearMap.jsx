@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import NavBar from "../components/NavBar";
+import ToolPage, { ToolDetails } from "../components/ToolPage";
 import RichContent from "../components/RichContent";
 import { useLang } from "../App";
-import { analyzeLinearMapInput, canUseSameBasis } from "../utils/linearMap";
-import "../showcase.css";
+import { analyzeLinearMapInput, canonicalBasisText, canUseSameBasis, inferLinearMapSourceDimension } from "../utils/linearMap";
 import "../gauss.css";
 import "../linear-map.css";
 
@@ -15,8 +14,8 @@ function unwrapDisplayMath(rawLatex) {
     .replace(/\$$/, "");
 }
 
-function statusClass() {
-  return "gauss-status gauss-status-success";
+function basisDimension(text) {
+  return text.trim().split("\n").find((line) => line.trim())?.trim().split(/[\s,;]+/).length || 1;
 }
 
 export default function LinearMap() {
@@ -48,6 +47,8 @@ export default function LinearMap() {
   const [formulaText, setFormulaText] = useState(examples.general.formula);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const sourceDimension = inferLinearMapSourceDimension(formulaText, basisDimension(sourceBasisText));
+  const targetDimension = formulaText.split("\n").filter((line) => line.trim()).length || basisDimension(targetBasisText);
 
   const sameBasisAvailable = canUseSameBasis({
     sourceBasisText,
@@ -119,218 +120,95 @@ export default function LinearMap() {
     }
   };
 
+  const useCanonicalSourceBasis = () => {
+    setSourceBasisText(canonicalBasisText(sourceDimension));
+    if (sameBasis && sourceDimension !== targetDimension) setSameBasis(false);
+  };
+
   return (
-    <div className="showcase-page showcase-page-teaching gauss-page linear-map-page min-w-screen min-h-screen pb-10">
-      <NavBar />
-
-      <div className="showcase-shell">
-        <div className="showcase-orb showcase-orb-a" />
-        <div className="showcase-orb showcase-orb-b" />
-
-        <section className="showcase-panel showcase-card animate-defil">
-          <p className="showcase-eyebrow">{t.teaching.sectionResources}</p>
-          <h1 className="showcase-title">{t.linearMap.title}</h1>
-          <p className="showcase-lead">{t.linearMap.lead}</p>
+    <ToolPage title={<RichContent as="span" html={t.linearMap.title} enableMathCopy={false} />} className="gauss-page linear-map-page">
+      <div className="gauss-layout">
+        <section className="research-panel tool-panel gauss-input-card" aria-labelledby="linear-input-title">
+          <h2 id="linear-input-title" className="tool-panel-title">{t.linearMap.inputTitle}</h2>
+          <div className="gauss-mode-row" role="group" aria-label={t.linearMap.basesTitle}>
+            <button type="button" onClick={() => setSameBasis(false)} aria-pressed={!sameBasis}
+              className={!sameBasis ? "gauss-mode gauss-mode-active" : "gauss-mode"}>{t.linearMap.modeTwoBases}</button>
+            <button type="button" onClick={() => { if (sameBasisAvailable) setSameBasis(true); }} aria-pressed={sameBasis}
+              className={sameBasis ? "gauss-mode gauss-mode-active" : "gauss-mode"} disabled={!sameBasisAvailable && !sameBasis}>
+              {t.linearMap.modeEndomorphism}
+            </button>
+          </div>
+          <div className="linear-map-input-grid">
+            <div className="linear-map-field">
+              <div className="linear-map-field-heading">
+                <label className="linear-map-label" htmlFor="source-basis">{t.linearMap.sourceBasisLabel}</label>
+                <button type="button" className="tool-button linear-map-canonical" onClick={useCanonicalSourceBasis}
+                  aria-label={`${t.linearMap.canonicalBasis} — ${t.linearMap.sourceBasisLabel}`}>{t.linearMap.canonicalBasis}</button>
+              </div>
+              <textarea id="source-basis" value={sourceBasisText} onChange={(event) => setSourceBasisText(event.target.value)}
+                className="gauss-textarea linear-map-textarea" spellCheck="false" />
+            </div>
+            {!sameBasis && <div className="linear-map-field">
+              <div className="linear-map-field-heading">
+                <label className="linear-map-label" htmlFor="target-basis">{t.linearMap.targetBasisLabel}</label>
+                <button type="button" className="tool-button linear-map-canonical" onClick={() => setTargetBasisText(canonicalBasisText(targetDimension))}
+                  aria-label={`${t.linearMap.canonicalBasis} — ${t.linearMap.targetBasisLabel}`}>{t.linearMap.canonicalBasis}</button>
+              </div>
+              <textarea id="target-basis" value={targetBasisText} onChange={(event) => setTargetBasisText(event.target.value)}
+                className="gauss-textarea linear-map-textarea" spellCheck="false" />
+            </div>}
+            <div className="linear-map-field linear-map-field-full">
+              <label className="linear-map-label" htmlFor="formula">{t.linearMap.formulaLabel}</label>
+              {result?.variablesLatex && <RichContent as="p" className="linear-map-variables" html={`${t.linearMap.variablesLabel} : $(${result.variablesLatex})$`} enableMathCopy={false} />}
+              <textarea id="formula" value={formulaText} onChange={(event) => setFormulaText(event.target.value)}
+                className="gauss-textarea linear-map-textarea" spellCheck="false" />
+            </div>
+          </div>
+          <div className="gauss-actions">
+            <button type="button" onClick={runAnalysis} className="tool-button tool-button-primary">{t.linearMap.run}</button>
+            <button type="button" onClick={loadExample} className="tool-button">{t.linearMap.resetExample}</button>
+          </div>
+          {error && <div className="gauss-error" role="alert"><strong>{t.linearMap.analyzeError}</strong><span>{error}</span></div>}
         </section>
-
-        <section className="gauss-layout">
-          <section className="showcase-panel showcase-card gauss-input-card animate-defil">
-            <h2 className="showcase-section-title">{t.linearMap.inputTitle}</h2>
-
-            <div className="gauss-mode-row">
-              <button
-                type="button"
-                onClick={() => setSameBasis(false)}
-                className={!sameBasis ? "gauss-mode gauss-mode-active" : "gauss-mode"}
-              >
-                {t.linearMap.modeTwoBases}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (sameBasisAvailable) {
-                    setSameBasis(true);
-                  }
-                }}
-                className={sameBasis ? "gauss-mode gauss-mode-active" : "gauss-mode"}
-                disabled={!sameBasisAvailable && !sameBasis}
-              >
-                {t.linearMap.modeEndomorphism}
-              </button>
+        <section className="research-panel tool-panel gauss-result-card" aria-labelledby="linear-result-title">
+          <h2 id="linear-result-title" className="tool-panel-title">{t.linearMap.resultsTitle}</h2>
+          {result && <>
+            <div className="tool-result">
+              <RichContent as="div" className="gauss-math"
+                html={`$$${unwrapDisplayMath(result.matrixTitleLatex)} = ${unwrapDisplayMath(result.matrixLatex)}$$`} enableMathCopy={false} responsiveMath />
             </div>
-
-            {!sameBasisAvailable && (
-              <p className="gauss-help">{t.linearMap.sameBasisHelp}</p>
-            )}
-
-            <div className="linear-map-input-grid">
-              <div className="linear-map-field">
-                <label className="linear-map-label" htmlFor="source-basis">
-                  {t.linearMap.sourceBasisLabel}
-                </label>
-                <p className="gauss-help">{t.linearMap.basisHelp}</p>
-                <textarea
-                  id="source-basis"
-                  value={sourceBasisText}
-                  onChange={(event) => setSourceBasisText(event.target.value)}
-                  className="gauss-textarea linear-map-textarea"
-                  spellCheck="false"
-                />
+            <ToolDetails title={t.tools.steps}>
+              {result.formulaLatex && <div className="gauss-block">
+                <h3 className="gauss-block-title">{t.linearMap.formulaTitle}</h3>
+                <RichContent as="div" className="gauss-math" html={result.formulaLatex} enableMathCopy={false} responsiveMath />
+              </div>}
+              <div className="linear-map-bases">
+                <div>
+                  <h3 className="gauss-block-title">{t.linearMap.sourceBasisLabel}</h3>
+                  <RichContent as="div" className="gauss-math" html={result.sourceBasisLatex} enableMathCopy={false} responsiveMath />
+                </div>
+                <div>
+                  <h3 className="gauss-block-title">{t.linearMap.targetBasisLabel}</h3>
+                  <RichContent as="div" className="gauss-math" html={result.targetBasisLatex} enableMathCopy={false} responsiveMath />
+                </div>
               </div>
-
-              {!sameBasis && (
-                <div className="linear-map-field">
-                  <label className="linear-map-label" htmlFor="target-basis">
-                    {t.linearMap.targetBasisLabel}
-                  </label>
-                  <p className="gauss-help">{t.linearMap.basisHelp}</p>
-                  <textarea
-                    id="target-basis"
-                    value={targetBasisText}
-                    onChange={(event) => setTargetBasisText(event.target.value)}
-                    className="gauss-textarea linear-map-textarea"
-                    spellCheck="false"
-                  />
+              <div className="gauss-block">
+                <h3 className="gauss-block-title">{t.linearMap.explanationTitle}</h3>
+                <div className="linear-map-columns">
+                  {result.columns.map((column) => (
+                    <article key={column.sourceLabel} className="linear-map-image">
+                      <div className="linear-map-formulas">
+                        <RichContent as="div" className="gauss-math" html={`$$f(${column.sourceLabel}) = ${unwrapDisplayMath(column.imageLatex)} = ${column.vectorDecompositionLatex}$$`} enableMathCopy={false} responsiveMath />
+                        <RichContent as="p" className="linear-map-conclusion gauss-math" html={`${t.linearMap.therefore} $f(${column.sourceLabel}) = ${column.decompositionLatex}$.`} enableMathCopy={false} responsiveMath />
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              )}
-
-              <div className="linear-map-field linear-map-field-full">
-                <label className="linear-map-label" htmlFor="formula">
-                  {t.linearMap.formulaLabel}
-                </label>
-                <p className="gauss-help">{t.linearMap.formulaHelp}</p>
-                <textarea
-                  id="formula"
-                  value={formulaText}
-                  onChange={(event) => setFormulaText(event.target.value)}
-                  className="gauss-textarea linear-map-textarea"
-                  spellCheck="false"
-                />
               </div>
-            </div>
-
-            <div className="gauss-actions">
-              <button type="button" onClick={runAnalysis} className="showcase-action showcase-action-primary">
-                {t.linearMap.run}
-              </button>
-              <button
-                type="button"
-                onClick={loadExample}
-                className="showcase-action showcase-action-secondary"
-              >
-                {t.linearMap.resetExample}
-              </button>
-            </div>
-
-            {error && (
-              <div className="gauss-error">
-                <strong>{t.linearMap.analyzeError}</strong>
-                <span>{error}</span>
-              </div>
-            )}
-          </section>
-
-          <section className="showcase-panel showcase-card gauss-result-card animate-defil">
-            <h2 className="showcase-section-title">{t.linearMap.resultsTitle}</h2>
-
-            {result && (
-              <>
-                <div className="gauss-summary">
-                  <p className="gauss-summary-label">{t.linearMap.summaryTitle}</p>
-                  <span className={statusClass()}>
-                    {t.linearMap.summaryReady} {result.dimension}
-                  </span>
-                </div>
-
-                {result.formulaLatex && (
-                  <div className="gauss-block">
-                    <RichContent
-                      as="h3"
-                      className="gauss-block-title"
-                      html={t.linearMap.formulaTitle}
-                      enableMathCopy={false}
-                    />
-                    <div className="gauss-solution-card">
-                      <RichContent as="div" className="gauss-math" html={result.formulaLatex} enableMathCopy={false} />
-                    </div>
-                  </div>
-                )}
-
-                <div className="gauss-block">
-                  <RichContent
-                    as="h3"
-                    className="gauss-block-title"
-                    html={t.linearMap.basesTitle}
-                    enableMathCopy={false}
-                  />
-                  <div className="gauss-step-views">
-                    <div className="gauss-view-card">
-                      <p className="gauss-view-title">{t.linearMap.sourceBasisLabel}</p>
-                      <RichContent as="div" className="gauss-math" html={result.sourceBasisLatex} enableMathCopy={false} />
-                    </div>
-
-                    <div className="gauss-view-card">
-                      <p className="gauss-view-title">{t.linearMap.targetBasisLabel}</p>
-                      <RichContent as="div" className="gauss-math" html={result.targetBasisLatex} enableMathCopy={false} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="gauss-block">
-                  <RichContent
-                    as="h3"
-                    className="gauss-block-title"
-                    html={t.linearMap.explanationTitle}
-                    enableMathCopy={false}
-                  />
-
-                  <div className="linear-map-columns">
-                    {result.columns.map((column) => (
-                      <article key={column.sourceLabel} className="gauss-step-card">
-                        <div className="linear-map-column-header">
-                          <span className="gauss-step-index">{column.index + 1}</span>
-                          <RichContent
-                            as="strong"
-                            className="linear-map-column-title"
-                            html={`$${column.sourceLabel}$`}
-                            enableMathCopy={false}
-                          />
-                        </div>
-
-                        <div className="linear-map-formulas">
-                          <RichContent
-                            as="div"
-                            className="gauss-math"
-                            html={`$$f(${column.sourceLabel}) = ${unwrapDisplayMath(column.imageLatex)} = ${column.vectorDecompositionLatex} = ${column.decompositionLatex}$$`}
-                            enableMathCopy={false}
-                          />
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="gauss-block">
-                  <RichContent
-                    as="h3"
-                    className="gauss-block-title"
-                    html={t.linearMap.matrixTitle}
-                    enableMathCopy={false}
-                  />
-                  <div className="gauss-solution-card">
-                    <RichContent
-                      as="div"
-                      className="gauss-math"
-                      html={`$$${unwrapDisplayMath(result.matrixTitleLatex)} = ${unwrapDisplayMath(result.matrixLatex)}$$`}
-                      enableMathCopy={false}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </section>
+            </ToolDetails>
+          </>}
         </section>
       </div>
-    </div>
+    </ToolPage>
   );
 }

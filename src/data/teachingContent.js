@@ -3,37 +3,6 @@ import { getStudentToolCards } from "../tools/studentTools";
 export function getTeachingYears(t) {
   return [
     {
-      year: "2025 -",
-      accent: "gold",
-      items: [
-        {
-          title: t.teaching.teach1.title4,
-          descriptionHtml: t.teaching.teach1.desc4,
-          imageLinks: [
-            {
-              href: "https://www.h-k.fr/adc.ps.2026PCm",
-              src: `${process.env.PUBLIC_URL}/hetk/pc2026.jpg`,
-              alt: t.research.pub5Title,
-              title: t.research.pub5Title,
-            },
-            {
-              href: "https://www.h-k.fr/adc.ps.2026MPm",
-              src: `${process.env.PUBLIC_URL}/hetk/mp2026.jpg`,
-              alt: t.research.pub5Title,
-              title: t.research.pub5Title,
-            },
-            {
-              href: "https://www.h-k.fr/adc.ps.2025PSIm",
-              src: `${process.env.PUBLIC_URL}/hetk/psi2025.jpg`,
-              alt: t.research.pub2Title,
-              title: t.research.pub2Title,
-            },
-          ],
-          actions: [],
-        },
-      ],
-    },
-    {
       year: "2026 - 2027",
       accent: "emerald",
       items: [
@@ -104,7 +73,7 @@ export function getTeachingYears(t) {
 
 export function getTeachingResourceCards({ t, lang, openTeX }) {
   return [
-    ...getStudentToolCards(t, lang),
+    ...getStudentToolCards(t, lang).filter((tool) => tool.id === "training"),
     {
       id: "terminale",
       title: t.teaching.resourceTerminaleTitle,

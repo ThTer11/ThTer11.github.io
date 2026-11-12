@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import NavBar from "../components/NavBar";
+import { useEffect, useRef, useState } from "react";
+import ToolPage, { ToolDetails } from "../components/ToolPage";
 import RichContent from "../components/RichContent";
 import { useLang } from "../App";
 import { analyzeInverseInput, augmentedMatrixToLatex, matrixToLatex } from "../utils/gauss";
-import "../showcase.css";
 import "../gauss.css";
 
 function describeStep(step) {
@@ -17,16 +16,16 @@ function describeStep(step) {
 
   if (step.type === "scale") {
     const factorLatex =
-      step.factor.numerator === -step.factor.denominator
+      step.factor.equals(-1)
         ? "-"
-        : step.factor.toLatex();
+        : (step.factor.toFactorLatex?.() ?? step.factor.toLatex());
     return `$$L_{${step.row + 1}} \\leftarrow ${factorLatex}L_{${step.row + 1}}$$`;
   }
 
   const factor = step.factor;
-  const sign = factor.numerator < 0n ? "+" : "-";
+  const sign = (factor.isNegative?.() ?? factor.numerator < 0n) ? "+" : "-";
   const absolute = factor.abs();
-  const scalar = absolute.isOne() ? "" : absolute.toLatex();
+  const scalar = absolute.isOne() ? "" : (absolute.toFactorLatex?.() ?? absolute.toLatex());
   return `$$L_{${step.row + 1}} \\leftarrow L_{${step.row + 1}} ${sign} ${scalar}L_{${step.withRow + 1}}$$`;
 }
 
@@ -37,12 +36,15 @@ function statusClass(isInvertible) {
 }
 
 export default function Inverse() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [input, setInput] = useState(t.inverse.exampleMatrix);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const requestVersion = useRef(0);
 
   useEffect(() => {
+    requestVersion.current++;
     try {
       setResult(analyzeInverseInput(t.inverse.exampleMatrix));
       setError("");
@@ -50,9 +52,12 @@ export default function Inverse() {
       setResult(null);
       setError(currentError.message);
     }
+    return () => { requestVersion.current++; };
   }, [t.inverse.exampleMatrix]);
 
   const loadExample = () => {
+    requestVersion.current++;
+    setBusy(false);
     setInput(t.inverse.exampleMatrix);
 
     try {
@@ -64,168 +69,78 @@ export default function Inverse() {
     }
   };
 
-  const runAnalysis = () => {
+  const runAnalysis = async () => {
+    const request = ++requestVersion.current;
+    setBusy(true);
     try {
-      setResult(analyzeInverseInput(input));
+      let next;
+      try { next = analyzeInverseInput(input); }
+      catch (_) {
+        const { analyzeSymbolicInverseInput } = await import("../utils/symbolicMatrix");
+        next = analyzeSymbolicInverseInput(input, lang);
+      }
+      if (request !== requestVersion.current) return;
+      setResult(next);
       setError("");
     } catch (currentError) {
+      if (request !== requestVersion.current) return;
       setResult(null);
       setError(currentError.message);
+    } finally {
+      if (request === requestVersion.current) setBusy(false);
     }
   };
 
   return (
-    <div className="showcase-page showcase-page-teaching gauss-page min-w-screen min-h-screen pb-10">
-      <NavBar />
-
-      <div className="showcase-shell">
-        <div className="showcase-orb showcase-orb-a" />
-        <div className="showcase-orb showcase-orb-b" />
-
-        <section className="showcase-panel showcase-card animate-defil">
-          <p className="showcase-eyebrow">{t.teaching.sectionResources}</p>
-          <h1 className="showcase-title">{t.inverse.title}</h1>
-          <p className="showcase-lead">{t.inverse.lead}</p>
+    <ToolPage title={t.inverse.title} className="gauss-page inverse-page">
+      <div className="gauss-layout">
+        <section className="research-panel tool-panel gauss-input-card" aria-labelledby="inverse-input-title">
+          <h2 id="inverse-input-title" className="tool-panel-title">{t.inverse.inputTitle}</h2>
+          <textarea id="inverse-input" value={input} onChange={(event) => setInput(event.target.value)}
+            className="gauss-textarea" spellCheck="false" aria-labelledby="inverse-input-title" />
+          <div className="gauss-actions">
+            <button type="button" onClick={runAnalysis} className="tool-button tool-button-primary" disabled={busy}>{busy ? t.inverse.computing : t.inverse.run}</button>
+            <button type="button" onClick={loadExample} className="tool-button">{t.inverse.resetExample}</button>
+          </div>
+          {error && <div className="gauss-error" role="alert"><strong>{t.inverse.analyzeError}</strong><span>{error}</span></div>}
         </section>
-
-        <section className="gauss-layout">
-          <section className="showcase-panel showcase-card gauss-input-card animate-defil">
-            <h2 className="showcase-section-title">{t.inverse.inputTitle}</h2>
-
-            <p className="gauss-help">{t.inverse.matrixHelp}</p>
-
-            <textarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              className="gauss-textarea"
-              spellCheck="false"
-            />
-
-            <div className="gauss-actions">
-              <button type="button" onClick={runAnalysis} className="showcase-action showcase-action-primary">
-                {t.inverse.run}
-              </button>
-              <button
-                type="button"
-                onClick={loadExample}
-                className="showcase-action showcase-action-secondary"
-              >
-                {t.inverse.resetExample}
-              </button>
+        <section className="research-panel tool-panel gauss-result-card" aria-labelledby="inverse-result-title">
+          <div className="tool-panel-heading">
+            <h2 id="inverse-result-title" className="tool-panel-title">{t.inverse.resultsTitle}</h2>
+            {result && <span className={result.isInvertible && result.hasParameters ? "gauss-status gauss-status-warning" : statusClass(result.isInvertible)}>
+              {result.isInvertible ? (result.hasParameters ? t.inverse.statusConditional : t.inverse.statusInvertible) : t.inverse.statusSingular}
+            </span>}
+          </div>
+          {result && <>
+            <div className="tool-result">
+              <RichContent as="div" className="gauss-math" html={result.isInvertible && result.inverseMatrix
+                ? `$$A^{-1} = ${matrixToLatex(result.inverseMatrix).replace(/^\$\$|\$\$$/g, "")}$$`
+                : `$$${t.inverse.noInverseLatex}$$`} enableMathCopy={false} responsiveMath />
+              {result.isInvertible && result.hasParameters && <RichContent as="p" className="tool-result-label inverse-conditions"
+                html={`${t.inverse.coefficientsDefined}${result.determinant.isProvablyNonZero() ? "." : `, $\\det(A)=${result.determinant.toLatex()}\\ne0$.`}`} enableMathCopy={false} responsiveMath />}
             </div>
-
-            {error && (
-              <div className="gauss-error">
-                <strong>{t.inverse.analyzeError}</strong>
-                <span>{error}</span>
+            <ToolDetails title={t.tools.steps}>
+              {result.pivotConditions?.length > 0 && <RichContent as="p" className="tool-result-label"
+                html={`${t.inverse.stepConditions} $${[...new Set(result.pivotConditions.map(value => `${value.toLatex()}\\ne0`))].join(",\\;")}$.`} enableMathCopy={false} responsiveMath />}
+              <div className="gauss-block">
+                <h3 className="gauss-block-title">{t.inverse.augmentedView}</h3>
+                <RichContent as="div" className="gauss-math" html={augmentedMatrixToLatex(result.initialAugmented, result.size)} enableMathCopy={false} responsiveMath />
               </div>
-            )}
-          </section>
-
-          <section className="showcase-panel showcase-card gauss-result-card animate-defil">
-            <h2 className="showcase-section-title">{t.inverse.resultsTitle}</h2>
-
-            {result && (
-              <>
-                <div className="gauss-summary">
-                  <p className="gauss-summary-label">{t.inverse.natureTitle}</p>
-                  <span className={statusClass(result.isInvertible)}>
-                    {result.isInvertible ? t.inverse.statusInvertible : t.inverse.statusSingular}
-                  </span>
-                </div>
-
-                <div className="gauss-block">
-                  <h3 className="gauss-block-title">{t.inverse.initialTitle}</h3>
-                  <div className="gauss-step-views">
-                    <div className="gauss-view-card">
-                      <p className="gauss-view-title">{t.inverse.matrixView}</p>
-                      <RichContent
-                        as="div"
-                        className="gauss-math"
-                        html={matrixToLatex(result.initialMatrix)}
-                        enableMathCopy={false}
-                      />
+              <div className="gauss-steps">
+                {result.steps.slice(1).map((step, index) => (
+                  <article key={`${step.type}-${index}`} className="gauss-step-card">
+                    <div className="gauss-step-header">
+                      <span className="gauss-step-index">{index + 1}</span>
+                      <RichContent as="div" className="gauss-math gauss-step-formula" html={describeStep(step)} enableMathCopy={false} responsiveMath />
                     </div>
-
-                    <div className="gauss-view-card">
-                      <p className="gauss-view-title">{t.inverse.augmentedView}</p>
-                      <RichContent
-                        as="div"
-                        className="gauss-math"
-                        html={augmentedMatrixToLatex(result.initialAugmented, result.size)}
-                        enableMathCopy={false}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="gauss-block">
-                  <h3 className="gauss-block-title">{t.inverse.stepsTitle}</h3>
-
-                  <div className="gauss-steps inverse-steps-grid">
-                    {result.steps.slice(1).map((step, index) => (
-                      <article key={`${step.type}-${index}`} className="gauss-step-card">
-                        <div className="gauss-step-header">
-                          <span className="gauss-step-index">{index + 1}</span>
-                          <RichContent
-                            as="div"
-                            className="gauss-step-label gauss-step-formula"
-                            html={describeStep(step)}
-                            enableMathCopy={false}
-                          />
-                        </div>
-
-                        <div className="gauss-step-views">
-                          <div className="gauss-view-card">
-                            <p className="gauss-view-title">{t.inverse.augmentedView}</p>
-                            <RichContent
-                              as="div"
-                              className="gauss-math"
-                              html={augmentedMatrixToLatex(step.matrix, result.size)}
-                              enableMathCopy={false}
-                            />
-                          </div>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="gauss-block">
-                  <h3 className="gauss-block-title">{t.inverse.reducedTitle}</h3>
-                  <div className="gauss-step-views">
-                    <div className="gauss-view-card">
-                      <p className="gauss-view-title">{t.inverse.augmentedView}</p>
-                      <RichContent
-                        as="div"
-                        className="gauss-math"
-                        html={augmentedMatrixToLatex(result.finalAugmented, result.size)}
-                        enableMathCopy={false}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="gauss-block">
-                  <h3 className="gauss-block-title">{t.inverse.inverseTitle}</h3>
-                  <div className="gauss-solution-card">
-                    <RichContent
-                      as="div"
-                      className="gauss-math"
-                      html={
-                        result.isInvertible && result.inverseMatrix
-                          ? matrixToLatex(result.inverseMatrix)
-                          : `$$${t.inverse.noInverseLatex}$$`
-                      }
-                      enableMathCopy={false}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </section>
+                    <RichContent as="div" className="gauss-math" html={augmentedMatrixToLatex(step.matrix, result.size)} enableMathCopy={false} responsiveMath />
+                  </article>
+                ))}
+              </div>
+            </ToolDetails>
+          </>}
         </section>
       </div>
-    </div>
+    </ToolPage>
   );
 }

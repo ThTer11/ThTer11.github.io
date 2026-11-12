@@ -59,6 +59,10 @@ function identityMatrix(size) {
   );
 }
 
+export function canonicalBasisText(dimension) {
+  return identityMatrix(dimension).map((vector) => vector.map(String).join(" ")).join("\n");
+}
+
 function swapRows(matrix, first, second) {
   [matrix[first], matrix[second]] = [matrix[second], matrix[first]];
 }
@@ -195,25 +199,52 @@ function familyLatex(name, vectors) {
 function normalizeExpression(text) {
   return text
     .replace(/\u2212/g, "-")
-    .replace(/\*/g, "")
+    .replace(/([a-zA-Z]+)_\{?(\d+)\}?/g, "$1$2")
     .replace(/\s+/g, "");
 }
 
-function variableAliases(dimension) {
-  const aliases = new Map();
-
-  for (let index = 0; index < dimension; index += 1) {
-    aliases.set(`x${index + 1}`, index);
-    if (index < DEFAULT_VARIABLES.length) {
-      aliases.set(DEFAULT_VARIABLES[index], index);
-    }
-  }
-
-  return aliases;
+function formulaVariables(rawText) {
+  return [...new Set(rawText.split("\n").map(normalizeExpression).join("+").match(/[a-zA-Z][a-zA-Z0-9]*/g) || [])];
 }
 
-function parseLinearComponent(rawExpression, dimension, label) {
-  const aliases = variableAliases(dimension);
+export function inferLinearMapSourceDimension(formulaText, currentDimension = 1) {
+  const used = formulaVariables(formulaText);
+  const requiredDimension = used.length && used.every((name) => /^x\d+$/.test(name))
+    ? Math.max(...used.map((name) => Number(name.slice(1))))
+    : used.length;
+  // A map can omit coordinates of its source space; keep explicitly chosen dimensions.
+  return Math.max(currentDimension, requiredDimension);
+}
+
+function inferVariables(rawText, dimension) {
+  const used = formulaVariables(rawText);
+  const defaults = Array.from({ length: dimension }, (_, i) => DEFAULT_VARIABLES[i] ?? `x${i + 1}`);
+  if (used.length > dimension) throw new Error(`L’application utilise ${used.length} variables pour une base de dimension ${dimension}.`);
+  if (used.length && used.every(name => /^x\d+$/.test(name))) {
+    if (used.some(name => Number(name.slice(1)) < 1 || Number(name.slice(1)) > dimension)) {
+      throw new Error(`Les indices des variables doivent être compris entre 1 et ${dimension}.`);
+    }
+    return Array.from({ length: dimension }, (_, i) => `x${i + 1}`);
+  }
+  if (used.every(name => defaults.includes(name))) return defaults;
+  const names = used.sort((a, b) => {
+    const ai = DEFAULT_VARIABLES.indexOf(a), bi = DEFAULT_VARIABLES.indexOf(b);
+    return (ai < 0 ? 100 : ai) - (bi < 0 ? 100 : bi) || a.localeCompare(b, undefined, { numeric: true });
+  });
+  for (let i = 0; names.length < dimension; i++) {
+    const candidate = DEFAULT_VARIABLES[i] ?? `x${i + 1}`;
+    if (!names.includes(candidate)) names.push(candidate);
+  }
+  return names;
+}
+
+function variableLatex(name) {
+  return name.replace(/^([a-zA-Z]+)(\d+)$/, "$1_{$2}");
+}
+
+function parseLinearComponent(rawExpression, variableNames, label) {
+  const aliases = new Map(variableNames.map((name, index) => [name, index]));
+  const dimension = variableNames.length;
   const expression = normalizeExpression(rawExpression);
 
   if (!expression) {
@@ -222,6 +253,7 @@ function parseLinearComponent(rawExpression, dimension, label) {
 
   const normalized = /^[+-]/.test(expression) ? expression : `+${expression}`;
   const terms = normalized.match(/[+-][^+-]+/g) || [];
+  if (terms.join("") !== normalized) throw new Error(`${label}: syntaxe invalide.`);
   const coefficients = Array.from({ length: dimension }, () => Fraction.zero());
   let constant = Fraction.zero();
 
@@ -235,10 +267,10 @@ function parseLinearComponent(rawExpression, dimension, label) {
 
     if (/[a-zA-Z]/.test(body)) {
       const match = body.match(
-        /^((?:\d+(?:\.\d+)?|\d*\.\d+)(?:\/(?:\d+(?:\.\d+)?|\d*\.\d+))?)?([a-zA-Z][a-zA-Z0-9]*)$/,
+        /^((?:\d+(?:\.\d+)?|\d*\.\d+)(?:\/(?:\d+(?:\.\d+)?|\d*\.\d+))?)?\*?([a-zA-Z][a-zA-Z0-9]*)$/,
       );
 
-      if (!match) {
+      if (!match || body.startsWith("*")) {
         throw new Error(`${label}: terme linéaire invalide "${body}".`);
       }
 
@@ -276,8 +308,9 @@ function parseLinearFormula(rawText, dimension) {
     throw new Error("Application linéaire: entre au moins une composante.");
   }
 
-  return lines.map((line, index) =>
-    parseLinearComponent(line, dimension, `Application linéaire, ligne ${index + 1}`));
+  const variableNames = inferVariables(rawText, dimension);
+  return { variableNames, rows: lines.map((line, index) =>
+    parseLinearComponent(line, variableNames, `Application linéaire, ligne ${index + 1}`)) };
 }
 
 function computeImagesFromFormula(formulaRows, sourceVectors) {
@@ -300,11 +333,11 @@ function formatFormulaTerm(coefficient, variable, first) {
   return `${sign}${scalar}${variable}`;
 }
 
-function formulaRowLatex(coefficients, dimension) {
+function formulaRowLatex(coefficients, variableNames) {
   const parts = [];
 
   coefficients.forEach((coefficient, index) => {
-    const variable = index < DEFAULT_VARIABLES.length ? DEFAULT_VARIABLES[index] : `x_{${index + 1}}`;
+    const variable = variableLatex(variableNames[index]);
     const part = formatFormulaTerm(coefficient, variable, parts.length === 0);
 
     if (part) {
@@ -315,10 +348,10 @@ function formulaRowLatex(coefficients, dimension) {
   return parts.length > 0 ? parts.join("") : "0";
 }
 
-function formulaLatex(formulaRows) {
-  const variables = DEFAULT_VARIABLES.slice(0, formulaRows[0].length).join(",");
-  const components = formulaRows.map((row) => formulaRowLatex(row)).join(",\\;");
-  return `$$f\\left(${variables}\\right)=\\left(${components}\\right)$$`;
+function formulaLatex(formulaRows, variableNames) {
+  const variables = variableNames.map(variableLatex).join(",");
+  const components = formulaRows.map((row) => formulaRowLatex(row, variableNames)).join(",\\;");
+  return `$$\\begin{array}{ccccc}f & : & \\mathbb{R}^{${variableNames.length}} & \\rightarrow & \\mathbb{R}^{${formulaRows.length}} \\\\ & & \\left(${variables}\\right) & \\mapsto & \\left(${components}\\right)\\end{array}$$`;
 }
 
 function imageDefinitionLatex(sourceLabels, columns) {
@@ -336,7 +369,7 @@ export function canUseSameBasis({ sourceBasisText, targetBasisText, imageText, i
 
     if (inputMode === "formula") {
       const formulaRows = parseLinearFormula(formulaText, sourceDimension);
-      return formulaRows.length === sourceDimension;
+      return formulaRows.rows.length === sourceDimension;
     }
 
     const targetVectors = parseVectorList(targetBasisText, "Base d'arrivée");
@@ -365,9 +398,12 @@ export function analyzeLinearMapInput({
   let targetVectors;
   let images;
   let formulaLatexValue = "";
+  let variableNames = [];
 
   if (inputMode === "formula") {
-    const formulaRows = parseLinearFormula(formulaText, sourceDimension);
+    const parsed = parseLinearFormula(formulaText, sourceDimension);
+    const formulaRows = parsed.rows;
+    variableNames = parsed.variableNames;
     const targetDimension = formulaRows.length;
 
     if (sameBasis && targetDimension !== sourceDimension) {
@@ -378,7 +414,7 @@ export function analyzeLinearMapInput({
       ? sourceVectors.map((vector) => vector.map((value) => Fraction.from(value)))
       : parseVectorList(targetBasisText, "Base d'arrivée");
     images = computeImagesFromFormula(formulaRows, sourceVectors);
-    formulaLatexValue = formulaLatex(formulaRows);
+    formulaLatexValue = formulaLatex(formulaRows, variableNames);
 
     if (targetVectors.length !== targetDimension || targetVectors[0].length !== targetDimension) {
       throw new Error("La base d'arrivée doit avoir la même dimension que l'espace d'arrivée.");
@@ -434,6 +470,8 @@ export function analyzeLinearMapInput({
 
   return {
     dimension: sourceDimension,
+    variableNames,
+    variablesLatex: variableNames.map(variableLatex).join(",\\;"),
     sameBasis,
     inputMode,
     formulaLatex: inputMode === "formula" ? formulaLatexValue : imageDefinitionLatex(sourceLabels, columns),

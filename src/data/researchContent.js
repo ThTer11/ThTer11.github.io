@@ -53,18 +53,19 @@ export function getPublications(t, openBib) {
       title: t.research.pub5Title,
       description: t.research.pub5Info,
       authors: null,
-      actions: [
+      covers: [
         {
-          kind: "link",
-          label: t.research.actionOpenMP2026,
+          src: `${process.env.PUBLIC_URL}/hetk/mp2026.jpg`,
+          alt: t.research.coverMP2026,
           href: "https://www.h-k.fr/adc.ps.2026MPm",
         },
         {
-          kind: "link",
-          label: t.research.actionOpenPC2026,
+          src: `${process.env.PUBLIC_URL}/hetk/pc2026.jpg`,
+          alt: t.research.coverPC2026,
           href: "https://www.h-k.fr/adc.ps.2026PCm",
         },
       ],
+      actions: [],
     },
     {
       id: "exam-2025",
@@ -74,13 +75,14 @@ export function getPublications(t, openBib) {
       title: t.research.pub2Title,
       description: t.research.pub2Info,
       authors: null,
-      actions: [
+      covers: [
         {
-          kind: "link",
-          label: t.research.actionOpenPSI2025,
+          src: `${process.env.PUBLIC_URL}/hetk/psi2025.jpg`,
+          alt: t.research.coverPSI2025,
           href: "https://www.h-k.fr/adc.ps.2025PSIm",
         },
       ],
+      actions: [],
     },
     {
       id: "outreach-2025",

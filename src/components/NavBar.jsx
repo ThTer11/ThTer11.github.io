@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Bars3Icon, XMarkIcon, MoonIcon, SunIcon, GlobeAltIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useLang } from "../App";
-import ReactCountryFlag from "react-country-flag";
-import Language from "@heroicons/react/24/outline/GlobeAltIcon";
-import Menu from "@heroicons/react/24/outline/Bars3Icon";
-import Moon from "@heroicons/react/24/outline/MoonIcon";
-import ChevronDown from "@heroicons/react/24/outline/ChevronDownIcon";
+import { isPracticePath, practiceHref } from "../practice/catalog";
 import "../navbar.css";
+
+const navClass = ({ isActive }) => `nav-main-link${isActive ? " nav-main-link-active" : ""}`;
 
 export default function NavBar() {
   const [menu, setMenu] = useState(false);
@@ -15,234 +14,131 @@ export default function NavBar() {
   const { t, lang, setLang } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const rootRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const languageButtonRef = useRef(null);
+  const teachingButtonRef = useRef(null);
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
+    try { localStorage.setItem("theme", theme); } catch { /* Theme works without storage. */ }
   }, [theme]);
 
   useEffect(() => {
     setMenu(false);
     setTeachingMenu(false);
+    setTranslationsOpen(false);
   }, [location.pathname, location.hash]);
 
-  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      if (menu) menuButtonRef.current?.focus();
+      else if (translationsOpen) languageButtonRef.current?.focus();
+      else if (teachingMenu) teachingButtonRef.current?.focus();
+      setMenu(false);
+      setTeachingMenu(false);
+      setTranslationsOpen(false);
+    };
+    const closeOutside = (event) => {
+      if (rootRef.current?.contains(event.target)) return;
+      setMenu(false);
+      setTeachingMenu(false);
+      setTranslationsOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOutside);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOutside);
+    };
+  }, [menu, translationsOpen, teachingMenu]);
 
+  const toggleTheme = () => setTheme((value) => value === "dark" ? "light" : "dark");
   const changeLang = (newLang) => {
     setLang(newLang);
+    setMenu(false);
     setTranslationsOpen(false);
-
     const pathParts = location.pathname.split("/").filter(Boolean);
-
-    if (pathParts.length === 0) {
-      navigate(`/${newLang}/${location.search}${location.hash}`);
-      return;
-    }
-
-    if (pathParts[0] === "website") {
-      pathParts.splice(1, 1, newLang);
-      navigate(`/${pathParts.join("/")}${location.search}${location.hash}`);
-      return;
-    }
-
-    pathParts[0] = newLang;
+    if (pathParts[0] === "website") pathParts.splice(1, 1, newLang);
+    else if (pathParts.length > 0) pathParts[0] = newLang;
+    else pathParts.push(newLang);
     navigate(`/${pathParts.join("/")}${location.search}${location.hash}`);
   };
 
-  const teachingLinks = useMemo(
-    () => [
-      {
-        to: `/${lang}/enseignements#activities`,
-        label: t.teaching.sectionActivities,
-      },
-      {
-        to: `/${lang}/enseignements#resources`,
-        label: t.teaching.sectionResources,
-      },
-      {
-        to: `/${lang}/entrainements`,
-        label: t.teaching.sectionTraining,
-      },
-    ],
-    [lang, t.teaching.sectionActivities, t.teaching.sectionResources, t.teaching.sectionTraining],
-  );
-
-  const teachingActive =
-    location.pathname === `/${lang}/enseignements` ||
-    location.pathname.startsWith(`/${lang}/entrainements`) ||
-    ["gauss", "inverse", "application-lineaire", "tikz"].some((path) =>
-      location.pathname.startsWith(`/${lang}/${path}`));
+  const teachingLinks = [
+    { to: `/${lang}/enseignements#activities`, label: t.teaching.sectionActivities },
+    { to: `/${lang}/enseignements#resources`, label: t.teaching.sectionResources },
+  ];
+  const practiceActive = isPracticePath(location.pathname, lang);
+  const teachingActive = location.pathname === `/${lang}/enseignements`;
+  const ThemeIcon = theme === "dark" ? SunIcon : MoonIcon;
+  const themeAction = theme === "dark" ? t.nav.light : t.nav.dark;
+  const practiceClass = `nav-practice-link${practiceActive ? " nav-practice-link-active" : ""}`;
 
   return (
-    <div>
-      <div className="site-nav fixed flex items-center justify-between w-full top-0 left-0 px-9 py-3 border-b border-gray-700 bg-white/20 dark:bg-[#252525]/20 backdrop-blur-sm rounded-xl shadow-lg z-50">
-        <Menu
-          onClick={() => setMenu((prev) => !prev)}
-          className="dark:text-white cursor-pointer w-6 lg:hidden"
-        />
-        <Link to={`/${lang}/`} className="dark:text-white font-mono text-xl font-semibold cursor-pointer">
-          Théo Ternier
+    <header ref={rootRef} className="site-navigation">
+      <nav className="site-nav" aria-label={t.nav.menu}>
+        <Link to={`/${lang}/`} className="nav-brand">Théo Ternier</Link>
+        <div className="nav-desktop-links">
+          <NavLink to={`/${lang}/`} end className={navClass}>{t.nav.home}</NavLink>
+          <NavLink to={`/${lang}/recherche`} className={navClass}>{t.nav.research}</NavLink>
+          <div className={`nav-teaching-group${teachingActive ? " nav-teaching-group-active" : ""}`}
+            onMouseEnter={() => setTeachingMenu(true)} onMouseLeave={() => setTeachingMenu(false)}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setTeachingMenu(false); }}>
+            <NavLink to={`/${lang}/enseignements`} className={navClass}>{t.nav.teaching}</NavLink>
+            <button ref={teachingButtonRef} type="button" className="nav-icon-button nav-caret"
+              aria-label={t.nav.teaching} aria-expanded={teachingMenu} aria-controls="nav-teaching-links"
+              onClick={() => setTeachingMenu((value) => !value)}><ChevronDownIcon aria-hidden="true" /></button>
+            {teachingMenu && <div id="nav-teaching-links" className="nav-submenu">
+              {teachingLinks.map((link) => <Link key={link.to} to={link.to} className="nav-submenu-link">{link.label}</Link>)}
+            </div>}
+          </div>
+          <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
+          <NavLink to={`/${lang}/conferences`} className={navClass}>{t.nav.conferences}</NavLink>
+        </div>
+        <div className="nav-desktop-controls">
+          <button type="button" className="nav-icon-button" onClick={toggleTheme} aria-label={themeAction} title={themeAction}>
+            <ThemeIcon aria-hidden="true" />
+          </button>
+          <button ref={languageButtonRef} type="button" className="nav-icon-button"
+            onClick={() => setTranslationsOpen((value) => !value)} aria-label={t.nav.language}
+            aria-expanded={translationsOpen} aria-controls="nav-language-links"><GlobeAltIcon aria-hidden="true" /></button>
+          {translationsOpen && <div id="nav-language-links" className="nav-language-popup">
+            <button type="button" lang="fr" aria-pressed={lang === "fr"} onClick={() => changeLang("fr")}>Français</button>
+            <button type="button" lang="en" aria-pressed={lang === "en"} onClick={() => changeLang("en")}>English</button>
+          </div>}
+        </div>
+        <Link to={practiceHref(lang)} className={`nav-mobile-practice ${practiceClass}`} aria-current={practiceActive ? "page" : undefined}>
+          {t.nav.practice}
         </Link>
-
-        <div className="hidden items-center lg:flex">
-          <NavLink
-            to={`/${lang}/`}
-            end
-            className={({ isActive }) =>
-              `transition mx-2 p-2 rounded-lg ${
-                isActive
-                  ? "text-white dark:text-black bg-black/80 dark:bg-white/80"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.home}
-          </NavLink>
-          <NavLink
-            to={`/${lang}/recherche`}
-            className={({ isActive }) =>
-              `transition mx-2 p-2 rounded-lg ${
-                isActive
-                  ? "text-white dark:text-black bg-black/80 dark:bg-white/80"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.research}
-          </NavLink>
-
-          <div
-            className="nav-teaching-group"
-            onMouseEnter={() => setTeachingMenu(true)}
-            onMouseLeave={() => setTeachingMenu(false)}
-          >
-            <NavLink
-              to={`/${lang}/enseignements`}
-              className={() =>
-                `transition mx-2 p-2 rounded-lg ${
-                  teachingActive
-                    ? "text-white dark:text-black bg-black/80 dark:bg-white/80"
-                    : "text-gray-500 dark:hover:text-white hover:text-black"
-                }`
-              }
-            >
-              {t.nav.teaching}
-            </NavLink>
-            <button
-              type="button"
-              className={teachingActive ? "nav-caret nav-caret-active" : "nav-caret"}
-              onClick={() => setTeachingMenu((prev) => !prev)}
-              aria-label={t.nav.teaching}
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-
-            {teachingMenu && (
-              <div className="nav-submenu">
-                {teachingLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className="nav-submenu-link">
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+        <button ref={menuButtonRef} type="button" className="nav-mobile-toggle nav-icon-button"
+          onClick={() => setMenu((value) => !value)} aria-label={menu ? t.nav.closeMenu : t.nav.menu}
+          aria-expanded={menu} aria-controls="nav-mobile-menu">
+          {menu ? <XMarkIcon aria-hidden="true" /> : <Bars3Icon aria-hidden="true" />}
+        </button>
+      </nav>
+      {menu && <nav id="nav-mobile-menu" className="nav-mobile-menu" aria-label={t.nav.menu}
+        onClick={(event) => { if (event.target.closest("a")) setMenu(false); }}>
+        <NavLink to={`/${lang}/`} end className={navClass}>{t.nav.home}</NavLink>
+        <NavLink to={`/${lang}/recherche`} className={navClass}>{t.nav.research}</NavLink>
+        <NavLink to={`/${lang}/enseignements`} className={navClass}>{t.nav.teaching}</NavLink>
+        <div className="nav-mobile-submenu">
+          {teachingLinks.map((link) => <Link key={link.to} to={link.to} className="nav-submenu-link">{link.label}</Link>)}
+        </div>
+        <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
+        <NavLink to={`/${lang}/conferences`} className={navClass}>{t.nav.conferences}</NavLink>
+        <div className="nav-mobile-settings">
+          <button type="button" className="nav-theme-button" onClick={toggleTheme}><ThemeIcon aria-hidden="true" />{themeAction}</button>
+          <div className="nav-language-options" role="group" aria-label={t.nav.language}>
+            <button type="button" lang="fr" aria-pressed={lang === "fr"} onClick={() => changeLang("fr")}>FR</button>
+            <button type="button" lang="en" aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
           </div>
-
-          <NavLink
-            to={`/${lang}/conferences`}
-            className={({ isActive }) =>
-              `transition mx-2 p-2 rounded-lg ${
-                isActive
-                  ? "text-white dark:text-black bg-black/80 dark:bg-white/80"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.conferences}
-          </NavLink>
         </div>
-
-        <div className="flex items-center">
-          <Moon onClick={toggleTheme} className="dark:text-white cursor-pointer w-6 mx-3" />
-          <Language
-            onClick={() => setTranslationsOpen((prev) => !prev)}
-            className="dark:text-white cursor-pointer w-6 mx-3"
-          />
-        </div>
-      </div>
-
-      {translationsOpen && (
-        <div className="fixed flex flex-col justify-between top-[56px] right-7 p-6 bg-white/20 dark:bg-[#252525]/20 backdrop-blur-sm z-[1000] border border-gray-400 rounded-lg shadow-md">
-          <button onClick={() => changeLang("fr")}>
-            <ReactCountryFlag countryCode="FR" svg />
-          </button>
-          <button onClick={() => changeLang("en")}>
-            <ReactCountryFlag countryCode="GB" svg />
-          </button>
-        </div>
-      )}
-
-      {menu && (
-        <div className="fixed top-[53px] left-0 w-full border-b bg-white/50 dark:bg-[#252525]/50 border-gray-700 backdrop-blur-sm lg:hidden flex flex-col animate-deroule overflow-hidden shadow-xl z-[1000]">
-          <NavLink
-            to={`/${lang}/`}
-            end
-            className={({ isActive }) =>
-              `transition m-2 ${
-                isActive
-                  ? "dark:text-white text-black"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.home}
-          </NavLink>
-          <NavLink
-            to={`/${lang}/recherche`}
-            className={({ isActive }) =>
-              `transition m-2 ${
-                isActive
-                  ? "dark:text-white text-black"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.research}
-          </NavLink>
-          <NavLink
-            to={`/${lang}/enseignements`}
-            className={() =>
-              `transition m-2 ${
-                teachingActive
-                  ? "dark:text-white text-black"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.teaching}
-          </NavLink>
-          <div className="nav-mobile-submenu">
-            {teachingLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="nav-mobile-submenu-link">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <NavLink
-            to={`/${lang}/conferences`}
-            className={({ isActive }) =>
-              `transition m-2 ${
-                isActive
-                  ? "dark:text-white text-black"
-                  : "text-gray-500 dark:hover:text-white hover:text-black"
-              }`
-            }
-          >
-            {t.nav.conferences}
-          </NavLink>
-        </div>
-      )}
-    </div>
+      </nav>}
+    </header>
   );
 }

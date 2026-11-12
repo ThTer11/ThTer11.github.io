@@ -6,7 +6,7 @@ export function getConferenceTalks(t) {
       type: t.conferences.typeConference,
       accent: "gold",
       title: t.conferences.conf7Title,
-      description: t.conferences.conf6Desc,
+      description: t.conferences.conf7Desc,
       actions: [
         {
           kind: "pdf",

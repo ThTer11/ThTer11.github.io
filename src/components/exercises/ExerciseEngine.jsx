@@ -212,7 +212,7 @@ function SetupPanel({
     <section className="showcase-panel showcase-card exercise-setup">
       {exerciseVariants.length > 0 ? (
         <fieldset className="exercise-settings-group">
-          <legend>{usesExerciseVariants ? labels.exerciseChoice : labels.level}</legend>
+          <legend className={usesExerciseVariants ? "exercise-setup-sr-only" : undefined}>{usesExerciseVariants ? labels.exerciseChoice : labels.level}</legend>
           <div className={usesCompactOptionGrid ? "exercise-level-grid exercise-level-grid-compact" : "exercise-level-grid"}>
             {exerciseVariants.map((variant) => {
               const selected = difficulty === variant.id;
@@ -280,8 +280,19 @@ function SetupPanel({
         <p className="exercise-muted">{labels.noLevel}</p>
       )}
 
-      {tool.series !== false && (
-        <div className={usesDiscreteQuestionCounts ? "exercise-count-selector exercise-count-selector-discrete" : "exercise-count-selector"}>
+      {tool.series !== false && (usesDiscreteQuestionCounts ? (
+        <fieldset className="exercise-count-control">
+          <legend>{labels.questions}</legend>
+          <div className="exercise-count-choices">
+            {countRange.choices.map((choice) => (
+              <button key={choice} type="button" className="exercise-count-choice" data-count={choice}
+                aria-pressed={choice === questionCount} disabled={tool.series?.allowQuestionCount === false}
+                onClick={() => setQuestionCount(choice)}>{choice}</button>
+            ))}
+          </div>
+        </fieldset>
+      ) : (
+        <div className="exercise-count-selector">
           <div className="exercise-count-heading">
             <label htmlFor={countInputId}>{labels.questions}</label>
             <output htmlFor={countInputId}>{questionCount}</output>
@@ -303,24 +314,11 @@ function SetupPanel({
                 aria-label={labels.questions}
                 aria-valuetext={String(questionCount)}
               />
-              {usesDiscreteQuestionCounts && (
-                <div className="exercise-count-ticks" aria-hidden="true">
-                  {countRange.choices.map((choice) => (
-                    <span
-                      key={choice}
-                      className={choice === questionCount ? "exercise-count-tick-active" : undefined}
-                      data-value={choice}
-                    >
-                      |
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
             <span aria-hidden="true">{displayedMaximum}</span>
           </div>
         </div>
-      )}
+      ))}
 
       <div className="exercise-setup-actions">
         <button type="button" className="showcase-action showcase-action-primary exercise-primary-action" onClick={onStart}>
@@ -465,6 +463,7 @@ export default function ExerciseEngine({
   lang = "fr",
   courseHints = {},
   onPhaseChange,
+  setupRequest = 0,
 }) {
   const labels = getExerciseUiText(lang);
   const [initialSettings] = useState(() => resolveInitialSettings(tool));
@@ -487,6 +486,13 @@ export default function ExerciseEngine({
   const deadlineRef = useRef(null);
   const seriesDeadlineRef = useRef(null);
   const questionSignaturesRef = useRef(new Set());
+
+  useEffect(() => {
+    if (setupRequest === 0) return;
+    setPhase("setup");
+    setInputError("");
+    setGenerationError("");
+  }, [setupRequest]);
 
   useEffect(() => {
     onPhaseChange?.(phase);
@@ -908,10 +914,7 @@ export default function ExerciseEngine({
             />
             </ResponsiveFeedback>
           ) : (
-            <div className="showcase-panel showcase-card exercise-response-placeholder">
-              <span aria-hidden="true">✓</span>
-              <p>{labels.feedbackPlaceholder}</p>
-            </div>
+            <div className="showcase-panel showcase-card exercise-response-placeholder" aria-hidden="true" />
           )}
         </aside>
       </div>

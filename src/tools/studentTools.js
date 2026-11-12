@@ -7,20 +7,6 @@ export const STUDENT_TOOLS = [
     path: "entrainements",
   },
   {
-    id: "tikz",
-    titleKey: "resourceTikzTitle",
-    descriptionKey: "resourceTikzText",
-    audience: "LaTeX",
-    path: "tikz",
-  },
-  {
-    id: "linear-map",
-    titleKey: "resourceLinearMapTitle",
-    descriptionKey: "resourceLinearMapText",
-    audience: "L1-L2",
-    path: "application-lineaire",
-  },
-  {
     id: "gauss",
     titleKey: "resourceGaussTitle",
     descriptionKey: "resourceGaussText",
@@ -34,10 +20,25 @@ export const STUDENT_TOOLS = [
     audience: "L1",
     path: "inverse",
   },
+  {
+    id: "linear-map",
+    titleKey: "resourceLinearMapTitle",
+    descriptionKey: "resourceLinearMapText",
+    audience: "L1-L2",
+    path: "application-lineaire",
+  },
+  {
+    id: "tikz",
+    enabled: false,
+    titleKey: "resourceTikzTitle",
+    descriptionKey: "resourceTikzText",
+    audience: "LaTeX",
+    path: "tikz",
+  },
 ];
 
 export function getStudentToolCards(t, lang) {
-  return STUDENT_TOOLS.map((tool) => ({
+  return STUDENT_TOOLS.filter((tool) => tool.enabled !== false).map((tool) => ({
     id: tool.id,
     title: t.teaching[tool.titleKey],
     description: t.teaching[tool.descriptionKey],

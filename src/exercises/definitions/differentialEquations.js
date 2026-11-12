@@ -194,7 +194,7 @@ export const differentialEquationsTool = {
   ].map((exercise) => ({ ...exercise, levels: exercise.id === "inhomogeneous" ? [1, 2, 3, 4] : [1, 2, 3], defaultLevel: 1 })),
   defaultExercise: "homogeneous", timer: false,
   series: { questionCount: 10, choices: [5, 10, 15, 20], allowQuestionCount: true },
-  score: true, persistSettings: true,
+  score: true,
   source: { type: "generator", generate: generateDifferentialEquation },
   answer: { type: "text", inputMode: "text", validator: validateOdeAnswer },
   feedback: { showCorrection: true, showExplanation: true, showInsight: false, showCourseHintOnError: true, nextQuestion: true },

@@ -1,7 +1,7 @@
 export const exerciseCategories = [
   {
     id: "calcul-elementaire",
-    title: { fr: "Calcul mental", en: "Mental calculation" },
+    title: { fr: "Calcul et automatismes", en: "Calculation and fluency" },
     description: {
       fr: "Addition, multiplication, fractions et identités remarquables.",
       en: "Addition, multiplication, fractions and remarkable identities.",

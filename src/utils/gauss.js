@@ -163,7 +163,8 @@ export function parseFraction(rawValue) {
 }
 
 function cloneMatrix(matrix) {
-  return matrix.map((row) => row.map((value) => Fraction.from(value)));
+  return matrix.map((row) => row.map((value) =>
+    value?.constructor?.from ? value.constructor.from(value) : Fraction.from(value)));
 }
 
 function normalizeTokens(text) {
@@ -323,7 +324,9 @@ export function parseMatrixInput(rawText) {
     throw new Error("La matrice augmentée doit contenir au moins une inconnue.");
   }
 
-  const variableNames = Array.from({ length: variableCount }, (_, index) => `x${index + 1}`);
+  const variableNames = variableCount <= 4
+    ? ["x", "y", "z", "t"].slice(0, variableCount)
+    : Array.from({ length: variableCount }, (_, index) => `x${index + 1}`);
   return { variableNames, augmentedMatrix };
 }
 
@@ -378,10 +381,10 @@ function combineRows(matrix, targetRow, sourceRow, factor) {
   return copy;
 }
 
-function identityMatrix(size) {
+function identityMatrix(size, Scalar = Fraction) {
   return Array.from({ length: size }, (_, rowIndex) =>
     Array.from({ length: size }, (_, columnIndex) =>
-      rowIndex === columnIndex ? Fraction.one() : Fraction.zero(),
+      rowIndex === columnIndex ? Scalar.one() : Scalar.zero(),
     ),
   );
 }
@@ -397,7 +400,7 @@ function extractSubMatrix(matrix, startColumn, endColumn) {
 function isIdentityMatrix(matrix) {
   return matrix.every((row, rowIndex) =>
     row.every((value, columnIndex) =>
-      rowIndex === columnIndex ? value.equals(Fraction.one()) : value.isZero(),
+      rowIndex === columnIndex ? value.isOne() : value.isZero(),
     ),
   );
 }
@@ -768,8 +771,11 @@ export function runGaussianElimination({ variableNames, augmentedMatrix }) {
 
 export function runMatrixInversion({ matrix: rawMatrix }) {
   const baseMatrix = cloneMatrix(rawMatrix);
+  const Scalar = baseMatrix[0][0].constructor;
+  let determinant = Scalar.one();
+  const pivotConditions = [];
   const size = baseMatrix.length;
-  const augmented = concatenateMatrices(baseMatrix, identityMatrix(size));
+  const augmented = concatenateMatrices(baseMatrix, identityMatrix(size, Scalar));
   const steps = [
     {
       type: "initial",
@@ -782,8 +788,11 @@ export function runMatrixInversion({ matrix: rawMatrix }) {
 
     for (let row = column; row < size; row += 1) {
       if (!augmented[row][column].isZero()) {
-        pivotRow = row;
-        break;
+        if (pivotRow === -1) pivotRow = row;
+        if (!augmented[row][column].isProvablyNonZero || augmented[row][column].isProvablyNonZero()) {
+          pivotRow = row;
+          break;
+        }
       }
     }
 
@@ -791,15 +800,18 @@ export function runMatrixInversion({ matrix: rawMatrix }) {
       return {
         size,
         initialMatrix: cloneMatrix(baseMatrix),
-        initialAugmented: concatenateMatrices(baseMatrix, identityMatrix(size)),
+        initialAugmented: concatenateMatrices(baseMatrix, identityMatrix(size, Scalar)),
         finalAugmented: cloneMatrix(augmented),
         steps,
+        determinant: Scalar.zero(),
+        pivotConditions,
         isInvertible: false,
         inverseMatrix: null,
       };
     }
 
     if (pivotRow !== column) {
+      determinant = determinant.neg();
       const swapped = swapRows(augmented, column, pivotRow);
       swapped.forEach((row, index) => {
         augmented[index] = row;
@@ -813,16 +825,18 @@ export function runMatrixInversion({ matrix: rawMatrix }) {
     }
 
     const pivot = augmented[column][column];
+    determinant = determinant.mul(pivot);
+    if (pivot.isProvablyNonZero && !pivot.isProvablyNonZero()) pivotConditions.push(pivot);
 
     if (!pivot.isOne()) {
-      const scaled = scaleRow(augmented, column, Fraction.one().div(pivot));
+      const scaled = scaleRow(augmented, column, Scalar.one().div(pivot));
       scaled.forEach((row, index) => {
         augmented[index] = row;
       });
       steps.push({
         type: "scale",
         row: column,
-        factor: Fraction.one().div(pivot),
+        factor: Scalar.one().div(pivot),
         matrix: cloneMatrix(augmented),
       });
     }
@@ -858,9 +872,11 @@ export function runMatrixInversion({ matrix: rawMatrix }) {
   return {
     size,
     initialMatrix: cloneMatrix(baseMatrix),
-    initialAugmented: concatenateMatrices(baseMatrix, identityMatrix(size)),
+    initialAugmented: concatenateMatrices(baseMatrix, identityMatrix(size, Scalar)),
     finalAugmented: cloneMatrix(augmented),
     steps,
+    determinant,
+    pivotConditions,
     isInvertible: isIdentityMatrix(leftMatrix),
     inverseMatrix: isIdentityMatrix(leftMatrix) ? inverseMatrix : null,
   };
@@ -880,4 +896,15 @@ export function analyzeInverseInput(input) {
 
 export function fractionToOperationLatex(value) {
   return formatScalarLatex(value);
+}
+
+/** The solution set is affine in general; it is vectorial exactly in the homogeneous case. */
+export function getSolutionGeometry(result) {
+  const ambientDimension = result.variableNames.length;
+  const homogeneous = result.initialMatrix.every(row => row[ambientDimension].isZero());
+  if (result.analysis.type === "inconsistent") return { kind: "empty", dimension: null, ambientDimension, homogeneous };
+  const dimension = result.analysis.freeColumns.length;
+  const kind = dimension === 0 ? "point" : dimension === 1 ? "line" : dimension === 2 ? "plane"
+    : dimension === ambientDimension - 1 ? "hyperplane" : homogeneous ? "vectorSpace" : "affineSpace";
+  return { kind, dimension, ambientDimension, homogeneous };
 }

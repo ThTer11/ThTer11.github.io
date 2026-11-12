@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import "../research.css";
+import "../editorial.css";
 import {
   ArrowTopRightOnSquareIcon,
   BookmarkIcon,
@@ -13,8 +14,6 @@ import RichContent from "../components/RichContent";
 import {
   RESEARCH_ACCENT_COLORS,
   getPublications,
-  getResearchFilters,
-  getResearchTypeLabels,
 } from "../data/researchContent";
 
 function ResourceButton({ action, onClick }) {
@@ -56,7 +55,6 @@ export default function Recherche() {
   const [bibText, setBibText] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [copyState, setCopyState] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("all");
   const [expandedAuthors, setExpandedAuthors] = useState({});
   const [expandedDescriptions, setExpandedDescriptions] = useState({});
 
@@ -118,14 +116,8 @@ export default function Recherche() {
   };
 
   const publications = getPublications(t, openBib);
-  const filters = getResearchFilters(t);
-
-  const filteredPublications =
-    activeFilter === "all"
-      ? publications
-      : publications.filter((publication) => publication.type === activeFilter);
-
-  const typeLabels = getResearchTypeLabels(t);
+  const years = [...new Set(publications.map((publication) => publication.year))]
+    .sort((left, right) => right.localeCompare(left));
 
   const getDescriptionLength = (publication) => {
     const content = publication.descriptionHtml
@@ -136,142 +128,123 @@ export default function Recherche() {
   };
 
   return (
-    <div className="research-page min-w-screen min-h-screen pb-10">
+    <div className="research-page editorial-page min-w-screen min-h-screen pb-10">
       <NavBar />
 
       <div className="research-shell">
         <div className="research-orb research-orb-one" />
         <div className="research-orb research-orb-two" />
 
-        <section className="research-panel research-hero animate-defil">
+        <section className="editorial-heading">
           <div className="research-hero-copy">
             <h1 className="research-title">{t.research.title}</h1>
-            <p className="research-lead">{t.research.lead}</p>
           </div>
         </section>
 
-        <section className="research-toolbar animate-defil">
-          <div className="research-filter-row">
-            {filters.map((filter) => (
-              <button
-                key={filter.key}
-                type="button"
-                onClick={() => setActiveFilter(filter.key)}
-                className={
-                  activeFilter === filter.key
-                    ? "research-filter research-filter-active"
-                    : "research-filter"
-                }
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </section>
+        <div className="publication-years">
+          {years.map((year) => (
+            <section key={year} className="publication-year" aria-labelledby={`publication-year-${year}`}>
+              <h2 id={`publication-year-${year}`} className="publication-year-heading">{year}</h2>
+              <div className="research-list">
+                {publications.filter((publication) => publication.year === year).map((publication) => {
+                  const authorsAreLong =
+                    publication.authors && publication.authors.length > 170;
+                  const isExpanded = Boolean(expandedAuthors[publication.id]);
+                  const descriptionIsLong = getDescriptionLength(publication) > 190;
+                  const descriptionExpanded = Boolean(expandedDescriptions[publication.id]);
+                  const displayedAuthors =
+                    authorsAreLong && !isExpanded
+                      ? `${publication.authors.split(",").slice(0, 3).join(",")}…`
+                      : publication.authors;
 
-        <section key={activeFilter} className="research-list">
-          {filteredPublications.length === 0 && (
-            <div className="research-panel research-empty animate-defil">
-              {t.research.empty}
-            </div>
-          )}
+                  return (
+                    <article
+                      key={publication.id}
+                      className="research-panel research-card"
+                      style={{
+                        "--research-accent": RESEARCH_ACCENT_COLORS[publication.accent],
+                      }}
+                    >
+                      <h3 className="research-card-title">{publication.title}</h3>
 
-          {filteredPublications.map((publication, index) => {
-            const authorsAreLong =
-              publication.authors && publication.authors.length > 170;
-            const isExpanded = Boolean(expandedAuthors[publication.id]);
-            const descriptionIsLong = getDescriptionLength(publication) > 190;
-            const descriptionExpanded = Boolean(expandedDescriptions[publication.id]);
-            const displayedAuthors =
-              authorsAreLong && !isExpanded
-                ? `${publication.authors.slice(0, 170)}...`
-                : publication.authors;
+                      {publication.authors && (
+                        <div className="research-authors-block">
+                          <p className="research-authors">{displayedAuthors}</p>
+                          {authorsAreLong && (
+                            <button
+                              type="button"
+                              className="research-inline-button"
+                              onClick={() => toggleAuthors(publication.id)}
+                              aria-expanded={isExpanded}
+                            >
+                              {isExpanded ? t.research.hideAuthors : t.research.showAuthors}
+                            </button>
+                          )}
+                        </div>
+                      )}
 
-            return (
-              <article
-                key={`${activeFilter}-${publication.id}`}
-                className="research-panel research-card animate-defil"
-                style={{
-                  animationDelay: `${index * 0.08}s`,
-                  "--research-accent": RESEARCH_ACCENT_COLORS[publication.accent],
-                }}
-              >
-                <div className="research-card-top">
-                  <div className="research-card-badges">
-                    <span className="research-year-badge">{publication.year}</span>
-                    <span className="research-type-badge">
-                      {typeLabels[publication.type]}
-                    </span>
-                  </div>
-                </div>
+                      {publication.description && (
+                        <p
+                          className={
+                            descriptionIsLong && !descriptionExpanded
+                              ? "research-description research-description-collapsed"
+                              : "research-description"
+                          }
+                        >
+                          {publication.description}
+                        </p>
+                      )}
 
-                <h2 className="research-card-title">{publication.title}</h2>
+                      {publication.descriptionHtml && (
+                        <RichContent
+                          as="div"
+                          className={
+                            descriptionIsLong && !descriptionExpanded
+                              ? "research-description research-description-collapsed"
+                              : "research-description"
+                          }
+                          html={publication.descriptionHtml}
+                        />
+                      )}
 
-                {publication.authors && (
-                  <div className="research-authors-block">
-                    <p className="research-authors-label">{t.research.authorsLabel}</p>
-                    <p className="research-authors">{displayedAuthors}</p>
-                    {authorsAreLong && (
-                      <button
-                        type="button"
-                        className="research-inline-button"
-                        onClick={() => toggleAuthors(publication.id)}
-                      >
-                        {isExpanded ? t.research.hideAuthors : t.research.showAuthors}
-                      </button>
-                    )}
-                  </div>
-                )}
+                      {descriptionIsLong && (
+                        <button
+                          type="button"
+                          className="research-inline-button"
+                          onClick={() => toggleDescription(publication.id)}
+                          aria-expanded={descriptionExpanded}
+                        >
+                          {descriptionExpanded
+                            ? t.research.hideDescription
+                            : t.research.showDescription}
+                        </button>
+                      )}
 
-                {publication.description && (
-                  <p
-                    className={
-                      descriptionIsLong && !descriptionExpanded
-                        ? "research-description research-description-collapsed"
-                        : "research-description"
-                    }
-                  >
-                    {publication.description}
-                  </p>
-                )}
-
-                {publication.descriptionHtml && (
-                  <RichContent
-                    as="div"
-                    className={
-                      descriptionIsLong && !descriptionExpanded
-                        ? "research-description research-description-collapsed"
-                        : "research-description"
-                    }
-                    html={publication.descriptionHtml}
-                  />
-                )}
-
-                {descriptionIsLong && (
-                  <button
-                    type="button"
-                    className="research-inline-button"
-                    onClick={() => toggleDescription(publication.id)}
-                  >
-                    {descriptionExpanded
-                      ? t.research.hideDescription
-                      : t.research.showDescription}
-                  </button>
-                )}
-
-                <div className="research-actions">
-                  {publication.actions.map((action) => (
-                    <ResourceButton
-                      key={`${publication.id}-${action.label}`}
-                      action={action}
-                      onClick={action.onClick}
-                    />
-                  ))}
-                </div>
-              </article>
-            );
-          })}
-        </section>
+                      {publication.covers?.length > 0 && (
+                        <div className="research-actions research-covers">
+                          {publication.covers.map((cover) => (
+                            <a key={cover.href} href={cover.href} target="_blank" rel="noopener noreferrer" className="research-cover-link">
+                              <img src={cover.src} alt={cover.alt} width="131" height="200" loading="lazy" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {publication.actions.length > 0 && <div className="research-actions">
+                        {publication.actions.map((action) => (
+                          <ResourceButton
+                            key={`${publication.id}-${action.label}`}
+                            action={action}
+                            onClick={action.onClick}
+                          />
+                        ))}
+                      </div>}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
 
       {showModal && (
@@ -289,7 +262,6 @@ export default function Recherche() {
           >
             <div className="research-modal-header">
               <div>
-                <p className="research-modal-kicker">BibTeX</p>
                 <h2 id="bibtex-title">{t.research.bibtexTitle}</h2>
               </div>
 

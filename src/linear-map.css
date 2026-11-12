@@ -1,68 +1,18 @@
-.linear-map-page .showcase-shell{
-  max-width:var(--site-shell-max);
-}
-
-.linear-map-input-grid{
-  display:grid;
-  gap:1rem;
-  margin-top:1rem;
-}
-
-.linear-map-field{
-  display:grid;
-  gap:.35rem;
-}
-
-.linear-map-label{
-  color:#0f172a;
-  font-size:.95rem;
-  font-weight:800;
-}
-
-.dark .linear-map-label{
-  color:#f8fafc;
-}
-
-.linear-map-textarea{
-  min-height:11rem;
-}
-
-.linear-map-field-full{
-  grid-column:1 / -1;
-}
-
-.linear-map-columns{
-  display:grid;
-  gap:1rem;
-  margin-top:.9rem;
-}
-
-.linear-map-column-header{
-  display:flex;
-  align-items:center;
-  gap:.75rem;
-  color:#0f172a;
-  font-size:1rem;
-  font-weight:800;
-}
-
-.dark .linear-map-column-header{
-  color:#0f172a;
-}
-
-.linear-map-formulas{
-  display:grid;
-  gap:.7rem;
-  margin-top:.9rem;
-}
-
-.linear-map-page .gauss-actions .showcase-action{
-  padding:.64rem .82rem;
-  font-size:.88rem;
-}
-
-@media (min-width: 980px){
-  .linear-map-input-grid{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+.linear-map-input-grid{display:grid;gap:.9rem;margin-top:.8rem}
+.linear-map-field{min-width:0}
+.linear-map-label{display:block;color:var(--tool-muted);font-size:.9rem;font-weight:600}
+.linear-map-field-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.15rem .5rem}
+.linear-map-canonical{min-height:44px;padding:.35rem .55rem;background:transparent;color:var(--tool-muted);font-size:.8rem;font-weight:600}
+.linear-map-page .gauss-block-title{color:var(--tool-muted);font-size:.9rem;font-weight:600}
+.linear-map-page .editorial-heading mjx-container{font-size:1em!important;letter-spacing:normal}
+.linear-map-variables{margin-top:.4rem;font-size:.9rem;color:var(--tool-muted)}
+.linear-map-textarea{min-height:6.5rem}
+.linear-map-field-full{grid-column:1 / -1}
+.linear-map-columns{display:grid;margin-top:.8rem}
+.linear-map-image{min-width:0;padding:.8rem 0;border-top:1px solid var(--tool-line)}
+.linear-map-image:first-child{padding-top:0;border-top:0}
+.linear-map-formulas{display:grid;gap:.4rem;min-width:0}
+.linear-map-conclusion{margin:0;font-size:1rem;line-height:1.6}
+.linear-map-bases{display:grid;gap:1rem;margin-top:.8rem}
+@media(min-width:600px){.linear-map-input-grid,.linear-map-bases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:980px){.linear-map-page .gauss-layout{grid-template-columns:minmax(360px,1fr) minmax(0,1.35fr)}}

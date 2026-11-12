@@ -8,6 +8,7 @@ import MddGallery from "../components/MddGallery";
 import RichContent from "../components/RichContent";
 import { useLang } from "../App";
 import "../showcase.css";
+import "../editorial.css";
 
 export default function Home() {
   const { t } = useLang();
@@ -19,7 +20,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="showcase-page showcase-page-home min-w-screen min-h-screen pb-10">
+    <div className="showcase-page showcase-page-home editorial-page min-w-screen min-h-screen pb-10">
       <NavBar />
       <div className="showcase-shell">
         <div className="showcase-orb showcase-orb-a" />
