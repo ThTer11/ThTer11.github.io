@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.429ea418.css",
-    "main.js": "/static/js/main.f68e5217.js",
+    "main.js": "/static/js/main.519bde98.js",
     "static/js/313.ba408953.chunk.js": "/static/js/313.ba408953.chunk.js",
     "static/js/453.867b3f8a.chunk.js": "/static/js/453.867b3f8a.chunk.js",
     "static/js/151.3004c858.chunk.js": "/static/js/151.3004c858.chunk.js",
@@ -10,13 +10,13 @@
     "static/media/Google_Scholar_logo.svg.png": "/static/media/Google_Scholar_logo.svg.bb097d9ba6a041ee325d.png",
     "index.html": "/index.html",
     "main.429ea418.css.map": "/static/css/main.429ea418.css.map",
-    "main.f68e5217.js.map": "/static/js/main.f68e5217.js.map",
+    "main.519bde98.js.map": "/static/js/main.519bde98.js.map",
     "313.ba408953.chunk.js.map": "/static/js/313.ba408953.chunk.js.map",
     "453.867b3f8a.chunk.js.map": "/static/js/453.867b3f8a.chunk.js.map",
     "151.3004c858.chunk.js.map": "/static/js/151.3004c858.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.429ea418.css",
-    "static/js/main.f68e5217.js"
+    "static/js/main.519bde98.js"
   ]
 }
