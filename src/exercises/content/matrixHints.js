@@ -38,6 +38,14 @@ export const matrixCourseHints = [
           "In general $AB\\neq BA$. It is even possible for $AB$ to be defined while $BA$ is not.",
         ),
       },
+      {
+        type: "example",
+        title: tr("Vecteur colonne", "Column vector"),
+        content: tr(
+          "Pour $A\\in M_{m,n}(\\mathbb R)$ et $X=(x_1,\\ldots,x_n)^T$, le produit $AX$ est un vecteur colonne à $m$ composantes. Sa composante $i$ vaut $a_{i1}x_1+\\cdots+a_{in}x_n$.",
+          "For $A\\in M_{m,n}(\\mathbb R)$ and $X=(x_1,\\ldots,x_n)^T$, $AX$ is a column vector with $m$ entries. Its entry $i$ is $a_{i1}x_1+\\cdots+a_{in}x_n$.",
+        ),
+      },
     ],
   },
   {

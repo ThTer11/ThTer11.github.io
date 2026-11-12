@@ -169,7 +169,7 @@ function tokenize(rawValue) {
   return withProducts;
 }
 
-export function parseCalculusExpression(rawValue) {
+export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {}) {
   const tokens = tokenize(rawValue);
   let cursor = 0;
   let depth = 0;
@@ -209,7 +209,7 @@ export function parseCalculusExpression(rawValue) {
         return { type: "call", name, argument };
       }
 
-      if (!["t", "x", "e", "pi", "c", "k"].includes(name)) {
+      if (!["t", "x", "e", "pi", "c", "k"].includes(name) && !additionalSymbols.includes(name)) {
         throw new Error(`Symbole inconnu : « ${token.value} ».`);
       }
 
@@ -278,8 +278,8 @@ export function parseCalculusExpression(rawValue) {
 
 
 /** Render the parsed expression, without simplifying a potentially wrong answer. */
-export function calculusExpressionToLatex(expression) {
-  const ast = typeof expression === "string" ? parseCalculusExpression(expression) : expression;
+export function calculusExpressionToLatex(expression, options) {
+  const ast = typeof expression === "string" ? parseCalculusExpression(expression, options) : expression;
   const precedence = (node) => node.type === "binary"
     ? ({ "+": 1, "-": 1, "*": 2, "/": 2, "^": 4 }[node.operator])
     : node.type === "unary" ? 3 : 5;

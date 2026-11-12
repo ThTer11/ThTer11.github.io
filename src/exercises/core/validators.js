@@ -302,6 +302,10 @@ export function formatExpectedAnswer(expected, spec = {}, question = {}, lang = 
 
   const type = spec.type ?? "text";
 
+  if (type === "matrix-product" && !expected.defined) {
+    return lang === "en" ? "Product not defined" : "Produit impossible";
+  }
+
   if (type === "matrix" && Array.isArray(expected)) {
     const matrix = expected.map((row) => row.map((value) => asFraction(value)));
     return matrixToLatex(matrix);

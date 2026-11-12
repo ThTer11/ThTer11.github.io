@@ -39,16 +39,13 @@ export const exerciseCategories = [
   //   audience: "L1",
   //   accent: "cobalt",
   // },
-  // {
-  //   id: "matrices",
-  //   title: { fr: "Matrices", en: "Matrices" },
-  //   description: {
-  //     fr: "Dimensions, produits, déterminants et inverses exacts.",
-  //     en: "Dimensions, products, determinants and exact inverses.",
-  //   },
-  //   audience: "L1–L2",
-  //   accent: "gold",
-  // },
+  {
+    id: "matrices",
+    title: { fr: "Matrices", en: "Matrices" },
+    description: { fr: "Produits de matrices et de vecteurs.", en: "Matrix and vector products." },
+    audience: "L1",
+    accent: "violet",
+  },
   // {
   //   id: "systemes-lineaires",
   //   title: { fr: "Systèmes linéaires", en: "Linear systems" },

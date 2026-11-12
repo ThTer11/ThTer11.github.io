@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BookOpenIcon, ClockIcon } from "@heroicons/react/24/outline";
 import AnswerInput, { emptyAnswerValue } from "./AnswerInput";
 import CourseHintModal from "./CourseHintModal";
@@ -213,7 +213,11 @@ function SetupPanel({
       {exerciseVariants.length > 0 ? (
         <fieldset className="exercise-settings-group">
           <legend className={usesExerciseVariants ? "exercise-setup-sr-only" : undefined}>{usesExerciseVariants ? labels.exerciseChoice : labels.level}</legend>
-          <div className={usesCompactOptionGrid ? "exercise-level-grid exercise-level-grid-compact" : "exercise-level-grid"}>
+          <div className={[
+            "exercise-level-grid", usesCompactOptionGrid && "exercise-level-grid-compact",
+            usesExerciseVariants && exerciseVariants.every((variant) => normalizeExerciseLevels(variant).length === 0) && "exercise-level-grid-without-levels",
+            tool.exerciseColumns && "exercise-level-grid-fixed-columns",
+          ].filter(Boolean).join(" ")} style={tool.exerciseColumns ? { "--exercise-option-columns": tool.exerciseColumns } : undefined}>
             {exerciseVariants.map((variant) => {
               const selected = difficulty === variant.id;
               const levels = normalizeExerciseLevels(variant);
@@ -467,7 +471,11 @@ export default function ExerciseEngine({
 }) {
   const labels = getExerciseUiText(lang);
   const [initialSettings] = useState(() => resolveInitialSettings(tool));
-  const [phase, setPhase] = useState("setup");
+  const [phase, setPhaseState] = useState("setup");
+  const setPhase = useCallback((nextPhase) => {
+    setPhaseState(nextPhase);
+    onPhaseChange?.(nextPhase);
+  }, [onPhaseChange]);
   const [difficulty, setDifficulty] = useState(initialSettings.difficulty);
   const [exerciseLevel, setExerciseLevel] = useState(initialSettings.exerciseLevel);
   const [questionCount, setQuestionCount] = useState(initialSettings.questionCount);
@@ -487,16 +495,12 @@ export default function ExerciseEngine({
   const seriesDeadlineRef = useRef(null);
   const questionSignaturesRef = useRef(new Set());
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (setupRequest === 0) return;
     setPhase("setup");
     setInputError("");
     setGenerationError("");
-  }, [setupRequest]);
-
-  useEffect(() => {
-    onPhaseChange?.(phase);
-  }, [onPhaseChange, phase]);
+  }, [setupRequest, setPhase]);
 
   const answerSpec = useMemo(
     () => resolveAnswerSpec(tool.answer, question?.answer),
@@ -605,24 +609,24 @@ export default function ExerciseEngine({
     if (prepareQuestion()) {
       setPhase("active");
     }
-  }, [prepareQuestion, questionCount, session.completed]);
+  }, [prepareQuestion, questionCount, session.completed, setPhase]);
 
-  const commitOutcome = useCallback((nextOutcome) => {
+  const commitOutcome = useCallback((nextOutcome, submittedAnswer = answer) => {
     const elapsed = questionStartedAt ? Date.now() - questionStartedAt : 0;
     setOutcome(nextOutcome);
     setSession((current) => recordAttempt(current, nextOutcome, elapsed, {
       prompt: question?.prompt,
       trustedHtml: Boolean(question?.trustedHtml),
-      submittedAnswer: answer,
-      submittedAnswerDisplay: formatAnswerDisplay(answer, answerSpec, question, lang),
+      submittedAnswer,
+      submittedAnswerDisplay: formatAnswerDisplay(submittedAnswer, answerSpec, question, lang),
       promptUi: resolveQuestionPromptUi(question?.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi, lang),
       expectedAnswer: formatExpectedAnswer(question?.expected, answerSpec, question, lang),
     }));
     setPhase("feedback");
     submittingRef.current = true;
-  }, [answer, answerSpec, lang, question, questionStartedAt, selectedExerciseVariant, tool.promptUi]);
+  }, [answer, answerSpec, lang, question, questionStartedAt, selectedExerciseVariant, setPhase, tool.promptUi]);
 
-  const submit = (event) => {
+  const submit = (event, submittedAnswer = answer) => {
     event?.preventDefault();
 
     if (phase === "feedback") {
@@ -634,7 +638,7 @@ export default function ExerciseEngine({
       return;
     }
 
-    if (answerIsEmpty(answer)) {
+    if (answerIsEmpty(submittedAnswer)) {
       setInputError(labels.answerPlaceholder);
       return;
     }
@@ -643,7 +647,12 @@ export default function ExerciseEngine({
     const timing = deadlineRef.current
       ? (submittedAt < deadlineRef.current ? "on-time" : "late")
       : "untimed";
-    let nextOutcome = validateAnswer(answer, answerSpec, question.expected, question, lang);
+    let nextOutcome = validateAnswer(submittedAnswer, answerSpec, question.expected, question, lang);
+    if (nextOutcome.status === "continue") {
+      setAnswer(nextOutcome.nextAnswer);
+      setInputError("");
+      return;
+    }
     if (nextOutcome.status === "invalid") {
       setInputError(nextOutcome.message);
       return;
@@ -664,7 +673,8 @@ export default function ExerciseEngine({
     };
 
     setInputError("");
-    commitOutcome(nextOutcome);
+    setAnswer(submittedAnswer);
+    commitOutcome(nextOutcome, submittedAnswer);
   };
 
   const handleExpire = useCallback(() => {
@@ -703,7 +713,7 @@ export default function ExerciseEngine({
     if (timer.mode === "series") {
       window.setTimeout(() => setPhase("complete"), 0);
     }
-  }, [commitOutcome, labels.timeExpiredNoAnswer, phase, timer]);
+  }, [commitOutcome, labels.timeExpiredNoAnswer, phase, setPhase, timer]);
 
   useEffect(() => {
     const autoNextConfig = autoNext === true ? { enabled: true } : autoNext;
@@ -861,7 +871,7 @@ export default function ExerciseEngine({
             </div>
           ))}
 
-          <form className="exercise-answer-form" onSubmit={submit}>
+          <form className={`exercise-answer-form${answerSpec.type === "matrix-product" ? " exercise-matrix-product-form" : ""}`} onSubmit={submit}>
             <AnswerInput
               spec={answerSpec}
               question={question}
@@ -872,6 +882,7 @@ export default function ExerciseEngine({
               labels={labels}
               focusKey={session.completed}
               onCommit={submit}
+              onCheck={(value) => submit(undefined, value)}
             />
 
             {timerExpired && timer?.strict !== true && phase === "active" && (
@@ -889,9 +900,13 @@ export default function ExerciseEngine({
               </button>
             )}
 
-            {phase === "active" && (
-              <button type="submit" className="showcase-action showcase-action-primary exercise-primary-action">
-                {labels.validate}
+            {(phase === "active" || (phase === "feedback" && answerSpec.type === "matrix-product")) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
+              <button type="submit"
+                className={`showcase-action showcase-action-primary exercise-primary-action${phase === "feedback" ? " exercise-action-reserved" : ""}`}
+                disabled={phase !== "active"} aria-hidden={phase !== "active" || undefined}>
+                {answerSpec.type === "matrix-product" && answer.stage === "dimensions"
+                  ? lang === "en" ? "Validate size" : "Valider la taille"
+                  : labels.validate}
               </button>
             )}
           </form>

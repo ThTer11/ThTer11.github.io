@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useLayoutEffect } from "react";
 import translations from "./translations";
 import Home from "./pages/Home";
 import Recherche from "./pages/Recherche";
@@ -44,7 +44,7 @@ function LangWrapper({ children }) {
 function ScrollToTop() {
   const { pathname } = useLocation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 
@@ -54,7 +54,7 @@ function ScrollToTop() {
 function PageBackground() {
   const { pathname } = useLocation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const classes = [
       "site-background-home",
       "site-background-teaching",

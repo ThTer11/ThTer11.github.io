@@ -5,6 +5,7 @@ import { elementaryTools } from "./definitions/elementary";
 import { calculusTools } from "./definitions/calculus";
 import { quadraticTools } from "./definitions/quadratic";
 import { matrixTools } from "./definitions/matrices";
+import { matrixProductTool } from "./definitions/matrixProducts";
 import { systemTools } from "./definitions/systems";
 import { elementaryCourseHints } from "./content/elementaryHints";
 import { calculusCourseHints } from "./content/calculusHints";
@@ -17,7 +18,8 @@ export const exerciseTools = [
   ...elementaryTools,
   ...calculusTools,
   ...quadraticTools,
-  ...matrixTools,
+  matrixProductTool,
+  ...matrixTools.map((tool) => ({ ...tool, enabled: false })),
   ...systemTools,
 ];
 

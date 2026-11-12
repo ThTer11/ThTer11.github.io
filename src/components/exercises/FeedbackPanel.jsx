@@ -5,6 +5,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/solid";
 import MathRenderer from "./MathRenderer";
+import MatrixProductExplanation from "./MatrixProductExplanation";
 import { localize } from "../../exercises/core/localize";
 import { formatExpectedAnswer } from "../../exercises/core/validators";
 
@@ -72,6 +73,8 @@ export default function FeedbackPanel({
   const { tone, title, lead, Icon } = feedbackPresentation(outcome, labels);
   const showCorrection = feedback.showCorrection !== false;
   const showExplanation = feedback.showExplanation !== false && question.explanation;
+  const interactiveProduct = showExplanation && answerSpec.type === "matrix-product" && question.expected.defined
+    && question.left && question.right;
   const showSolution = feedback.showSolution !== false && question.solution;
   const showInsight = feedback.showInsight !== false && question.insight;
   const hintIds = question.courseHintIds ?? [];
@@ -115,7 +118,7 @@ export default function FeedbackPanel({
         {outcome.reason && outcome.message && (
           <MathRenderer className="exercise-feedback-message" content={outcome.message} />
         )}
-        {showCorrection && !outcome.correct && (
+        {showCorrection && !outcome.correct && !interactiveProduct && (
           <div className="exercise-feedback-block exercise-feedback-answer">
             <h3>{labels.expectedAnswer}</h3>
             <MathRenderer
@@ -129,6 +132,7 @@ export default function FeedbackPanel({
           <div className="exercise-feedback-block exercise-feedback-details">
             <h3>{labels.explanation}</h3>
             <MathRenderer content={localize(question.explanation, lang)} trustedHtml={Boolean(question.explanationTrustedHtml)} />
+            {interactiveProduct && <MatrixProductExplanation question={question} lang={lang} />}
           </div>
         )}
 

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, CalculatorIcon, ChartBarIcon, ChevronDownIcon, VariableIcon, WrenchScrewdriverIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ArrowLeftIcon, ArrowRightIcon, CalculatorIcon, ChartBarIcon, ChevronDownIcon, TableCellsIcon, VariableIcon, WrenchScrewdriverIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import ExerciseEngine from "../components/exercises/ExerciseEngine";
@@ -16,12 +16,15 @@ import "../practice.css";
 const groupIcons = {
   "calcul-elementaire": CalculatorIcon,
   analyse: ChartBarIcon,
+  matrices: TableCellsIcon,
   "equations-differentielles": VariableIcon,
   outils: WrenchScrewdriverIcon,
 };
 
 function useColumnCount() {
-  const [columns, setColumns] = useState(1);
+  const [columns, setColumns] = useState(() => typeof window !== "undefined" && window.matchMedia
+    ? window.matchMedia("(min-width:1200px)").matches ? 3 : window.matchMedia("(min-width:760px)").matches ? 2 : 1
+    : 1);
   useEffect(() => {
     const tablet = window.matchMedia("(min-width:760px)");
     const desktop = window.matchMedia("(min-width:1200px)");
@@ -50,12 +53,9 @@ export default function ExerciseCatalog() {
   const sessionVisible = Boolean(selectedTool) && phase !== "setup";
   const disclosureId = selected ? `practice-setup-${selected.groupId}-${selected.toolId}` : "";
 
-  useEffect(() => {
-    if (!location.hash) return undefined;
-    const frame = requestAnimationFrame(() => {
-      document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start", behavior: "auto" });
-    });
-    return () => cancelAnimationFrame(frame);
+  useLayoutEffect(() => {
+    if (!location.hash) return;
+    document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [location.pathname, location.hash, lang]);
 
   const handlePhaseChange = useCallback((nextPhase) => {
@@ -65,7 +65,7 @@ export default function ExerciseCatalog() {
     setPhase(nextPhase);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (sessionVisible) window.scrollTo({ top: 0, behavior: "auto" });
     else if (wasInSession.current) window.scrollTo({ top: catalogueScroll.current, behavior: "auto" });
     wasInSession.current = sessionVisible;
@@ -114,7 +114,7 @@ export default function ExerciseCatalog() {
                 aria-labelledby={`practice-title-${group.id}`}>
                 <header className="practice-group-heading" hidden={sessionVisible}>
                   <span className="practice-group-icon"><Icon aria-hidden="true" /></span>
-                  <div><h2 id={`practice-title-${group.id}`}>{group.title}</h2>{group.description && <p>{group.description}</p>}</div>
+                  <div><h2 id={`practice-title-${group.id}`}>{group.title}</h2></div>
                 </header>
                 <div className={`practice-card-grid${sessionVisible ? " practice-session-contents" : ""}`}>
                   {group.entries.map((entry, index) => {

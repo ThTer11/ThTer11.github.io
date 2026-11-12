@@ -16,6 +16,7 @@ export default function MathRenderer({
   display = false,
   trustedHtml = false,
   enableMathCopy = false,
+  responsiveMath = true,
 }) {
   const raw = String(content ?? "");
   const math = display && !raw.includes("$") && !raw.includes("\\[")
@@ -29,7 +30,7 @@ export default function MathRenderer({
       html={html}
       className={className}
       enableMathCopy={enableMathCopy}
-      responsiveMath
+      responsiveMath={responsiveMath}
     />
   );
 }

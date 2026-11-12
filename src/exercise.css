@@ -1056,6 +1056,9 @@
   margin-top:auto;
 }
 
+/* Preserve the answer matrix's centre when validation gives way to feedback. */
+.exercise-answer-form>.exercise-action-reserved{visibility:hidden;pointer-events:none}
+
 .exercise-answer-expired-note{
   display:inline-flex;
   align-items:center;
@@ -1157,6 +1160,45 @@
   flex-wrap:wrap;
   align-items:center;
   gap:.55rem;
+}
+
+.exercise-matrix-product-answer{display:grid;gap:1rem;min-width:0;width:100%}
+.exercise-matrix-product-answer .exercise-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.exercise-product-choice-locked .exercise-choice{cursor:default;opacity:1}
+.exercise-product-choice-locked .exercise-choice-selected{background:#059669;border-color:#059669;color:#fff}
+.dark .exercise-product-choice-locked .exercise-choice-selected{background:#137556;border-color:#258c6b;color:#e1f7ed}
+.exercise-matrix-product-stage-matrix{flex:1;min-height:min-content;grid-template-rows:auto minmax(min-content,1fr)}
+.exercise-matrix-product-answer .exercise-matrix-entry{display:grid;grid-template-columns:2.75rem minmax(0,1fr) 2.75rem;align-items:center;justify-self:center;width:fit-content;max-width:100%;gap:.8rem}
+.exercise-matrix-product-stage-matrix .exercise-matrix-entry{grid-row:2;align-self:center;margin-block:1rem}
+.exercise-matrix-product-answer .exercise-matrix-input{grid-column:2;grid-row:1;margin:0;min-width:0;max-width:100%}
+.exercise-matrix-product-answer .exercise-matrix-input:before,.exercise-matrix-product-answer .exercise-matrix-input:after{width:.75rem;border:0;border-radius:50%}
+.exercise-matrix-product-answer .exercise-matrix-input:before{border-left:2px solid #475569}
+.exercise-matrix-product-answer .exercise-matrix-input:after{border-right:2px solid #475569}
+.dark .exercise-matrix-product-answer .exercise-matrix-input:before,.dark .exercise-matrix-product-answer .exercise-matrix-input:after{border-color:#94a3b8}
+.exercise-matrix-product-answer .exercise-matrix-table{grid-template-columns:repeat(var(--exercise-matrix-columns),minmax(2rem,4.65rem))}
+.exercise-matrix-product-answer .exercise-numeric-symbols{grid-column:3;grid-row:1}
+.exercise-matrix-product-answer .exercise-negative-sign{width:2.75rem;min-height:2.75rem;flex-basis:2.75rem;border-radius:.75rem;font-size:1.2rem}
+.exercise-product-dimensions{min-width:0;width:100%;max-width:20rem;margin:0 auto;border:0;padding:0}
+.exercise-product-dimensions legend{width:100%;text-align:center;font-size:.95rem;font-weight:600;margin-bottom:.8rem}
+.exercise-product-dimensions-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.exercise-product-dimensions-fields label{display:grid;gap:.4rem;text-align:center;font-size:.85rem;min-width:0}
+.exercise-product-dimensions-fields input{text-align:center;min-width:0;width:100%}
+.exercise-matrix-entry-symbolic .exercise-matrix-input{width:100%;max-width:20rem}
+.exercise-matrix-entry-symbolic .exercise-matrix-table{grid-template-columns:minmax(0,1fr);width:100%}
+.exercise-matrix-givens{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.35rem;min-width:0;align-items:center}
+.exercise-matrix-givens>div{min-width:0}
+.exercise-matrix-product-answer .exercise-choice{min-height:2.75rem;padding:.45rem .55rem;border-radius:.8rem;font-size:.9rem;line-height:1.3}
+@media(min-width:760px){.exercise-setup .exercise-level-grid-fixed-columns{grid-template-columns:repeat(var(--exercise-option-columns),minmax(0,1fr))}}
+@media(min-width:1200px){.exercise-setup .exercise-level-grid.exercise-level-grid-without-levels{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:759px){
+  .exercise-matrix-givens{font-size:.82rem;gap:.4rem}
+  .exercise-question-content .exercise-matrix-givens .rich-content-math-display mjx-container{width:100%;min-width:0;max-width:100%;padding:.08rem 0;font-size:1em!important}
+  .exercise-matrix-givens .rich-content-math-display mjx-container>svg{max-width:100%;height:auto}
+  .exercise-matrix-product-answer .exercise-choice-grid{gap:.5rem}
+  .exercise-matrix-product-answer .exercise-choice{font-size:.8rem;padding:.4rem .25rem}
+  .exercise-matrix-product-answer .exercise-matrix-table{grid-template-columns:repeat(var(--exercise-matrix-columns),minmax(1.85rem,3.25rem))}
+  .exercise-matrix-product-answer .exercise-matrix-entry-symbolic .exercise-matrix-table{grid-template-columns:minmax(0,1fr)}
+  .exercise-matrix-product-answer .exercise-matrix-table .exercise-matrix-cell{min-height:2.65rem;padding:.4rem .25rem}
 }
 
 .exercise-matrix-entry .exercise-matrix-input{

@@ -5,6 +5,10 @@ import { localize } from "../../exercises/core/localize";
 export function emptyAnswerValue(spec = {}, question = {}) {
   const type = spec.type ?? "text";
 
+  if (type === "matrix-product") {
+    return { defined: question.symbolic ? "possible" : "", stage: question.symbolic ? "dimensions" : "compatibility", size: ["", ""], matrix: [] };
+  }
+
   if (type === "matrix") {
     const dimensions = question.inputDimensions ?? spec.dimensions ?? [2, 2];
     return Array.from({ length: dimensions[0] }, () =>
@@ -68,7 +72,7 @@ function ChoiceInput({ options, value, onChange, onCommit, disabled, lang, first
   );
 }
 
-function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions }) {
+function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions, allowExpressions = false }) {
   const [activeCell, setActiveCell] = useState([0, 0]);
   const update = (rowIndex, columnIndex, nextValue) => {
     const next = value.map((row) => [...row]);
@@ -80,7 +84,7 @@ function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFr
   const activeValue = value[activeRow]?.[activeColumn] ?? "";
 
   return (
-    <div className="exercise-matrix-entry" role="group" aria-label={labels.answer}>
+    <div className={`exercise-matrix-entry${allowExpressions ? " exercise-matrix-entry-symbolic" : ""}`} role="group" aria-label={labels.answer}>
       <div className="exercise-matrix-input">
         <div
           className="exercise-matrix-table"
@@ -95,7 +99,9 @@ function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFr
               onFocus={() => setActiveCell([rowIndex, columnIndex])}
               onChange={(event) => update(rowIndex, columnIndex, event.target.value)}
               disabled={disabled}
-              inputMode="numeric"
+              inputMode={allowExpressions ? "text" : "numeric"}
+              autoComplete="off"
+              spellCheck="false"
               aria-label={`${labels.matrixRow} ${rowIndex + 1}, ${labels.matrixColumn} ${columnIndex + 1}`}
             />
           )))}
@@ -119,6 +125,37 @@ function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFr
       </div>
     </div>
   );
+}
+
+function MatrixProductInput({ value, onChange, onCheck, disabled, labels, lang, question, firstInputRef }) {
+  const text = lang === "en"
+    ? { possible: "Product defined", impossible: "Product not defined", rows: "Rows", columns: "Columns", size: "Product size" }
+    : { possible: "Produit défini", impossible: "Produit impossible", rows: "Lignes", columns: "Colonnes", size: "Taille du produit" };
+  const stage = value.stage ?? "matrix";
+  return <div className={`exercise-matrix-product-answer exercise-matrix-product-stage-${stage}`}>
+    {!question.symbolic && <div className={stage !== "compatibility" ? "exercise-product-choice-locked" : undefined}><ChoiceInput
+      options={["possible", "impossible"].map((id) => ({ id, label: text[id] }))}
+      value={value.defined} onChange={(defined) => {
+        const next = { ...value, defined };
+        onChange(next);
+        onCheck?.(next);
+      }} onCommit={() => onCheck?.(value)} disabled={disabled || stage !== "compatibility"} lang={lang}
+      firstInputRef={stage === "compatibility" ? firstInputRef : undefined} /></div>}
+    {stage === "dimensions" && <fieldset className="exercise-product-dimensions">
+      <legend>{text.size}</legend>
+      <div className="exercise-product-dimensions-fields">
+        {[text.rows, text.columns].map((label, index) => <label key={index}>
+          <span>{label}</span>
+          <input ref={index === 0 ? firstInputRef : undefined} className="exercise-text-input"
+            inputMode="numeric" autoComplete="off" disabled={disabled} value={value.size[index]}
+            onChange={(event) => onChange({ ...value, size: value.size.map((n, i) => i === index ? event.target.value : n) })} />
+        </label>)}
+      </div>
+    </fieldset>}
+    {stage === "matrix" && <MatrixInput value={value.matrix}
+      onChange={(matrix) => onChange({ ...value, matrix })} disabled={disabled} labels={labels}
+      allowExpressions={question.symbolic} firstInputRef={firstInputRef} />}
+  </div>;
 }
 
 function toggleNegativeSign(value) {
@@ -279,6 +316,7 @@ export default function AnswerInput({
   labels,
   focusKey,
   onCommit,
+  onCheck,
 }) {
   const firstInputRef = useRef(null);
   const type = spec.type ?? "text";
@@ -291,7 +329,12 @@ export default function AnswerInput({
     }
 
     return undefined;
-  }, [disabled, focusKey]);
+  }, [disabled, focusKey, value?.stage]);
+
+  if (type === "matrix-product") {
+    return <MatrixProductInput value={value} onChange={onChange} onCheck={onCheck} disabled={disabled}
+      labels={labels} lang={lang} question={question} firstInputRef={firstInputRef} />;
+  }
 
   if (type === "choice") {
     return <ChoiceInput options={options} value={value} onChange={onChange} onCommit={onCommit} disabled={disabled} lang={lang} firstInputRef={firstInputRef} />;

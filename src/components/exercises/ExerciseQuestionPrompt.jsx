@@ -88,7 +88,7 @@ export default function ExerciseQuestionPrompt({
   promptUi,
   trustedHtml = false,
 }) {
-  const { expression } = splitQuestionPrompt(content);
+  const expression = trustedHtml ? content : splitQuestionPrompt(content).expression;
 
   if (!promptUi || promptUi === false) {
     return (
