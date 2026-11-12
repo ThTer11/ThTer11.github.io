@@ -97,8 +97,8 @@ export default function NavBar() {
               {teachingLinks.map((link) => <Link key={link.to} to={link.to} className="nav-submenu-link">{link.label}</Link>)}
             </div>}
           </div>
-          <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
           <NavLink to={`/${lang}/conferences`} className={navClass}>{t.nav.conferences}</NavLink>
+          <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
         </div>
         <div className="nav-desktop-controls">
           <button type="button" className="nav-icon-button" onClick={toggleTheme} aria-label={themeAction} title={themeAction}>
@@ -129,8 +129,8 @@ export default function NavBar() {
         <div className="nav-mobile-submenu">
           {teachingLinks.map((link) => <Link key={link.to} to={link.to} className="nav-submenu-link">{link.label}</Link>)}
         </div>
-        <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
         <NavLink to={`/${lang}/conferences`} className={navClass}>{t.nav.conferences}</NavLink>
+        <Link to={practiceHref(lang)} className={practiceClass} aria-current={practiceActive ? "page" : undefined}>{t.nav.practice}</Link>
         <div className="nav-mobile-settings">
           <button type="button" className="nav-theme-button" onClick={toggleTheme}><ThemeIcon aria-hidden="true" />{themeAction}</button>
           <div className="nav-language-options" role="group" aria-label={t.nav.language}>
