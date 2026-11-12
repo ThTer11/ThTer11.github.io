@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bars3Icon, XMarkIcon, MoonIcon, SunIcon, GlobeAltIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, MoonIcon, SunIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useLang } from "../App";
 import { isPracticePath, practiceHref } from "../practice/catalog";
 import "../navbar.css";
@@ -9,14 +9,12 @@ const navClass = ({ isActive }) => `nav-main-link${isActive ? " nav-main-link-ac
 
 export default function NavBar() {
   const [menu, setMenu] = useState(false);
-  const [translationsOpen, setTranslationsOpen] = useState(false);
   const [teachingMenu, setTeachingMenu] = useState(false);
   const { t, lang, setLang } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const rootRef = useRef(null);
   const menuButtonRef = useRef(null);
-  const languageButtonRef = useRef(null);
   const teachingButtonRef = useRef(null);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
@@ -30,24 +28,20 @@ export default function NavBar() {
   useEffect(() => {
     setMenu(false);
     setTeachingMenu(false);
-    setTranslationsOpen(false);
   }, [location.pathname, location.hash]);
 
   useEffect(() => {
     const closeOnEscape = (event) => {
       if (event.key !== "Escape") return;
       if (menu) menuButtonRef.current?.focus();
-      else if (translationsOpen) languageButtonRef.current?.focus();
       else if (teachingMenu) teachingButtonRef.current?.focus();
       setMenu(false);
       setTeachingMenu(false);
-      setTranslationsOpen(false);
     };
     const closeOutside = (event) => {
       if (rootRef.current?.contains(event.target)) return;
       setMenu(false);
       setTeachingMenu(false);
-      setTranslationsOpen(false);
     };
     document.addEventListener("keydown", closeOnEscape);
     document.addEventListener("pointerdown", closeOutside);
@@ -55,13 +49,12 @@ export default function NavBar() {
       document.removeEventListener("keydown", closeOnEscape);
       document.removeEventListener("pointerdown", closeOutside);
     };
-  }, [menu, translationsOpen, teachingMenu]);
+  }, [menu, teachingMenu]);
 
   const toggleTheme = () => setTheme((value) => value === "dark" ? "light" : "dark");
   const changeLang = (newLang) => {
     setLang(newLang);
     setMenu(false);
-    setTranslationsOpen(false);
     const pathParts = location.pathname.split("/").filter(Boolean);
     if (pathParts[0] === "website") pathParts.splice(1, 1, newLang);
     else if (pathParts.length > 0) pathParts[0] = newLang;
@@ -104,13 +97,10 @@ export default function NavBar() {
           <button type="button" className="nav-icon-button" onClick={toggleTheme} aria-label={themeAction} title={themeAction}>
             <ThemeIcon aria-hidden="true" />
           </button>
-          <button ref={languageButtonRef} type="button" className="nav-icon-button"
-            onClick={() => setTranslationsOpen((value) => !value)} aria-label={t.nav.language}
-            aria-expanded={translationsOpen} aria-controls="nav-language-links"><GlobeAltIcon aria-hidden="true" /></button>
-          {translationsOpen && <div id="nav-language-links" className="nav-language-popup">
-            <button type="button" lang="fr" aria-pressed={lang === "fr"} onClick={() => changeLang("fr")}>Français</button>
-            <button type="button" lang="en" aria-pressed={lang === "en"} onClick={() => changeLang("en")}>English</button>
-          </div>}
+          <div className="nav-language-options" role="group" aria-label={t.nav.language}>
+            <button type="button" lang="fr" aria-pressed={lang === "fr"} onClick={() => changeLang("fr")}>FR</button>
+            <button type="button" lang="en" aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
+          </div>
         </div>
         <Link to={practiceHref(lang)} className={`nav-mobile-practice ${practiceClass}`} aria-current={practiceActive ? "page" : undefined}>
           {t.nav.practice}
