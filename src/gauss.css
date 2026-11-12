@@ -8,6 +8,16 @@
 .gauss-help{margin:.8rem 0 .5rem;color:var(--tool-muted);font-size:.88rem;line-height:1.55}
 .gauss-textarea{display:block;width:100%;min-width:0;min-height:8rem;margin-top:.6rem;padding:.85rem;border:1px solid rgba(148,163,184,.24);border-radius:1.1rem;background:var(--tool-surface);color:var(--tool-ink);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.96rem;line-height:1.65;resize:vertical}
 .dark .gauss-textarea{border-color:rgba(148,163,184,.18)}
+.gauss-augmented-input{min-width:0;margin-top:.6rem;border:1px solid rgba(148,163,184,.24);border-radius:1.1rem;background:var(--tool-surface);color:var(--tool-ink);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.96rem;line-height:1.65;overflow:hidden}
+.dark .gauss-augmented-input{border-color:rgba(148,163,184,.18)}
+.gauss-augmented-input{height:8rem;min-height:8rem;resize:vertical}
+.gauss-augmented-scroll{height:100%;max-width:100%;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.gauss-augmented-grid{position:relative;display:grid;grid-template-columns:calc(var(--gauss-coefficient-chars)*1ch + 1.2rem) minmax(0,1fr);width:100%;min-height:100%;min-width:calc((var(--gauss-coefficient-chars) + var(--gauss-rhs-chars))*1ch + 2.4rem);padding:.35rem 0}
+.gauss-augmented-grid::after{content:"";position:absolute;top:.6rem;left:calc(var(--gauss-coefficient-chars)*1ch + 1.2rem);width:1px;height:calc(var(--gauss-matrix-rows)*1.65em);background:#8298ae;pointer-events:none}
+.gauss-augmented-field{display:block;width:100%;min-width:0;min-height:0;margin:0;padding:.25rem .6rem;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;tab-size:4;resize:none;overflow:hidden;white-space:pre}
+.gauss-augmented-rhs{border-left:1px solid transparent}
+.tools-page .gauss-augmented-field:focus{outline:none;box-shadow:none}
+.tools-page .gauss-augmented-input:focus-within{border-color:rgba(37,99,235,.46);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .gauss-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
 .gauss-actions .tool-button-primary{flex:1}
 .gauss-export-options{display:grid;gap:.9rem;margin-top:.75rem}
@@ -40,3 +50,4 @@
 .gauss-step-formula{flex:1;min-width:0;text-align:left}
 .gauss-step-formula .rich-content-math-display mjx-container{text-align:left!important}
 @media(min-width:980px){.gauss-layout{grid-template-columns:minmax(290px,.8fr) minmax(0,1.6fr)}.gauss-input-card{position:sticky;top:calc(var(--site-nav-height,64px) + 20px)}}
+@media(max-width:759px){.gauss-augmented-input{font-size:16px}}

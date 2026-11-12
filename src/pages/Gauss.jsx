@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ToolPage, { ToolDetails } from "../components/ToolPage";
 import RichContent from "../components/RichContent";
+import AugmentedMatrixInput from "../components/AugmentedMatrixInput";
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { FaFilePdf } from "react-icons/fa";
 import { buildGaussLatexDocument, buildGaussPdfHtml, gaussOperationLatex } from "../utils/gaussExport";
 import { useLang } from "../App";
-import { analyzeGaussInput, augmentedMatrixToLatex, systemToLatex, getSolutionGeometry } from "../utils/gauss";
+import { analyzeGaussInput, augmentedMatrixToLatex, systemToLatex, getSolutionGeometry, parseSystemInput, parseMatrixInput, runGaussianElimination } from "../utils/gauss";
+import { joinAugmentedMatrixInput, matrixInputFromSystem, systemInputFromMatrix } from "../utils/augmentedMatrixInput";
 import "../gauss.css";
 
 function describeStep(step) {
@@ -41,27 +43,66 @@ export default function Gauss() {
   const [mode, setMode] = useState("system");
   const [view, setView] = useState("system");
   const [input, setInput] = useState(t.gauss.exampleSystem);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(() => analyzeGaussInput("system", t.gauss.exampleSystem));
+  const [matrixInput, setMatrixInput] = useState(() => matrixInputFromSystem({ augmentedMatrix: result.initialMatrix }));
+  const [matrixVariables, setMatrixVariables] = useState(() => result.variableNames);
+  const [editedMode, setEditedMode] = useState(null);
   const [error, setError] = useState("");
+  const [inputHeight, setInputHeight] = useState("8rem");
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    try {
-      setResult(analyzeGaussInput("system", t.gauss.exampleSystem));
-      setError("");
-    } catch (currentError) {
-      setResult(null);
-      setError(currentError.message);
+    if (!inputRef.current || typeof ResizeObserver === "undefined") return;
+    const element = inputRef.current;
+    const observer = new ResizeObserver(() => setInputHeight(element.getBoundingClientRect().height));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [mode]);
+
+  const parseCurrentInput = () => {
+    if (mode === "matrix" || editedMode === null) {
+      const parsed = parseMatrixInput(joinAugmentedMatrixInput(matrixInput));
+      if (matrixVariables.length === parsed.variableNames.length) parsed.variableNames = matrixVariables;
+      return parsed;
     }
-  }, [t.gauss.exampleSystem]);
+    const parsed = parseSystemInput(input);
+    const names = [
+      ...matrixVariables.filter((name) => parsed.variableNames.includes(name)),
+      ...parsed.variableNames.filter((name) => !matrixVariables.includes(name)),
+    ];
+    return {
+      variableNames: names,
+      augmentedMatrix: parsed.augmentedMatrix.map((row) => [
+        ...names.map((name) => row[parsed.variableNames.indexOf(name)]), row[row.length - 1],
+      ]),
+    };
+  };
 
-  const loadExample = (nextMode) => {
-    const example = nextMode === "system" ? t.gauss.exampleSystem : t.gauss.exampleMatrix;
-    setMode(nextMode);
-    setView(nextMode);
-    setInput(example);
+  const changeMode = (nextMode) => {
+    if (nextMode === mode) return;
+    const empty = mode === "system" ? !input.trim() : !matrixInput.coefficients.trim() && !matrixInput.rightHandSide.trim();
+    if (empty) {
+      setInput("");
+      setMatrixInput({ coefficients: "", rightHandSide: "" });
+      setMatrixVariables([]);
+      setEditedMode(null);
+      setMode(nextMode);
+      setView(nextMode);
+      setResult(null);
+      setError("");
+      return;
+    }
 
     try {
-      setResult(analyzeGaussInput(nextMode, example));
+      const parsed = parseCurrentInput();
+      const nextResult = runGaussianElimination(parsed);
+      if (editedMode === "system") setMatrixInput(matrixInputFromSystem(parsed));
+      if (editedMode === "matrix") setInput(systemInputFromMatrix(parsed));
+      setMatrixVariables(parsed.variableNames);
+      setEditedMode(null);
+      setMode(nextMode);
+      setView(nextMode);
+      setResult(nextResult);
       setError("");
     } catch (currentError) {
       setResult(null);
@@ -71,7 +112,7 @@ export default function Gauss() {
 
   const runAnalysis = () => {
     try {
-      setResult(analyzeGaussInput(mode, input));
+      setResult(runGaussianElimination(parseCurrentInput()));
       setError("");
     } catch (currentError) {
       setResult(null);
@@ -111,17 +152,21 @@ export default function Gauss() {
           <h2 id="gauss-input-title" className="tool-panel-title">{t.gauss.inputTitle}</h2>
           <div className="gauss-mode-row" role="group" aria-label={t.tools.inputFormat}>
             {["system", "matrix"].map((value) => (
-              <button key={value} type="button" onClick={() => loadExample(value)} aria-pressed={mode === value}
+              <button key={value} type="button" onClick={() => changeMode(value)} aria-pressed={mode === value}
                 className={mode === value ? "gauss-mode gauss-mode-active" : "gauss-mode"}>
                 {value === "system" ? t.gauss.modeSystem : t.gauss.modeMatrix}
               </button>
             ))}
           </div>
-          <textarea id="gauss-input" value={input} onChange={(event) => setInput(event.target.value)}
-            className="gauss-textarea" spellCheck="false" aria-labelledby="gauss-input-title" />
+          {mode === "matrix" ? (
+            <AugmentedMatrixInput value={matrixInput} onChange={(value) => { setMatrixInput(value); setEditedMode("matrix"); }} labels={t.gauss}
+              containerRef={inputRef} height={inputHeight} />
+          ) : (
+            <textarea id="gauss-input" ref={inputRef} style={{ height: inputHeight }} value={input} onChange={(event) => { setInput(event.target.value); setEditedMode("system"); }}
+              className="gauss-textarea" spellCheck="false" aria-labelledby="gauss-input-title" />
+          )}
           <div className="gauss-actions">
             <button type="button" onClick={runAnalysis} className="tool-button tool-button-primary">{t.gauss.run}</button>
-            <button type="button" onClick={() => loadExample(mode)} className="tool-button">{t.gauss.resetExample}</button>
           </div>
           <section className="tool-export" aria-label={t.gauss.exportTitle}>
             <h3 className="gauss-block-title">{t.gauss.exportTitle}</h3>
