@@ -1,3 +1,4 @@
+import { inputErrorMessage } from "../../utils/inputError";
 import { matrixToLatex } from "../../utils/gauss";
 import {
   arePolynomialExpressionsEquivalent,
@@ -277,13 +278,9 @@ export function validateAnswer(rawValue, spec = {}, expected, question = {}, lan
       return validateMultipleFields(rawValue, expected, spec, question, lang);
     }
 
-    if (type === "graphic") {
-      return result("invalid", "Une interaction graphique doit fournir son propre validateur.");
-    }
-
-    return result("invalid", `Type de réponse inconnu : ${type}`);
+    return result("invalid", labels(lang).invalid);
   } catch (error) {
-    return result("invalid", error.message || labels(lang).invalid);
+    return result("invalid", inputErrorMessage(error, lang, labels(lang).invalid));
   }
 }
 

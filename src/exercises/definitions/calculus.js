@@ -196,6 +196,7 @@ function derivativeQuestion({
   return {
     variant,
     dedupeKey: `derivative:${domain}:${expression.plain}`,
+    answer: { prefix: "f'(t)" },
     prompt: translated(
       `$$f(t)=${expression.latex}$$`,
       `$$f(t)=${expression.latex}$$`,
@@ -232,6 +233,7 @@ function primitiveQuestion({
   return {
     variant,
     dedupeKey: `primitive:${domain}:${integrand.plain}`,
+    answer: { prefix: "F(t)" },
     prompt: translated(
       `$$f(t)=${integrand.latex}$$`,
       `$$f(t)=${integrand.latex}$$`,
@@ -274,6 +276,7 @@ function uniquePrimitiveQuestion({
   return {
     variant,
     dedupeKey: `unique:${domain}:${integrand.plain}:${conditionPoint}:${conditionValue}`,
+    answer: { prefix: "F(t)" },
     prompt: translated(
       `$$f(t)=${integrand.latex}$$`,
       `$$f(t)=${integrand.latex}$$`,

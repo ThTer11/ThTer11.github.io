@@ -1,5 +1,9 @@
 import { odeAnswerToLatex } from "../math/differentialEquations";
 import { calculusExpressionToLatex } from "../math/calculus";
+import { augmentedLatex, parameterConditionLatex } from "../math/augmentedSystems";
+import { toFractionMatrix } from "../math/linearAlgebra";
+import { systemToLatex } from "../../utils/gauss";
+import { getExerciseUiText } from "../content/uiText";
 import { localize } from "./localize";
 
 const LABELS = {
@@ -26,6 +30,40 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
   if (value === undefined || value === null || String(value).trim() === "") return text(labels.noAnswer);
   if (typeof value === "boolean") return text(value ? labels.true : labels.false);
   const type = spec.type;
+  if (type === "matrix-inversion") {
+    const ui = getExerciseUiText(lang);
+    if (value.stage === "inverse") {
+      return formatAnswerDisplay(value.matrix, { type: "matrix" }, {}, lang);
+    }
+    const choice = text({
+      invertible: ui.matrixInvertible,
+      singular: ui.matrixSingular,
+    }[value.invertibility] ?? labels.noAnswer);
+    if (value.stage === "invertibility") return choice;
+    if (value.stage === "determinant") {
+      return { kind: "fields", fields: [
+        { label: "$\\det(A)$", display: formatAnswerDisplay(value.determinant, { type: "integer" }, {}, lang) },
+        { label: ui.matrixInvertibility, display: choice },
+      ] };
+    }
+    try {
+      return { kind: "math", content: systemToLatex(toFractionMatrix(value.system), question.unknowns, question.rightHandSides) };
+    } catch {
+      return text(plain(value.system) || labels.noAnswer);
+    }
+  }
+  if (["row-reduction", "parameter-system", "matrix-writing"].includes(type)) {
+    if (type === "parameter-system") {
+      if (!value.condition?.trim()) return text(labels.noAnswer);
+      try { return {kind:"math", content:`$$${parameterConditionLatex(value.condition)}$$`}; }
+      catch { return text(value.condition); }
+    }
+    if (type === "matrix-writing" && value.stage === "matrix-form") return {
+      kind: "fields", fields: ["A", "B"].map(name => ({label:name, display:formatAnswerDisplay(value[name], {type:"matrix"}, {}, lang)})),
+    };
+    try { return {kind:"math", content:`$$${augmentedLatex(value.matrix)}$$`}; }
+    catch { return text(plain(value.matrix) || labels.noAnswer); }
+  }
   if (type === "matrix-product") {
     if (!value.defined) return text(labels.noAnswer);
     if (value.defined === "impossible") return text(lang === "en" ? "Product not defined" : "Produit impossible");

@@ -217,6 +217,7 @@ function SetupPanel({
             "exercise-level-grid", usesCompactOptionGrid && "exercise-level-grid-compact",
             usesExerciseVariants && exerciseVariants.every((variant) => normalizeExerciseLevels(variant).length === 0) && "exercise-level-grid-without-levels",
             tool.exerciseColumns && "exercise-level-grid-fixed-columns",
+            tool.fullHeightExerciseCards && "exercise-level-grid-full-height",
           ].filter(Boolean).join(" ")} style={tool.exerciseColumns ? { "--exercise-option-columns": tool.exerciseColumns } : undefined}>
             {exerciseVariants.map((variant) => {
               const selected = difficulty === variant.id;
@@ -409,7 +410,7 @@ function StudyEngine({ tool, lang, courseHints }) {
           trustedHtml={Boolean(exercise.trustedHtml)}
         />
       </div>
-      {exercise.diagram?.type === "parabola" && <ParabolaDiagram diagram={exercise.diagram} />}
+      {exercise.diagram?.type === "parabola" && <ParabolaDiagram diagram={exercise.diagram} lang={lang} />}
 
       {hintCount > 0 && (
         <div className="exercise-study-hints">
@@ -489,7 +490,7 @@ export default function ExerciseEngine({
   const [hintCount, setHintCount] = useState(0);
   const [openHint, setOpenHint] = useState(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
-  const [generationError, setGenerationError] = useState("");
+  const [generationError, setGenerationError] = useState(false);
   const submittingRef = useRef(false);
   const deadlineRef = useRef(null);
   const seriesDeadlineRef = useRef(null);
@@ -499,7 +500,7 @@ export default function ExerciseEngine({
     if (setupRequest === 0) return;
     setPhase("setup");
     setInputError("");
-    setGenerationError("");
+    setGenerationError(false);
   }, [setupRequest, setPhase]);
 
   const answerSpec = useMemo(
@@ -571,12 +572,12 @@ export default function ExerciseEngine({
       }
 
       setQuestionStartedAt(startedAt);
-      setGenerationError("");
+      setGenerationError(false);
       submittingRef.current = false;
       questionSignaturesRef.current.add(generated.signature);
       return true;
-    } catch (error) {
-      setGenerationError(error.message);
+    } catch {
+      setGenerationError(true);
       return false;
     }
   }, [difficulty, selectedExerciseLevel, tool]);
@@ -620,7 +621,7 @@ export default function ExerciseEngine({
       submittedAnswer,
       submittedAnswerDisplay: formatAnswerDisplay(submittedAnswer, answerSpec, question, lang),
       promptUi: resolveQuestionPromptUi(question?.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi, lang),
-      expectedAnswer: formatExpectedAnswer(question?.expected, answerSpec, question, lang),
+      expectedAnswer: question?.summaryAnswerDisplay ?? formatExpectedAnswer(question?.expected, answerSpec, question, lang),
     }));
     setPhase("feedback");
     submittingRef.current = true;
@@ -738,7 +739,7 @@ export default function ExerciseEngine({
         phase === "feedback" &&
         !event.shiftKey &&
         !openHint &&
-        event.target?.tagName !== "BUTTON"
+        !event.target?.closest?.("button, summary, a")
       ) {
         event.preventDefault();
         advance();
@@ -769,7 +770,7 @@ export default function ExerciseEngine({
           onOpenCourseOverview={() => setOverviewOpen(true)}
           courseReminderCount={overviewHints.length}
         />
-        {generationError && <p className="exercise-inline-error">{generationError}</p>}
+        {generationError && <p className="exercise-inline-error">{labels.generationError}</p>}
         {overviewOpen && (
           <CourseHintModal hints={overviewHints} lang={lang} labels={labels} onClose={() => setOverviewOpen(false)} />
         )}
@@ -792,9 +793,11 @@ export default function ExerciseEngine({
   }
 
   if (!question) {
-    return <p className="exercise-inline-error">{generationError || labels.unavailable}</p>;
+    return <p className="exercise-inline-error">{generationError ? labels.generationError : labels.unavailable}</p>;
   }
 
+  const autoCheckReduction = answerSpec.type === "row-reduction";
+  const waitingForGaussInversionChoice = answerSpec.type === "matrix-inversion" && question.rowWorkspace && answer.stage === "invertibility";
   const progress = Math.min(questionCount, session.completed + (phase === "active" ? 1 : 0));
   const currentQuestionNumber = phase === "feedback"
     ? session.completed
@@ -854,15 +857,19 @@ export default function ExerciseEngine({
             )}
           </header>
 
-          <div className="exercise-question-frame">
-            <ExerciseQuestionPrompt
-              content={localize(question.prompt, lang)}
-              lang={lang}
-              promptUi={question.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi}
-              trustedHtml={Boolean(question.trustedHtml)}
-            />
-          </div>
-          {question.diagram?.type === "parabola" && <ParabolaDiagram diagram={question.diagram} />}
+          {question.rowWorkspace ? (
+            <MathRenderer className="system-row-instruction" content={localize(question.promptUi?.label, lang)} />
+          ) : (
+            <div className="exercise-question-frame">
+              <ExerciseQuestionPrompt
+                content={localize(question.prompt, lang)}
+                lang={lang}
+                promptUi={question.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi}
+                trustedHtml={Boolean(question.trustedHtml)}
+              />
+            </div>
+          )}
+          {question.diagram?.type === "parabola" && <ParabolaDiagram diagram={question.diagram} lang={lang} />}
 
           {tool.feedback?.showHints !== false && hintCount > 0 && (question.hints ?? []).slice(0, hintCount).map((hint, index) => (
             <div key={index} className="exercise-study-hint">
@@ -871,7 +878,7 @@ export default function ExerciseEngine({
             </div>
           ))}
 
-          <form className={`exercise-answer-form${answerSpec.type === "matrix-product" ? " exercise-matrix-product-form" : ""}`} onSubmit={submit}>
+          <form className={`exercise-answer-form${answerSpec.type === "matrix-product" ? " exercise-matrix-product-form" : ""}`} onSubmit={autoCheckReduction ? (event) => event.preventDefault() : submit}>
             <AnswerInput
               spec={answerSpec}
               question={question}
@@ -900,13 +907,15 @@ export default function ExerciseEngine({
               </button>
             )}
 
-            {(phase === "active" || (phase === "feedback" && answerSpec.type === "matrix-product")) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
+            {!autoCheckReduction && !waitingForGaussInversionChoice && (phase === "active" || (phase === "feedback" && ["matrix-product", "matrix-writing", "parameter-system", "matrix-inversion"].includes(answerSpec.type))) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
               <button type="submit"
                 className={`showcase-action showcase-action-primary exercise-primary-action${phase === "feedback" ? " exercise-action-reserved" : ""}`}
                 disabled={phase !== "active"} aria-hidden={phase !== "active" || undefined}>
                 {answerSpec.type === "matrix-product" && answer.stage === "dimensions"
-                  ? lang === "en" ? "Validate size" : "Valider la taille"
-                  : labels.validate}
+                  ? lang === "en" ? "Check dimensions" : "Valider la taille"
+                  : answerSpec.type === "matrix-writing" && answer.stage === "matrix-form"
+                    ? lang === "en" ? "Check the matrices" : "Valider les matrices"
+                    : labels.validate}
               </button>
             )}
           </form>

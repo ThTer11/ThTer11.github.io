@@ -5,6 +5,7 @@ import AugmentedMatrixInput from "../components/AugmentedMatrixInput";
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { FaFilePdf } from "react-icons/fa";
 import { buildGaussLatexDocument, buildGaussPdfHtml, gaussOperationLatex } from "../utils/gaussExport";
+import { inputErrorMessage } from "../utils/inputError";
 import { useLang } from "../App";
 import { analyzeGaussInput, augmentedMatrixToLatex, systemToLatex, getSolutionGeometry, parseSystemInput, parseMatrixInput, runGaussianElimination } from "../utils/gauss";
 import { joinAugmentedMatrixInput, matrixInputFromSystem, systemInputFromMatrix } from "../utils/augmentedMatrixInput";
@@ -47,7 +48,8 @@ export default function Gauss() {
   const [matrixInput, setMatrixInput] = useState(() => matrixInputFromSystem({ augmentedMatrix: result.initialMatrix }));
   const [matrixVariables, setMatrixVariables] = useState(() => result.variableNames);
   const [editedMode, setEditedMode] = useState(null);
-  const [error, setError] = useState("");
+  const [inputError, setError] = useState(null);
+  const error = inputError && inputErrorMessage(inputError, lang, t.gauss.inputError);
   const [inputHeight, setInputHeight] = useState("8rem");
   const inputRef = useRef(null);
 
@@ -89,7 +91,7 @@ export default function Gauss() {
       setMode(nextMode);
       setView(nextMode);
       setResult(null);
-      setError("");
+      setError(null);
       return;
     }
 
@@ -103,20 +105,20 @@ export default function Gauss() {
       setMode(nextMode);
       setView(nextMode);
       setResult(nextResult);
-      setError("");
+      setError(null);
     } catch (currentError) {
       setResult(null);
-      setError(currentError.message);
+      setError(currentError);
     }
   };
 
   const runAnalysis = () => {
     try {
       setResult(runGaussianElimination(parseCurrentInput()));
-      setError("");
+      setError(null);
     } catch (currentError) {
       setResult(null);
-      setError(currentError.message);
+      setError(currentError);
     }
   };
 

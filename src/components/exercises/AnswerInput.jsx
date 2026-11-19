@@ -1,12 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import MathRenderer from "./MathRenderer";
+import AugmentedSystemInput, { emptyAugmentedAnswer } from "./AugmentedSystemInput";
 import { localize } from "../../exercises/core/localize";
+import { systemToLatex } from "../../utils/gauss";
+import "./matrix-inversion.css";
 
 export function emptyAnswerValue(spec = {}, question = {}) {
   const type = spec.type ?? "text";
 
+  if (["matrix-writing", "row-reduction", "parameter-system"].includes(type)) return emptyAugmentedAnswer(type, question);
+
   if (type === "matrix-product") {
     return { defined: question.symbolic ? "possible" : "", stage: question.symbolic ? "dimensions" : "compatibility", size: ["", ""], matrix: [] };
+  }
+
+  if (type === "matrix-inversion") {
+    if (question.rowWorkspace) {
+      return {
+        stage: "invertibility", invertibility: "",
+        workspace: emptyAugmentedAnswer(type, question),
+      };
+    }
+    return question.unknowns
+      ? { stage: "system", system: question.initialMatrix.map((row) => row.map(() => "")) }
+      : { stage: "determinant", determinant: "", invertibility: "" };
   }
 
   if (type === "matrix") {
@@ -29,9 +46,9 @@ export function emptyAnswerValue(spec = {}, question = {}) {
   return "";
 }
 
-function ChoiceInput({ options, value, onChange, onCommit, disabled, lang, firstInputRef }) {
+function ChoiceInput({ options, value, onChange, onChoose = onChange, onCommit, disabled, lang, firstInputRef, labelledBy }) {
   return (
-    <div className="exercise-choice-grid" role="radiogroup">
+    <div className="exercise-choice-grid" role="radiogroup" aria-labelledby={labelledBy}>
       {options.map((option, index) => (
         <button
           key={option.id}
@@ -42,7 +59,7 @@ function ChoiceInput({ options, value, onChange, onCommit, disabled, lang, first
           className={String(value) === String(option.id)
             ? "exercise-choice exercise-choice-selected"
             : "exercise-choice"}
-          onClick={() => onChange(option.id)}
+          onClick={() => onChoose(option.id)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && String(value) === String(option.id)) {
               event.preventDefault();
@@ -72,7 +89,7 @@ function ChoiceInput({ options, value, onChange, onCommit, disabled, lang, first
   );
 }
 
-function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions, allowExpressions = false }) {
+function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions, allowExpressions = false, prefix }) {
   const [activeCell, setActiveCell] = useState([0, 0]);
   const update = (rowIndex, columnIndex, nextValue) => {
     const next = value.map((row) => [...row]);
@@ -85,6 +102,7 @@ function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFr
 
   return (
     <div className={`exercise-matrix-entry${allowExpressions ? " exercise-matrix-entry-symbolic" : ""}`} role="group" aria-label={labels.answer}>
+      {prefix && <MathRenderer as="span" className="exercise-matrix-prefix" content={`$${prefix}=$`} responsiveMath={false} />}
       <div className="exercise-matrix-input">
         <div
           className="exercise-matrix-table"
@@ -152,7 +170,7 @@ function MatrixProductInput({ value, onChange, onCheck, disabled, labels, lang, 
         </label>)}
       </div>
     </fieldset>}
-    {stage === "matrix" && <MatrixInput value={value.matrix}
+    {stage === "matrix" && <MatrixInput prefix={question.product} value={value.matrix}
       onChange={(matrix) => onChange({ ...value, matrix })} disabled={disabled} labels={labels}
       allowExpressions={question.symbolic} firstInputRef={firstInputRef} />}
   </div>;
@@ -195,6 +213,134 @@ function FractionSeparatorButton({ value, onChange, disabled, labels }) {
     >
       /
     </button>
+  );
+}
+
+function AssociatedSystemInput({ system, question, onChange, disabled, labels, firstInputRef }) {
+  const [active, setActive] = useState([0, 0]);
+  const [activeRow, activeColumn] = active;
+  const update = (row, column, value) => onChange(system.map((entries, i) =>
+    i === row ? entries.map((entry, j) => j === column ? value : entry) : entries));
+
+  return (
+    <fieldset className="exercise-inversion-system-fields">
+      <legend>{labels.matrixCompleteSystem}</legend>
+      <div className="exercise-inversion-equations">
+        <svg className="exercise-inversion-brace" viewBox="0 0 18 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M17 1C8 1 9 11 9 26V37C9 45 6 50 1 50C6 50 9 55 9 63V74C9 89 8 99 17 99"
+            fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+        {system.map((row, i) => <Fragment key={i}>
+          {row.map((entry, j) => <div key={j} className="exercise-inversion-term">
+            {j > 0 && <span aria-hidden="true">+</span>}
+            <label>
+              <input
+                ref={i === 0 && j === 0 ? firstInputRef : undefined}
+                type="text"
+                inputMode="numeric"
+                className="exercise-matrix-cell"
+                aria-label={`${labels.matrixRow} ${i + 1}, ${question.unknowns[j]}`}
+                autoComplete="off"
+                spellCheck="false"
+                value={entry}
+                disabled={disabled}
+                onFocus={() => setActive([i, j])}
+                onChange={(event) => update(i, j, event.target.value)}
+              />
+              <MathRenderer as="span" content={`$${question.unknowns[j]}$`} responsiveMath={false} />
+            </label>
+          </div>)}
+          <MathRenderer as="span" className="exercise-inversion-rhs"
+            content={`$= ${question.rightHandSides[i]}$`} responsiveMath={false} />
+        </Fragment>)}
+      </div>
+      <div className="exercise-numeric-symbols">
+        <NegativeSignButton value={system[activeRow][activeColumn]}
+          onChange={(entry) => update(activeRow, activeColumn, entry)} disabled={disabled} labels={labels} />
+      </div>
+    </fieldset>
+  );
+}
+
+function MatrixInvertibilityChoice({ value, onChange, onCommit, onCheck, disabled, locked, labels, lang, firstInputRef }) {
+  const choiceLabelId = useId();
+  return (
+    <>
+      <p className="exercise-inversion-question" id={choiceLabelId}>
+        <MathRenderer as="span" content={labels.matrixInvertibility} />
+      </p>
+      <div className={locked ? "exercise-inversion-choices exercise-product-choice-locked" : "exercise-inversion-choices"}>
+        <ChoiceInput
+          options={[{ id: "invertible", label: labels.matrixInvertible }, { id: "singular", label: labels.matrixSingular }]}
+          value={value.invertibility}
+          onChange={(invertibility) => onChange({ ...value, invertibility })}
+          onChoose={onCheck ? (invertibility) => onCheck({ ...value, invertibility }) : undefined}
+          onCommit={onCheck ? () => onCheck(value) : onCommit}
+          disabled={disabled || locked}
+          lang={lang}
+          firstInputRef={firstInputRef}
+          labelledBy={choiceLabelId}
+        />
+      </div>
+    </>
+  );
+}
+
+function MatrixInversionInput({ spec, value, question, onChange, onCheck, onCommit, disabled, labels, lang, firstInputRef, focusKey }) {
+  const hasSystem = Boolean(question.unknowns);
+  const enteringInverse = value.stage === "inverse";
+  if (value.stage === "system") {
+    return <AssociatedSystemInput key={focusKey} system={value.system} question={question} disabled={disabled}
+      onChange={(system) => onChange({ ...value, system })} labels={labels} firstInputRef={firstInputRef} />;
+  }
+  const inverseInput = enteringInverse && (
+    <MatrixInput prefix="A^{-1}" value={value.matrix} onChange={(matrix) => onChange({ ...value, matrix })}
+      disabled={disabled} labels={labels} firstInputRef={firstInputRef} allowFractions />
+  );
+  if (enteringInverse && hasSystem) return inverseInput;
+
+  if (value.workspace) {
+    return (
+      <>
+        <AugmentedSystemInput key={focusKey} spec={spec} question={question} value={value.workspace}
+          onChange={(workspace) => onChange({ ...value, workspace })} disabled={disabled || enteringInverse} lang={lang} />
+        {enteringInverse ? inverseInput : (
+          <div className="exercise-inversion-decision">
+            <MatrixInvertibilityChoice value={value} onChange={onChange} onCheck={onCheck}
+              disabled={disabled} labels={labels} lang={lang} />
+          </div>
+        )}
+      </>
+    );
+  }
+  return (
+    <>
+      {hasSystem && <MathRenderer className="exercise-inversion-completed-system"
+        content={systemToLatex(question.initialMatrix, question.unknowns, question.rightHandSides)} />}
+      <div className="exercise-inversion-decision">
+        {!hasSystem && (
+          <div className="exercise-inversion-determinant-control">
+            <label className="exercise-inversion-determinant-field">
+              <MathRenderer as="span" content={"$\\det(A)=$"} responsiveMath={false} />
+              <input ref={!enteringInverse ? firstInputRef : undefined} className="exercise-text-input" value={value.determinant}
+                inputMode="numeric" autoComplete="off" spellCheck="false" disabled={disabled}
+                readOnly={enteringInverse} tabIndex={enteringInverse ? -1 : undefined}
+                onChange={(event) => onChange({ ...value, determinant: event.target.value })} />
+            </label>
+            {!enteringInverse && (
+              <div className="exercise-numeric-symbols">
+                <NegativeSignButton value={value.determinant} onChange={(determinant) => onChange({ ...value, determinant })}
+                  labels={labels} disabled={disabled} />
+              </div>
+            )}
+          </div>
+        )}
+        <MatrixInvertibilityChoice value={value} onChange={onChange} onCommit={onCommit}
+          disabled={disabled} locked={enteringInverse} labels={labels} lang={lang}
+          firstInputRef={hasSystem ? firstInputRef : undefined} />
+      </div>
+      {inverseInput}
+    </>
   );
 }
 
@@ -331,9 +477,23 @@ export default function AnswerInput({
     return undefined;
   }, [disabled, focusKey, value?.stage]);
 
+  if (["matrix-writing", "row-reduction", "parameter-system"].includes(type)) {
+    return <AugmentedSystemInput key={focusKey} spec={spec} question={question} value={value} onChange={onChange} onCheck={onCheck} disabled={disabled} lang={lang} />;
+  }
+
   if (type === "matrix-product") {
     return <MatrixProductInput value={value} onChange={onChange} onCheck={onCheck} disabled={disabled}
       labels={labels} lang={lang} question={question} firstInputRef={firstInputRef} />;
+  }
+
+  if (type === "matrix-inversion") {
+    return (
+      <div className={`exercise-inversion-answer exercise-inversion-${value.stage}${value.workspace ? " exercise-inversion-gauss" : ""}`}
+        data-matrix-size={question.augmentedSplit}>
+        <MatrixInversionInput spec={spec} value={value} question={question} onChange={onChange} onCheck={onCheck} onCommit={onCommit}
+          disabled={disabled} labels={labels} lang={lang} focusKey={focusKey} firstInputRef={firstInputRef} />
+      </div>
+    );
   }
 
   if (type === "choice") {
@@ -401,53 +561,61 @@ export default function AnswerInput({
 
   const usesNumericSymbolBar = ["integer", "decimal", "fraction"].includes(type)
     && spec.allowNegative !== false;
+  const prefix = localize(question.answer?.prefix ?? spec.prefix, lang);
+  const example = { integer: "12", decimal: "2.5", fraction: "3/4" }[type] ?? "2*x + 3";
+  const placeholder = localize(spec.placeholder, lang) || (type === "solution-set"
+    ? labels.solutionSetPlaceholder
+    : `${lang === "en" ? "e.g." : "ex."} ${example}`);
 
   return (
     <label className="exercise-field-label">
       <span>{labels.answer}</span>
-      {usesNumericSymbolBar ? (
-        <div className="exercise-signed-input">
+      <div className={`exercise-answer-control${prefix ? " exercise-answer-control-prefixed" : ""}`} aria-disabled={disabled || undefined}>
+        {prefix && <MathRenderer as="span" className="exercise-answer-prefix" content={`$${prefix}=$`} responsiveMath={false} />}
+        {usesNumericSymbolBar ? (
+          <div className="exercise-signed-input">
+            <input
+              ref={firstInputRef}
+              className="exercise-text-input"
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              disabled={disabled}
+              inputMode={spec.inputMode ?? (type === "decimal" ? "decimal" : "numeric")}
+              autoComplete="off"
+              spellCheck="false"
+              placeholder={placeholder}
+            />
+            <div className="exercise-numeric-symbols">
+              <NegativeSignButton
+                value={value}
+                onChange={onChange}
+                disabled={disabled}
+                labels={labels}
+              />
+              {type === "fraction" && (
+                <FractionSeparatorButton
+                  value={value}
+                  onChange={onChange}
+                  disabled={disabled}
+                  labels={labels}
+                />
+              )}
+            </div>
+          </div>
+        ) : (
           <input
             ref={firstInputRef}
             className="exercise-text-input"
             value={value}
             onChange={(event) => onChange(event.target.value)}
             disabled={disabled}
-            inputMode={spec.inputMode ?? (type === "decimal" ? "decimal" : "numeric")}
+            inputMode={spec.inputMode ?? "text"}
             autoComplete="off"
             spellCheck="false"
-            placeholder={localize(spec.placeholder, lang) || labels.answerPlaceholder}
+            placeholder={placeholder}
           />
-          <div className="exercise-numeric-symbols">
-            <NegativeSignButton
-              value={value}
-              onChange={onChange}
-              disabled={disabled}
-              labels={labels}
-            />
-            {type === "fraction" && (
-              <FractionSeparatorButton
-                value={value}
-                onChange={onChange}
-                disabled={disabled}
-                labels={labels}
-              />
-            )}
-          </div>
-        </div>
-      ) : (
-        <input
-          ref={firstInputRef}
-          className="exercise-text-input"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          disabled={disabled}
-          inputMode={spec.inputMode ?? "text"}
-          autoComplete="off"
-          spellCheck="false"
-          placeholder={localize(spec.placeholder, lang) || (type === "solution-set" ? labels.solutionSetPlaceholder : labels.answerPlaceholder)}
-        />
-      )}
+        )}
+      </div>
     </label>
   );
 }

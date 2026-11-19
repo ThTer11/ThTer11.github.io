@@ -5,7 +5,9 @@ import { elementaryTools } from "./definitions/elementary";
 import { calculusTools } from "./definitions/calculus";
 import { quadraticTools } from "./definitions/quadratic";
 import { matrixTools } from "./definitions/matrices";
+import { augmentedSystemsTool } from "./definitions/augmentedSystems";
 import { matrixProductTool } from "./definitions/matrixProducts";
+import { matrixInversionTool } from "./definitions/matrixInversion";
 import { systemTools } from "./definitions/systems";
 import { elementaryCourseHints } from "./content/elementaryHints";
 import { calculusCourseHints } from "./content/calculusHints";
@@ -19,6 +21,8 @@ export const exerciseTools = [
   ...calculusTools,
   ...quadraticTools,
   matrixProductTool,
+  augmentedSystemsTool,
+  matrixInversionTool,
   ...matrixTools.map((tool) => ({ ...tool, enabled: false })),
   ...systemTools,
 ];

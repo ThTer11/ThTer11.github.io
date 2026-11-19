@@ -1,3 +1,5 @@
+import { localize } from "../../exercises/core/localize";
+
 function createPath({ a, b, c, xMin, xMax, yMin, yMax, width, height }) {
   const points = [];
   const samples = 120;
@@ -13,7 +15,7 @@ function createPath({ a, b, c, xMin, xMax, yMin, yMax, width, height }) {
   return points.join(" ");
 }
 
-export default function ParabolaDiagram({ diagram }) {
+export default function ParabolaDiagram({ diagram, lang = "fr" }) {
   const width = 520;
   const height = 280;
   const xMin = diagram.xMin ?? -5;
@@ -28,7 +30,7 @@ export default function ParabolaDiagram({ diagram }) {
 
   return (
     <div className="exercise-graph-frame">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={diagram.alt ?? "Représentation graphique d'une parabole"}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={localize(diagram.alt, lang) || (lang === "en" ? "Graph of a parabola" : "Représentation graphique d'une parabole")}>
         <rect width={width} height={height} className="exercise-graph-background" />
         {verticals.map((x) => {
           const screenX = ((x - xMin) / (xMax - xMin)) * width;

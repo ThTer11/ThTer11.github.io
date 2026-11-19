@@ -1,5 +1,10 @@
 const tr = (fr, en) => ({ fr, en });
 
+const matrix2Example = "$$A=\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}.$$";
+const inverse2Formula = "$$A^{-1}=\\frac{1}{\\det(A)}\\begin{pmatrix}d&-b\\\\-c&a\\end{pmatrix}.$$";
+const matrix3Example = "$$A=\\begin{pmatrix}d&e&f\\\\g&h&i\\\\j&k&\\ell\\end{pmatrix}.$$";
+const system3Example = "$$\\left\\{\\begin{aligned}dx+ey+fz&=a\\\\gx+hy+iz&=b\\\\jx+ky+\\ell z&=c\\end{aligned}\\right.$$";
+
 export const matrixCourseHints = [
   {
     id: "matrix-product",
@@ -90,38 +95,38 @@ export const matrixCourseHints = [
   },
   {
     id: "matrix-inverse",
-    title: tr("Inverse d'une matrice $2\\times2$", "Inverse of a $2\\times2$ matrix"),
-    summary: tr(
-      "Vérifier d'abord que le déterminant est non nul.",
-      "First check that the determinant is nonzero.",
-    ),
+    title: tr("Inversion de matrices", "Matrix inversion"),
     blocks: [
       {
         type: "text",
+        title: tr("Définition", "Definition"),
         content: tr(
-          "Une matrice carrée $A$ est inversible si et seulement si $\\det(A)\\neq0$.",
-          "A square matrix $A$ is invertible if and only if $\\det(A)\\neq0$.",
+          "Une matrice $A\\in\\mathcal{M}_n(\\mathbb R)$ est inversible si et seulement s’il existe une matrice $B\\in\\mathcal{M}_n(\\mathbb R)$ telle que $AB=I_n$.",
+          "A matrix $A\\in\\mathcal{M}_n(\\mathbb R)$ is invertible if and only if there exists a matrix $B\\in\\mathcal{M}_n(\\mathbb R)$ such that $AB=I_n$.",
         ),
       },
       {
         type: "formula",
+        title: tr("Cas des matrices $2\\times2$", "The $2\\times2$ case"),
         content: tr(
-          "$$A=\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix},\\quad \\det(A)=ad-bc\\neq0\\quad\\Longrightarrow\\quad A^{-1}=\\frac1{ad-bc}\\begin{pmatrix}d&-b\\\\-c&a\\end{pmatrix}.$$",
-          "$$A=\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix},\\quad \\det(A)=ad-bc\\neq0\\quad\\Longrightarrow\\quad A^{-1}=\\frac1{ad-bc}\\begin{pmatrix}d&-b\\\\-c&a\\end{pmatrix}.$$",
+          `${matrix2Example}\nOn définit le déterminant de $A$ par $\\det(A)=ad-bc$.\nLa matrice $A$ est inversible si et seulement si $\\det(A)\\ne0$. Dans ce cas, son inverse est donné par\n${inverse2Formula}`,
+          `${matrix2Example}\nThe determinant of $A$ is defined by $\\det(A)=ad-bc$.\nThe matrix $A$ is invertible if and only if $\\det(A)\\ne0$. In that case, its inverse is given by\n${inverse2Formula}`,
         ),
       },
       {
-        type: "example",
+        type: "formula",
+        title: tr("Cas des matrices $3\\times3$", "The $3\\times3$ case"),
         content: tr(
-          "$$A=\\begin{pmatrix}1&2\\\\0&1\\end{pmatrix}\\quad\\Longrightarrow\\quad A^{-1}=\\begin{pmatrix}1&-2\\\\0&1\\end{pmatrix}.$$",
-          "$$A=\\begin{pmatrix}1&2\\\\0&1\\end{pmatrix}\\quad\\Longrightarrow\\quad A^{-1}=\\begin{pmatrix}1&-2\\\\0&1\\end{pmatrix}.$$",
+          `${matrix3Example}\nOn associe à cette matrice le système suivant :\n${system3Example}\nOn résout ce système. S’il admet une solution unique pour tout $(a,b,c)\\in\\mathbb R^3$, la matrice $A$ est inversible. Sinon, elle ne l’est pas.`,
+          `${matrix3Example}\nThe associated system is:\n${system3Example}\nSolve this system. If it has a unique solution for every $(a,b,c)\\in\\mathbb R^3$, the matrix $A$ is invertible. Otherwise, it is not invertible.`,
         ),
       },
       {
-        type: "remark",
+        type: "formula",
+        title: tr("Cas général en utilisant le pivot de Gauss", "General case using Gaussian elimination"),
         content: tr(
-          "Un contrôle rapide consiste à vérifier que $AA^{-1}=I_2$.",
-          "A quick check is to verify that $AA^{-1}=I_2$.",
+          "Soit $A\\in\\mathcal{M}_n(\\mathbb R)$. On utilise le pivot de Gauss pour obtenir l’échelonnée réduite de la matrice augmentée $(A\\mid I_n)$.\nSi cette forme est $(I_n\\mid B)$, la matrice $A$ est inversible, d’inverse $B$. Sinon, $A$ n’est pas inversible.",
+          "Let $A\\in\\mathcal{M}_n(\\mathbb R)$. Use Gaussian elimination to obtain the reduced row echelon form of the augmented matrix $(A\\mid I_n)$.\nIf the resulting matrix is $(I_n\\mid B)$, then $A$ is invertible with inverse $B$. Otherwise, $A$ is not invertible.",
         ),
       },
     ],

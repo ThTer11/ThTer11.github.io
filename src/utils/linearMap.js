@@ -1,5 +1,9 @@
+import { InputError } from "./inputError";
 import { Fraction, matrixToLatex, parseFraction } from "./gauss";
 
+const SOURCE_BASIS = { fr: "Base de départ", en: "Source basis" };
+const TARGET_BASIS = { fr: "Base d'arrivée", en: "Target basis" };
+const IMAGES = { fr: "Images", en: "Images" };
 const DEFAULT_VARIABLES = ["x", "y", "z", "t", "u", "v", "w"];
 
 function cloneMatrix(matrix) {
@@ -14,7 +18,7 @@ function parseVectorLine(line, index, label) {
   const tokens = line.trim().split(/[\s,;]+/).filter(Boolean);
 
   if (tokens.length === 0) {
-    throw new Error(`${label}: ligne ${index + 1} vide.`);
+    throw new InputError(`${label.fr}: ligne ${index + 1} vide.`, `${label.en}: row ${index + 1} is empty.`);
   }
 
   return tokens.map((token) => parseFraction(token));
@@ -27,7 +31,7 @@ function parseVectorList(rawText, label) {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error(`${label}: entre au moins un vecteur.`);
+    throw new InputError(`${label.fr}: entre au moins un vecteur.`, `${label.en}: enter at least one vector.`);
   }
 
   const vectors = lines.map((line, index) => parseVectorLine(line, index, label));
@@ -35,7 +39,7 @@ function parseVectorList(rawText, label) {
 
   vectors.forEach((vector, index) => {
     if (vector.length !== dimension) {
-      throw new Error(`${label}: la ligne ${index + 1} n'a pas la bonne dimension.`);
+      throw new InputError(`${label.fr}: la ligne ${index + 1} n'a pas la bonne dimension.`, `${label.en}: row ${index + 1} has the wrong number of entries.`);
     }
   });
 
@@ -71,7 +75,7 @@ function invertMatrix(matrix, label) {
   const size = matrix.length;
 
   if (size === 0 || matrix.some((row) => row.length !== size)) {
-    throw new Error(`${label}: la matrice associée doit être carrée.`);
+    throw new InputError(`${label.fr}: la matrice associée doit être carrée.`, `${label.en}: the associated matrix must be square.`);
   }
 
   const left = cloneMatrix(matrix);
@@ -85,7 +89,7 @@ function invertMatrix(matrix, label) {
     }
 
     if (pivotRow === size) {
-      throw new Error(`${label}: la famille donnée n'est pas une base.`);
+      throw new InputError(`${label.fr}: la famille donnée n'est pas une base.`, `${label.en}: the given vectors do not form a basis.`);
     }
 
     if (pivotRow !== column) {
@@ -219,10 +223,10 @@ export function inferLinearMapSourceDimension(formulaText, currentDimension = 1)
 function inferVariables(rawText, dimension) {
   const used = formulaVariables(rawText);
   const defaults = Array.from({ length: dimension }, (_, i) => DEFAULT_VARIABLES[i] ?? `x${i + 1}`);
-  if (used.length > dimension) throw new Error(`L’application utilise ${used.length} variables pour une base de dimension ${dimension}.`);
+  if (used.length > dimension) throw new InputError(`L’application utilise ${used.length} variables pour une base de dimension ${dimension}.`, `The map uses ${used.length} variables, but the source basis has dimension ${dimension}.`);
   if (used.length && used.every(name => /^x\d+$/.test(name))) {
     if (used.some(name => Number(name.slice(1)) < 1 || Number(name.slice(1)) > dimension)) {
-      throw new Error(`Les indices des variables doivent être compris entre 1 et ${dimension}.`);
+      throw new InputError(`Les indices des variables doivent être compris entre 1 et ${dimension}.`, `Variable indices must be between 1 and ${dimension}.`);
     }
     return Array.from({ length: dimension }, (_, i) => `x${i + 1}`);
   }
@@ -248,12 +252,12 @@ function parseLinearComponent(rawExpression, variableNames, label) {
   const expression = normalizeExpression(rawExpression);
 
   if (!expression) {
-    throw new Error(`${label}: composante vide.`);
+    throw new InputError(`${label.fr}: composante vide.`, `${label.en}: empty component.`);
   }
 
   const normalized = /^[+-]/.test(expression) ? expression : `+${expression}`;
   const terms = normalized.match(/[+-][^+-]+/g) || [];
-  if (terms.join("") !== normalized) throw new Error(`${label}: syntaxe invalide.`);
+  if (terms.join("") !== normalized) throw new InputError(`${label.fr}: syntaxe invalide.`, `${label.en}: invalid syntax.`);
   const coefficients = Array.from({ length: dimension }, () => Fraction.zero());
   let constant = Fraction.zero();
 
@@ -262,7 +266,7 @@ function parseLinearComponent(rawExpression, variableNames, label) {
     const body = term.slice(1);
 
     if (!body) {
-      throw new Error(`${label}: terme invalide.`);
+      throw new InputError(`${label.fr}: terme invalide.`, `${label.en}: invalid term.`);
     }
 
     if (/[a-zA-Z]/.test(body)) {
@@ -271,14 +275,14 @@ function parseLinearComponent(rawExpression, variableNames, label) {
       );
 
       if (!match || body.startsWith("*")) {
-        throw new Error(`${label}: terme linéaire invalide "${body}".`);
+        throw new InputError(`${label.fr}: terme linéaire invalide "${body}".`, `${label.en}: invalid linear term "${body}".`);
       }
 
       const [, coefficientText, variable] = match;
       const variableIndex = aliases.get(variable);
 
       if (variableIndex === undefined) {
-        throw new Error(`${label}: variable "${variable}" non reconnue.`);
+        throw new InputError(`${label.fr}: variable "${variable}" non reconnue.`, `${label.en}: unknown variable "${variable}".`);
       }
 
       const coefficient = coefficientText ? parseFraction(coefficientText) : Fraction.one();
@@ -292,7 +296,7 @@ function parseLinearComponent(rawExpression, variableNames, label) {
   });
 
   if (!constant.isZero()) {
-    throw new Error(`${label}: l'application doit être linéaire, sans terme constant.`);
+    throw new InputError(`${label.fr}: l'application doit être linéaire, sans terme constant.`, `${label.en}: the map must be linear, with no constant term.`);
   }
 
   return coefficients;
@@ -305,12 +309,12 @@ function parseLinearFormula(rawText, dimension) {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error("Application linéaire: entre au moins une composante.");
+    throw new InputError("Application linéaire: entre au moins une composante.", "Linear map: enter at least one component.");
   }
 
   const variableNames = inferVariables(rawText, dimension);
   return { variableNames, rows: lines.map((line, index) =>
-    parseLinearComponent(line, variableNames, `Application linéaire, ligne ${index + 1}`)) };
+    parseLinearComponent(line, variableNames, { fr: `Application linéaire, ligne ${index + 1}`, en: `Linear map, line ${index + 1}` })) };
 }
 
 function computeImagesFromFormula(formulaRows, sourceVectors) {
@@ -364,7 +368,7 @@ function imageDefinitionLatex(sourceLabels, columns) {
 
 export function canUseSameBasis({ sourceBasisText, targetBasisText, imageText, inputMode, formulaText }) {
   try {
-    const sourceVectors = parseVectorList(sourceBasisText, "Base de départ");
+    const sourceVectors = parseVectorList(sourceBasisText, SOURCE_BASIS);
     const sourceDimension = sourceVectors[0].length;
 
     if (inputMode === "formula") {
@@ -372,8 +376,8 @@ export function canUseSameBasis({ sourceBasisText, targetBasisText, imageText, i
       return formulaRows.rows.length === sourceDimension;
     }
 
-    const targetVectors = parseVectorList(targetBasisText, "Base d'arrivée");
-    const images = parseVectorList(imageText, "Images");
+    const targetVectors = parseVectorList(targetBasisText, TARGET_BASIS);
+    const images = parseVectorList(imageText, IMAGES);
     return targetVectors.length === sourceDimension && targetVectors[0].length === sourceDimension && images[0].length === sourceDimension;
   } catch (_) {
     return false;
@@ -388,11 +392,11 @@ export function analyzeLinearMapInput({
   inputMode,
   sameBasis,
 }) {
-  const sourceVectors = parseVectorList(sourceBasisText, "Base de départ");
+  const sourceVectors = parseVectorList(sourceBasisText, SOURCE_BASIS);
   const sourceDimension = sourceVectors[0].length;
 
   if (sourceVectors.length !== sourceDimension) {
-    throw new Error("La base de départ doit contenir autant de vecteurs que la dimension.");
+    throw new InputError("La base de départ doit contenir autant de vecteurs que la dimension.", "The source basis must contain as many vectors as the dimension of the domain.");
   }
 
   let targetVectors;
@@ -407,46 +411,46 @@ export function analyzeLinearMapInput({
     const targetDimension = formulaRows.length;
 
     if (sameBasis && targetDimension !== sourceDimension) {
-      throw new Error("L'option même base n'est possible que pour un endomorphisme.");
+      throw new InputError("L'option même base n'est possible que pour un endomorphisme.", "You can only use the same basis for an endomorphism.");
     }
 
     targetVectors = sameBasis
       ? sourceVectors.map((vector) => vector.map((value) => Fraction.from(value)))
-      : parseVectorList(targetBasisText, "Base d'arrivée");
+      : parseVectorList(targetBasisText, TARGET_BASIS);
     images = computeImagesFromFormula(formulaRows, sourceVectors);
     formulaLatexValue = formulaLatex(formulaRows, variableNames);
 
     if (targetVectors.length !== targetDimension || targetVectors[0].length !== targetDimension) {
-      throw new Error("La base d'arrivée doit avoir la même dimension que l'espace d'arrivée.");
+      throw new InputError("La base d'arrivée doit avoir la même dimension que l'espace d'arrivée.", "The target basis must match the dimension of the codomain.");
     }
   } else {
     targetVectors = sameBasis
       ? sourceVectors.map((vector) => vector.map((value) => Fraction.from(value)))
-      : parseVectorList(targetBasisText, "Base d'arrivée");
-    images = parseVectorList(imageText, "Images");
+      : parseVectorList(targetBasisText, TARGET_BASIS);
+    images = parseVectorList(imageText, IMAGES);
 
     if (sameBasis && images[0].length !== sourceDimension) {
-      throw new Error("L'option même base n'est possible que pour un endomorphisme.");
+      throw new InputError("L'option même base n'est possible que pour un endomorphisme.", "You can only use the same basis for an endomorphism.");
     }
   }
 
   if (images.length !== sourceVectors.length) {
-    throw new Error("Il faut donner une image pour chaque vecteur de la base de départ.");
+    throw new InputError("Il faut donner une image pour chaque vecteur de la base de départ.", "Enter one image for each vector in the source basis.");
   }
 
   const targetDimension = targetVectors[0].length;
 
   images.forEach((vector, index) => {
     if (vector.length !== targetDimension) {
-      throw new Error(`Image ${index + 1}: la dimension ne correspond pas à l'espace d'arrivée.`);
+      throw new InputError(`Image ${index + 1}: la dimension ne correspond pas à l'espace d'arrivée.`, `Image ${index + 1}: the dimension does not match the codomain.`);
     }
   });
 
   const sourceMatrix = basisMatrixFromVectors(sourceVectors);
   const targetMatrix = basisMatrixFromVectors(targetVectors);
 
-  invertMatrix(sourceMatrix, "Base de départ");
-  const targetInverse = invertMatrix(targetMatrix, "Base d'arrivée");
+  invertMatrix(sourceMatrix, SOURCE_BASIS);
+  const targetInverse = invertMatrix(targetMatrix, TARGET_BASIS);
 
   const targetLabels = targetVectors.map((_, index) => vectorLabel(sameBasis ? "b" : "c", index));
   const sourceLabels = sourceVectors.map((_, index) => vectorLabel("b", index));

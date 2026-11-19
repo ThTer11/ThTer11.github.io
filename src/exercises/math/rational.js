@@ -1,3 +1,4 @@
+import { InputError } from "../../utils/inputError";
 import { Fraction, parseFraction } from "../../utils/gauss";
 
 const MAX_DIGITS = 80;
@@ -18,11 +19,11 @@ function normalizeLatexFraction(value) {
 
 function validateNumberToken(token) {
   if (!NUMBER_PATTERN.test(token)) {
-    throw new Error(`Nombre invalide : « ${token} ».`);
+    throw new InputError(`Nombre invalide : « ${token} ».`, `Invalid number: “${token}”.`);
   }
 
   if ((token.match(/\d/g) ?? []).length > MAX_DIGITS) {
-    throw new Error("Nombre trop long.");
+    throw new InputError("Nombre trop long.", "The number is too long.");
   }
 }
 
@@ -31,7 +32,7 @@ export function parseExactNumber(rawValue) {
   const parts = normalized.split("/");
 
   if (parts.length > 2 || parts.some((part) => !part)) {
-    throw new Error("Écriture fractionnaire invalide.");
+    throw new InputError("Écriture fractionnaire invalide.", "Invalid fraction format.");
   }
 
   parts.forEach(validateNumberToken);
@@ -42,7 +43,7 @@ function absBigInt(value) {
   return value < 0n ? -value : value;
 }
 
-function gcdBigInt(left, right) {
+export function gcdBigInt(left, right) {
   let a = absBigInt(left);
   let b = absBigInt(right);
 

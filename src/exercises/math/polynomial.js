@@ -1,3 +1,4 @@
+import { InputError } from "../../utils/inputError";
 import { Fraction, parseFraction } from "../../utils/gauss";
 
 const MAX_INPUT_LENGTH = 300;
@@ -78,7 +79,7 @@ function multiplyPolynomials(left, right) {
 
 function dividePolynomial(polynomial, divisor) {
   if (divisor.size !== 1 || !divisor.has("")) {
-    throw new Error("Seule la division par une constante est prise en charge.");
+    throw new InputError("Seule la division par une constante est prise en charge.", "Only division by a constant is supported.");
   }
 
   const constant = divisor.get("");
@@ -89,7 +90,7 @@ function dividePolynomial(polynomial, divisor) {
 
 function powerPolynomial(polynomial, exponent) {
   if (!Number.isSafeInteger(exponent) || exponent < 0 || exponent > MAX_EXPONENT) {
-    throw new Error(`L'exposant doit être un entier entre 0 et ${MAX_EXPONENT}.`);
+    throw new InputError(`L'exposant doit être un entier entre 0 et ${MAX_EXPONENT}.`, `The exponent must be an integer from 0 to ${MAX_EXPONENT}.`);
   }
 
   let result = constantPolynomial(1);
@@ -139,7 +140,7 @@ function expandLatexFractions(rawText) {
     const denominator = numerator && readBalancedGroup(text, numerator.end);
 
     if (!numerator || !denominator) {
-      throw new Error("Fraction LaTeX incomplète.");
+      throw new InputError("Fraction LaTeX incomplète.", "Incomplete LaTeX fraction.");
     }
 
     const replacement = `((${expandLatexFractions(numerator.content)})/(${expandLatexFractions(denominator.content)}))`;
@@ -154,11 +155,11 @@ export function normalizeExpressionInput(rawValue) {
   const rawText = String(rawValue ?? "").trim();
 
   if (!rawText) {
-    throw new Error("Réponse vide.");
+    throw new InputError("Réponse vide.", "Enter an answer.");
   }
 
   if (rawText.length > MAX_INPUT_LENGTH) {
-    throw new Error("Expression trop longue.");
+    throw new InputError("Expression trop longue.", "The expression is too long.");
   }
 
   return expandLatexFractions(
@@ -211,7 +212,7 @@ function tokenize(rawValue) {
       continue;
     }
 
-    throw new Error(`Symbole non pris en charge : « ${text[index]} ».`);
+    throw new InputError(`Symbole non pris en charge : « ${text[index]} ».`, `Unsupported symbol: “${text[index]}”.`);
   }
 
   const withProducts = [];
@@ -236,17 +237,17 @@ function constantInteger(polynomial) {
   }
 
   if (polynomial.size !== 1 || !polynomial.has("")) {
-    throw new Error("L'exposant doit être constant.");
+    throw new InputError("L'exposant doit être constant.", "The exponent must be constant.");
   }
 
   const value = polynomial.get("");
   if (value.denominator !== 1n) {
-    throw new Error("L'exposant doit être entier.");
+    throw new InputError("L'exposant doit être entier.", "The exponent must be an integer.");
   }
 
   const asNumber = Number(value.numerator);
   if (!Number.isSafeInteger(asNumber)) {
-    throw new Error("Exposant trop grand.");
+    throw new InputError("Exposant trop grand.", "The exponent is too large.");
   }
 
   return asNumber;
@@ -263,7 +264,7 @@ export function parsePolynomialExpression(rawValue) {
     const token = consume();
 
     if (!token) {
-      throw new Error("Expression incomplète.");
+      throw new InputError("Expression incomplète.", "The expression is incomplete.");
     }
 
     if (token.type === "number") {
@@ -277,12 +278,12 @@ export function parsePolynomialExpression(rawValue) {
     if (token.type === "left") {
       const expression = parseExpression();
       if (consume()?.type !== "right") {
-        throw new Error("Parenthèse fermante manquante.");
+        throw new InputError("Parenthèse fermante manquante.", "Missing closing parenthesis.");
       }
       return expression;
     }
 
-    throw new Error(`Élément inattendu : « ${token.value} ».`);
+    throw new InputError(`Élément inattendu : « ${token.value} ».`, `Unexpected element: “${token.value}”.`);
   };
 
   const parsePower = () => {
@@ -340,7 +341,7 @@ export function parsePolynomialExpression(rawValue) {
   const result = parseExpression();
 
   if (cursor !== tokens.length) {
-    throw new Error(`Élément inattendu : « ${peek().value} ».`);
+    throw new InputError(`Élément inattendu : « ${peek().value} ».`, `Unexpected element: “${peek().value}”.`);
   }
 
   return result;

@@ -72,6 +72,7 @@ export default function FeedbackPanel({
 
   const { tone, title, lead, Icon } = feedbackPresentation(outcome, labels);
   const showCorrection = feedback.showCorrection !== false;
+  const showReducedMatrixOnMobile = outcome.correct && answerSpec.type === "row-reduction";
   const showExplanation = feedback.showExplanation !== false && question.explanation;
   const interactiveProduct = showExplanation && answerSpec.type === "matrix-product" && question.expected.defined
     && question.left && question.right;
@@ -118,9 +119,11 @@ export default function FeedbackPanel({
         {outcome.reason && outcome.message && (
           <MathRenderer className="exercise-feedback-message" content={outcome.message} />
         )}
-        {showCorrection && !outcome.correct && !interactiveProduct && (
-          <div className="exercise-feedback-block exercise-feedback-answer">
-            <h3>{labels.expectedAnswer}</h3>
+        {showCorrection && (!outcome.correct || showReducedMatrixOnMobile) && !interactiveProduct && (
+          <div className={`exercise-feedback-block exercise-feedback-answer${showReducedMatrixOnMobile ? " exercise-feedback-reduced-mobile" : ""}`}>
+            <h3>{showReducedMatrixOnMobile
+              ? lang === "en" ? "Reduced matrix" : "Matrice réduite"
+              : labels.expectedAnswer}</h3>
             <MathRenderer
               content={localize(formatExpectedAnswer(question.expected, answerSpec, question, lang), lang)}
               trustedHtml

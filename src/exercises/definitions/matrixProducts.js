@@ -89,11 +89,11 @@ export function generateMatrixMultiplication({ difficulty = "product", rng = Mat
     const result = symbolic ? symbolicMatrix(matrix) : body(matrix);
     answerDisplay = `$$${order}=${result}$$`;
     explanation = tr(
-      `${comparison.fr}\nLe produit $${order}$ est défini si $${leftShape[1]}=${rightShape[0]}$ donc $${order}$ est possible et est de taille $${leftShape[0]}\\times${rightShape[1]}$.`,
-      `${comparison.en}\nThe product $${order}$ is defined if $${leftShape[1]}=${rightShape[0]}$, so $${order}$ is possible and has size $${leftShape[0]}\\times${rightShape[1]}$.`,
+      `${comparison.fr}\nLe produit $${order}$ est défini si $${leftShape[1]}=${rightShape[0]}$, donc le produit $${order}$ est possible et est de taille $${leftShape[0]}\\times${rightShape[1]}$.`,
+      `${comparison.en}\nThe product $${order}$ is defined if $${leftShape[1]}=${rightShape[0]}$, so the product $${order}$ is possible and has size $${leftShape[0]}\\times${rightShape[1]}$.`,
     );
   } else {
-    explanation = tr(`${comparison.fr}\nLe produit $${order}$ est défini si $${leftShape[1]}=${rightShape[0]}$. Ici $${leftShape[1]}\\ne${rightShape[0]}$ donc $${order}$ n’est pas possible.`, `${comparison.en}\nThe product $${order}$ is defined if $${leftShape[1]}=${rightShape[0]}$. Here $${leftShape[1]}\\ne${rightShape[0]}$, so $${order}$ is not possible.`);
+    explanation = tr(`${comparison.fr}\nLe produit $${order}$ est défini si $${leftShape[1]}=${rightShape[0]}$. Ici $${leftShape[1]}\\ne${rightShape[0]}$, donc le produit $${order}$ n’est pas possible.`, `${comparison.en}\nThe product $${order}$ is defined if $${leftShape[1]}=${rightShape[0]}$. Here $${leftShape[1]}\\ne${rightShape[0]}$, so the product $${order}$ is not possible.`);
   }
   return {
     prompt, trustedHtml: true, symbolic, product: order, left, right,
@@ -114,6 +114,7 @@ export const matrixProductTool = {
   ],
   defaultExercise: "product", timer: false,
   exerciseColumns: 3,
+  fullHeightExerciseCards: true,
   series: { questionCount: 5, choices: [5, 10, 15, 20], allowQuestionCount: true, allowRestart: true, showSummary: true },
   score: true,
   source: { type: "generator", generate: generateMatrixMultiplication },

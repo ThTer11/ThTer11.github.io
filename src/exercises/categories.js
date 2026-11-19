@@ -1,10 +1,10 @@
 export const exerciseCategories = [
   {
     id: "calcul-elementaire",
-    title: { fr: "Calcul et automatismes", en: "Calculation and fluency" },
+    title: { fr: "Calcul et automatismes", en: "Core calculation skills" },
     description: {
       fr: "Addition, multiplication, fractions et identités remarquables.",
-      en: "Addition, multiplication, fractions and remarkable identities.",
+      en: "Addition, multiplication, fractions and standard algebraic identities.",
     },
     audience: "",
     accent: "emerald",
@@ -42,7 +42,7 @@ export const exerciseCategories = [
   {
     id: "matrices",
     title: { fr: "Matrices", en: "Matrices" },
-    description: { fr: "Produits de matrices et de vecteurs.", en: "Matrix and vector products." },
+    description: { fr: "Produits matriciels, systèmes linéaires et inversion.", en: "Matrix products, linear systems and inversion." },
     audience: "L1",
     accent: "violet",
   },

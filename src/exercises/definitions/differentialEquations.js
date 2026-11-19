@@ -179,7 +179,7 @@ export function generateDifferentialEquation({ difficulty = "homogeneous", level
     explanation,
     explanationTrustedHtml: true,
     courseHintIds: [HINT],
-    answer: { placeholder: unique ? tr("Expression en t, sans constante libre", "Expression in t, without a free constant") : tr("Ex. C*exp(-2*t)+3", "E.g. C*exp(-2*t)+3") },
+    answer: { placeholder: unique ? tr("Ex. 2*exp(-t)+3", "E.g. 2*exp(-t)+3") : tr("Ex. C*exp(-2*t)+3", "E.g. C*exp(-2*t)+3") },
   };
 }
 
@@ -188,8 +188,8 @@ export const differentialEquationsTool = {
   title: tr("Équations différentielles d’ordre 1", "First-order differential equations"),
   description: tr("Résoudre les équations linéaires du premier ordre, avec ou sans second membre et condition initiale.", "Solve first-order linear equations, with or without a forcing term and an initial condition."),
   exercises: [
-    { id: "homogeneous", color: "sky", label: tr("Équations différentielles homogènes", "Homogeneous differential equations"), description: tr("Coefficient constant, fonctions usuelles, puis compositions et intégration par parties.", "Constant coefficients, standard functions, then compositions and integration by parts.") },
-    { id: "inhomogeneous", color: "violet", label: tr("Avec second membre", "Nonhomogeneous equations"), description: tr("Solution particulière constante, forme de la solution particulière indiquée, puis variation de la constante.", "Constant particular solution, suggested form, then variation of parameters.") },
+    { id: "homogeneous", color: "sky", label: tr("Équations différentielles homogènes", "Homogeneous differential equations"), description: tr("Coefficient constant, fonctions usuelles, puis compositions et intégration par parties.", "Constant coefficients, then standard functions, followed by composite functions and integration by parts.") },
+    { id: "inhomogeneous", color: "violet", label: tr("Avec second membre", "Inhomogeneous equations"), description: tr("Solution particulière constante, forme de la solution particulière indiquée, puis variation de la constante.", "Constant particular solutions, prescribed forms, then variation of constants.") },
     { id: "initial-value", color: "emerald", label: tr("Avec condition initiale", "Initial-value problems"), description: tr("Résoudre l’équation différentielle puis déterminer l’unique solution vérifiant la condition.", "Solve the equation, then find the unique solution satisfying the condition.") },
   ].map((exercise) => ({ ...exercise, levels: exercise.id === "inhomogeneous" ? [1, 2, 3, 4] : [1, 2, 3], defaultLevel: 1 })),
   defaultExercise: "homogeneous", timer: false,

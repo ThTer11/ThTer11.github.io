@@ -532,7 +532,7 @@ export const discriminantTool = {
   title: tr("Calcul rapide du discriminant", "Quick discriminant calculation"),
   description: tr(
     "Automatiser le calcul exact de $\\Delta=b^2-4ac$.",
-    "Build fluency with the exact calculation $\\Delta=b^2-4ac$.",
+    "Practise calculating the exact value of the discriminant $\\Delta=b^2-4ac$.",
   ),
   difficulties: [
     { id: "1", label: tr("Coefficients simples", "Simple coefficients") },

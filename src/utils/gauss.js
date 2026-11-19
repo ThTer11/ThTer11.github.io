@@ -1,3 +1,5 @@
+import { InputError } from "./inputError";
+
 function absBigInt(value) {
   return value < 0n ? -value : value;
 }
@@ -18,7 +20,7 @@ function gcdBigInt(a, b) {
 export class Fraction {
   constructor(numerator, denominator = 1n) {
     if (denominator === 0n) {
-      throw new Error("Zero denominator");
+      throw new InputError("Le dénominateur ne peut pas être nul.", "The denominator cannot be zero.");
     }
 
     let num = BigInt(numerator);
@@ -74,7 +76,7 @@ export class Fraction {
     const value = Fraction.from(other);
 
     if (value.numerator === 0n) {
-      throw new Error("Division by zero");
+      throw new InputError("Division par zéro.", "Division by zero.");
     }
 
     return new Fraction(
@@ -140,14 +142,14 @@ export function parseFraction(rawValue) {
   const value = rawValue.trim();
 
   if (!value) {
-    throw new Error("Empty number");
+    throw new InputError("Saisis un nombre.", "Enter a number.");
   }
 
   if (value.includes("/")) {
     const parts = value.split("/");
 
     if (parts.length !== 2) {
-      throw new Error(`Invalid fraction: ${rawValue}`);
+      throw new InputError(`Fraction invalide : ${rawValue}`, `Invalid fraction: ${rawValue}`);
     }
 
     const numerator = parseFraction(parts[0]);
@@ -155,11 +157,12 @@ export function parseFraction(rawValue) {
     return numerator.div(denominator);
   }
 
-  if (value.includes(".")) {
-    return parseDecimal(value);
+  try {
+    return value.includes(".") ? parseDecimal(value) : new Fraction(BigInt(value), 1n);
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    throw new InputError(`Nombre invalide : « ${rawValue} ».`, `Invalid number: “${rawValue}”.`);
   }
-
-  return new Fraction(BigInt(value), 1n);
 }
 
 function cloneMatrix(matrix) {
@@ -192,7 +195,7 @@ function parseLinearExpression(rawExpression) {
     const body = term.slice(1);
 
     if (!body) {
-      throw new Error(`Terme invalide dans l'expression "${rawExpression}"`);
+      throw new InputError(`Terme invalide dans l'expression "${rawExpression}"`, `Invalid term in the expression "${rawExpression}"`);
     }
 
     if (/[a-zA-Z]/.test(body)) {
@@ -201,7 +204,7 @@ function parseLinearExpression(rawExpression) {
       );
 
       if (!match) {
-        throw new Error(`Terme linéaire invalide: "${body}"`);
+        throw new InputError(`Terme linéaire invalide: "${body}"`, `Invalid linear term: "${body}"`);
       }
 
       const [, coefficientText, variable] = match;
@@ -231,7 +234,7 @@ export function parseSystemInput(rawText) {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error("Entre au moins une équation.");
+    throw new InputError("Entre au moins une équation.", "Enter at least one equation.");
   }
 
   const variableNames = [];
@@ -242,7 +245,7 @@ export function parseSystemInput(rawText) {
     const members = line.split("=");
 
     if (members.length !== 2) {
-      throw new Error(`Ligne ${index + 1}: utilise exactement un signe "=".`);
+      throw new InputError(`Ligne ${index + 1}: utilise exactement un signe "=".`, `Line ${index + 1}: use exactly one "=" sign.`);
     }
 
     const left = parseLinearExpression(members[0]);
@@ -259,7 +262,7 @@ export function parseSystemInput(rawText) {
   });
 
   if (variableNames.length === 0) {
-    throw new Error("Le système ne contient aucune inconnue.");
+    throw new InputError("Le système ne contient aucune inconnue.", "The system contains no unknowns.");
   }
 
   const augmentedMatrix = equations.map(({ left, right }) => {
@@ -283,25 +286,25 @@ export function parseMatrixInput(rawText) {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error("Entre au moins une ligne de matrice.");
+    throw new InputError("Entre au moins une ligne de matrice.", "Enter at least one matrix row.");
   }
 
   const augmentedMatrix = lines.map((line, index) => {
     const parts = line.split("|");
 
     if (parts.length !== 2) {
-      throw new Error(`Ligne ${index + 1}: sépare la matrice et le second membre avec "|".`);
+      throw new InputError(`Ligne ${index + 1}: sépare la matrice et le second membre avec "|".`, `Row ${index + 1}: separate the matrix from the right-hand side with "|".`);
     }
 
     const leftTokens = parts[0].trim().split(/[\s,;]+/).filter(Boolean);
     const rightTokens = parts[1].trim().split(/[\s,;]+/).filter(Boolean);
 
     if (leftTokens.length === 0) {
-      throw new Error(`Ligne ${index + 1}: il manque les coefficients.`);
+      throw new InputError(`Ligne ${index + 1}: il manque les coefficients.`, `Row ${index + 1}: the coefficients are missing.`);
     }
 
     if (rightTokens.length !== 1) {
-      throw new Error(`Ligne ${index + 1}: il faut un seul second membre après "|".`);
+      throw new InputError(`Ligne ${index + 1}: il faut un seul second membre après "|".`, `Row ${index + 1}: enter exactly one right-hand-side value after "|".`);
     }
 
     return [
@@ -314,14 +317,14 @@ export function parseMatrixInput(rawText) {
 
   augmentedMatrix.forEach((row, index) => {
     if (row.length !== width) {
-      throw new Error(`Ligne ${index + 1}: toutes les lignes doivent avoir la même longueur.`);
+      throw new InputError(`Ligne ${index + 1}: toutes les lignes doivent avoir la même longueur.`, `Row ${index + 1}: all rows must have the same length.`);
     }
   });
 
   const variableCount = width - 1;
 
   if (variableCount <= 0) {
-    throw new Error("La matrice augmentée doit contenir au moins une inconnue.");
+    throw new InputError("La matrice augmentée doit contenir au moins une inconnue.", "The augmented matrix must contain at least one unknown.");
   }
 
   const variableNames = variableCount <= 4
@@ -337,14 +340,14 @@ export function parseSquareMatrixInput(rawText) {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error("Entre au moins une ligne de matrice.");
+    throw new InputError("Entre au moins une ligne de matrice.", "Enter at least one matrix row.");
   }
 
   const matrix = lines.map((line, index) => {
     const tokens = line.split(/[\s,;]+/).filter(Boolean);
 
     if (tokens.length === 0) {
-      throw new Error(`Ligne ${index + 1}: il manque les coefficients.`);
+      throw new InputError(`Ligne ${index + 1}: il manque les coefficients.`, `Row ${index + 1}: the coefficients are missing.`);
     }
 
     return tokens.map((token) => parseFraction(token));
@@ -354,7 +357,7 @@ export function parseSquareMatrixInput(rawText) {
 
   matrix.forEach((row, index) => {
     if (row.length !== size) {
-      throw new Error(`Ligne ${index + 1}: la matrice doit être carrée.`);
+      throw new InputError(`Ligne ${index + 1}: la matrice doit être carrée.`, `Row ${index + 1}: the matrix must be square.`);
     }
   });
 
@@ -491,7 +494,7 @@ function formatSignedTerm(coefficient, variableLatex, isFirst) {
   return `${sign}${coefficientLatex}${variableLatex}`;
 }
 
-function equationCellsLatex(row, variableNames) {
+export function equationCellsLatex(row, variableNames) {
   const cells = [];
   let firstDisplayed = false;
 
@@ -561,7 +564,7 @@ export function augmentedMatrixToLatex(matrix, splitIndex) {
   return `$$\\left(\\begin{array}{${alignment}}${rows}\\end{array}\\right)$$`;
 }
 
-export function systemToLatex(matrix, variableNames) {
+export function systemToLatex(matrix, variableNames, rightHandSides) {
   if (matrix.length === 0) {
     return "";
   }
@@ -571,9 +574,9 @@ export function systemToLatex(matrix, variableNames) {
       ? "rcl"
       : `r${"cr".repeat(variableNames.length - 1)}cl`;
   const rows = matrix
-    .map((row) => {
+    .map((row, index) => {
       const cells = equationCellsLatex(row, variableNames);
-      return [...cells, "=", row[variableNames.length].toLatex()].join(" & ");
+      return [...cells, "=", rightHandSides?.[index] ?? row[variableNames.length].toLatex()].join(" & ");
     })
     .join(" \\\\[0.45em] ");
 

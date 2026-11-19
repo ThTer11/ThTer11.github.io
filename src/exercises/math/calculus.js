@@ -1,3 +1,5 @@
+import { InputError, inputErrorMessage } from "../../utils/inputError";
+
 const MAX_INPUT_LENGTH = 500;
 const MAX_TOKENS = 500;
 const MAX_PARSE_DEPTH = 60;
@@ -31,7 +33,7 @@ function expandLatexStructures(rawText) {
     const denominator = numerator && readBalancedGroup(text, numerator.end);
 
     if (!numerator || !denominator) {
-      throw new Error("Fraction LaTeX incomplète.");
+      throw new InputError("Fraction LaTeX incomplète.", "Incomplete LaTeX fraction.");
     }
 
     const replacement = `((${expandLatexStructures(numerator.content)})/(${expandLatexStructures(denominator.content)}))`;
@@ -45,7 +47,7 @@ function expandLatexStructures(rawText) {
     const radicand = readBalancedGroup(text, marker + 5);
 
     if (!radicand) {
-      throw new Error("Racine carrée LaTeX incomplète.");
+      throw new InputError("Racine carrée LaTeX incomplète.", "Incomplete LaTeX square root.");
     }
 
     const replacement = `sqrt(${expandLatexStructures(radicand.content)})`;
@@ -64,8 +66,8 @@ function stripAssignment(rawText) {
 export function normalizeCalculusInput(rawValue) {
   const rawText = stripAssignment(String(rawValue ?? "").trim());
 
-  if (!rawText) throw new Error("Réponse vide.");
-  if (rawText.length > MAX_INPUT_LENGTH) throw new Error("Expression trop longue.");
+  if (!rawText) throw new InputError("Réponse vide.", "Enter an answer.");
+  if (rawText.length > MAX_INPUT_LENGTH) throw new InputError("Expression trop longue.", "The expression is too long.");
 
   let text = rawText
     .replace(/\$/g, "")
@@ -99,7 +101,7 @@ export function normalizeCalculusInput(rawValue) {
     .trim()
     .toLowerCase();
 
-  if (!text) throw new Error("Réponse vide.");
+  if (!text) throw new InputError("Réponse vide.", "Enter an answer.");
   return text;
 }
 
@@ -140,10 +142,10 @@ function rawTokens(rawValue) {
       continue;
     }
 
-    throw new Error(`Symbole non pris en charge : « ${text[index]} ».`);
+    throw new InputError(`Symbole non pris en charge : « ${text[index]} ».`, `Unsupported symbol: “${text[index]}”.`);
   }
 
-  if (tokens.length > MAX_TOKENS) throw new Error("Expression trop complexe.");
+  if (tokens.length > MAX_TOKENS) throw new InputError("Expression trop complexe.", "The expression is too complex.");
   return tokens;
 }
 
@@ -179,7 +181,7 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
 
   const withinDepthLimit = (callback) => {
     depth += 1;
-    if (depth > MAX_PARSE_DEPTH) throw new Error("Expression trop imbriquée.");
+    if (depth > MAX_PARSE_DEPTH) throw new InputError("Expression trop imbriquée.", "The expression is nested too deeply.");
 
     try {
       return callback();
@@ -191,7 +193,7 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
   const parsePrimary = () => withinDepthLimit(() => {
     const token = consume();
 
-    if (!token) throw new Error("Expression incomplète.");
+    if (!token) throw new InputError("Expression incomplète.", "The expression is incomplete.");
 
     if (token.type === "number") {
       return { type: "number", value: Number(token.value), raw: token.value };
@@ -202,15 +204,15 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
 
       if (FUNCTION_NAMES.has(token.value)) {
         if (consume()?.type !== "left") {
-          throw new Error(`Écris ${token.value}(...) avec des parenthèses.`);
+          throw new InputError(`Écris ${token.value}(...) avec des parenthèses.`, `Use parentheses: ${token.value}(...).`);
         }
         const argument = parseExpression();
-        if (consume()?.type !== "right") throw new Error("Parenthèse fermante manquante.");
+        if (consume()?.type !== "right") throw new InputError("Parenthèse fermante manquante.", "Missing closing parenthesis.");
         return { type: "call", name, argument };
       }
 
       if (!["t", "x", "e", "pi", "c", "k"].includes(name) && !additionalSymbols.includes(name)) {
-        throw new Error(`Symbole inconnu : « ${token.value} ».`);
+        throw new InputError(`Symbole inconnu : « ${token.value} ».`, `Unknown symbol: “${token.value}”.`);
       }
 
       return { type: "symbol", name };
@@ -218,11 +220,11 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
 
     if (token.type === "left") {
       const expression = parseExpression();
-      if (consume()?.type !== "right") throw new Error("Parenthèse fermante manquante.");
+      if (consume()?.type !== "right") throw new InputError("Parenthèse fermante manquante.", "Missing closing parenthesis.");
       return expression;
     }
 
-    throw new Error(`Élément inattendu : « ${token.value} ».`);
+    throw new InputError(`Élément inattendu : « ${token.value} ».`, `Unexpected element: “${token.value}”.`);
   });
 
   const parsePower = () => {
@@ -270,7 +272,7 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
   const result = parseExpression();
 
   if (cursor !== tokens.length) {
-    throw new Error(`Élément inattendu : « ${peek().value} ».`);
+    throw new InputError(`Élément inattendu : « ${peek().value} ».`, `Unexpected element: “${peek().value}”.`);
   }
 
   return result;
@@ -463,7 +465,7 @@ export function validateCalculusAnswer(rawValue, { expected, question, lang = "f
         formOk: false,
         status: "equivalent",
         message: lang === "en"
-          ? "You found one primitive, but + C is needed to give all primitives."
+          ? "You found one antiderivative. Add $+C$ to give the full family."
           : "Tu as trouvé une primitive, mais il manque $+C$ pour donner toutes les primitives.",
       };
     }
@@ -475,7 +477,7 @@ export function validateCalculusAnswer(rawValue, { expected, question, lang = "f
         ? (lang === "en" ? "Correct answer." : "Bonne réponse.")
         : upToConstant
           ? (lang === "en"
-            ? "Differentiate your proposed primitive to check it."
+            ? "Differentiate your proposed antiderivative to check your answer."
             : "Dérive la primitive proposée pour vérifier ton résultat.")
           : (lang === "en"
             ? "The expression is not equivalent to the expected answer."
@@ -485,7 +487,9 @@ export function validateCalculusAnswer(rawValue, { expected, question, lang = "f
     return {
       correct: false,
       status: "invalid",
-      message: error.message,
+      message: inputErrorMessage(error, lang, lang === "en"
+        ? "This answer could not be interpreted."
+        : "Cette réponse n’a pas pu être interprétée."),
     };
   }
 }

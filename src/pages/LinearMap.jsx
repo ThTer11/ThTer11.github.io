@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ToolPage, { ToolDetails } from "../components/ToolPage";
 import RichContent from "../components/RichContent";
+import { inputErrorMessage } from "../utils/inputError";
 import { useLang } from "../App";
 import { analyzeLinearMapInput, canonicalBasisText, canUseSameBasis, inferLinearMapSourceDimension } from "../utils/linearMap";
 import "../gauss.css";
@@ -19,7 +20,7 @@ function basisDimension(text) {
 }
 
 export default function LinearMap() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const examples = useMemo(
     () => ({
       general: {
@@ -46,7 +47,8 @@ export default function LinearMap() {
   const [targetBasisText, setTargetBasisText] = useState(examples.general.targetBasis);
   const [formulaText, setFormulaText] = useState(examples.general.formula);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
+  const [inputError, setError] = useState(null);
+  const error = inputError && inputErrorMessage(inputError, lang, t.linearMap.inputError);
   const sourceDimension = inferLinearMapSourceDimension(formulaText, basisDimension(sourceBasisText));
   const targetDimension = formulaText.split("\n").filter((line) => line.trim()).length || basisDimension(targetBasisText);
 
@@ -70,10 +72,10 @@ export default function LinearMap() {
           sameBasis,
         }),
       );
-      setError("");
+      setError(null);
     } catch (currentError) {
       setResult(null);
-      setError(currentError.message);
+      setError(currentError);
     }
   }, [formulaText, sameBasis, sourceBasisText, targetBasisText]);
 
@@ -89,10 +91,10 @@ export default function LinearMap() {
           sameBasis,
         }),
       );
-      setError("");
+      setError(null);
     } catch (currentError) {
       setResult(null);
-      setError(currentError.message);
+      setError(currentError);
     }
   };
 
@@ -113,10 +115,10 @@ export default function LinearMap() {
           sameBasis,
         }),
       );
-      setError("");
+      setError(null);
     } catch (currentError) {
       setResult(null);
-      setError(currentError.message);
+      setError(currentError);
     }
   };
 

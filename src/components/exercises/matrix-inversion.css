@@ -1,0 +1,227 @@
+.exercise-inversion-answer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  justify-items: center;
+  gap: .8rem;
+}
+
+.exercise-inversion-decision,
+.exercise-inversion-system-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  width: min(100%, 26rem);
+  gap: .65rem;
+  justify-items: center;
+}
+
+.exercise-inversion-determinant-control {
+  display: grid;
+  grid-template-columns: var(--determinant-side, 0px) auto var(--determinant-side, 0px);
+  column-gap: .45rem;
+  align-items: center;
+}
+
+.exercise-inversion-determinant-field {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  gap: .55rem;
+}
+
+.exercise-inversion-determinant-control > .exercise-numeric-symbols {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.exercise-inversion-determinant-field input {
+  width: 6rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.exercise-inversion-determinant-field input:read-only {
+  background: #f1f5f9;
+}
+
+.dark .exercise-inversion-determinant-field input:read-only {
+  background: #1e293b;
+}
+
+.exercise-inversion-question,
+.exercise-inversion-system-fields legend {
+  margin: 0;
+  text-align: center;
+  color: #475569;
+  font-size: .95rem;
+  font-weight: 600;
+}
+
+.exercise-inversion-completed-system,
+.exercise-inversion-choices {
+  width: 100%;
+  min-width: 0;
+}
+
+.exercise-inversion-completed-system.responsive-math .rich-content-math-display {
+  margin: 0;
+  padding: .1rem 0;
+}
+
+.dark .exercise-inversion-question,
+.dark .exercise-inversion-system-fields legend {
+  color: #cbd5e1;
+}
+
+.exercise-inversion-system-fields legend {
+  margin: 0 auto .6rem;
+  padding: 0;
+}
+
+.exercise-inversion-decision .exercise-choice-grid {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.exercise-inversion-decision .exercise-choice {
+  min-height: 2.75rem;
+  padding: .5rem .35rem;
+  font-size: .9rem;
+}
+
+.exercise-inversion-choices.exercise-product-choice-locked .exercise-choice:not(.exercise-choice-selected) {
+  opacity: .65;
+}
+
+.exercise-inversion-equations {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, .9fr) repeat(2, minmax(0, 1fr)) auto;
+  align-items: center;
+  width: 100%;
+  column-gap: .45rem;
+  row-gap: .45rem;
+}
+
+.exercise-inversion-brace {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  color: #64748b;
+}
+
+.dark .exercise-inversion-brace {
+  color: #94a3b8;
+}
+
+.exercise-inversion-term,
+.exercise-inversion-term label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: .3rem;
+}
+
+.exercise-inversion-term label {
+  width: 100%;
+}
+
+.exercise-inversion-term .exercise-matrix-cell {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  border-radius: .5rem;
+  padding: .35rem .08rem;
+  text-align: center;
+}
+
+.exercise-inversion-rhs {
+  white-space: nowrap;
+}
+
+.exercise-inversion-inverse .exercise-matrix-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  max-width: 100%;
+}
+
+.exercise-inversion-inverse .exercise-matrix-input {
+  margin: 0;
+}
+
+.exercise-inversion-inverse .exercise-matrix-input::before,
+.exercise-inversion-inverse .exercise-matrix-input::after {
+  border-top: 0;
+  border-bottom: 0;
+  border-radius: 50%;
+}
+
+.exercise-inversion-inverse .exercise-matrix-table {
+  grid-template-columns: repeat(var(--exercise-matrix-columns), minmax(0, 4.5rem));
+}
+
+.exercise-inversion-inverse .exercise-numeric-symbols {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+
+.exercise-inversion-gauss .system-live-matrix {
+  min-height: 7.5rem;
+}
+
+@media (max-width: 480px) {
+  .exercise-inversion-gauss[data-matrix-size="4"] .system-live-matrix {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 860px) {
+  .exercise-inversion-answer {
+    gap: .65rem;
+  }
+
+  .exercise-inversion-determinant-control {
+    --determinant-side: 2.75rem;
+  }
+
+  .exercise-inversion-equations {
+    grid-template-columns: .75rem minmax(0, .9fr) repeat(2, minmax(0, 1fr)) auto;
+    column-gap: .25rem;
+  }
+
+  .exercise-inversion-term,
+  .exercise-inversion-term label {
+    gap: .18rem;
+  }
+
+  .exercise-inversion-answer .exercise-negative-sign {
+    width: 2.75rem;
+    min-height: 2.75rem;
+    flex-basis: 2.75rem;
+    border-radius: .75rem;
+    font-size: 1.2rem;
+  }
+
+  .exercise-inversion-inverse .exercise-matrix-table {
+    grid-template-columns: repeat(var(--exercise-matrix-columns), minmax(0, 3rem));
+  }
+
+  .exercise-inversion-inverse:has(.exercise-inversion-decision) .exercise-matrix-entry {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: .7rem;
+  }
+
+  .exercise-inversion-inverse:has(.exercise-inversion-decision) .exercise-matrix-entry > .exercise-numeric-symbols {
+    grid-column: 3;
+    flex-direction: column;
+    gap: .25rem;
+  }
+}

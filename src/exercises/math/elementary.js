@@ -1,3 +1,4 @@
+import { InputError } from "../../utils/inputError";
 import { normalizeExpressionInput } from "./polynomial";
 
 function absoluteInteger(value) {
@@ -23,7 +24,7 @@ export function simplifySquareRoot(value) {
   const radicand = Number(value);
 
   if (!Number.isSafeInteger(radicand) || radicand < 0) {
-    throw new Error("Le radicand doit être un entier positif ou nul.");
+    throw new InputError("Le radicand doit être un entier positif ou nul.", "The radicand must be a non-negative integer.");
   }
 
   if (radicand === 0) {
@@ -119,7 +120,7 @@ function parseSquareRootTerm(rawValue) {
   const match = normalized.match(/^([+-]?\d*)sqrt\((\d+)\)$/);
 
   if (!match) {
-    throw new Error("Écris la réponse sous la forme a√b (par exemple 3√2). ");
+    throw new InputError("Écris la réponse sous la forme a√b (par exemple 3√2). ", "Write the answer as a√b (for example, 3√2).");
   }
 
   const coefficient = match[1] === "" || match[1] === "+"
@@ -130,7 +131,7 @@ function parseSquareRootTerm(rawValue) {
   const radicand = Number(match[2]);
 
   if (!Number.isSafeInteger(coefficient) || !Number.isSafeInteger(radicand) || radicand < 0) {
-    throw new Error("Racine carrée invalide.");
+    throw new InputError("Racine carrée invalide.", "Invalid square root.");
   }
 
   return { coefficient, radicand, hasRadical: true };
@@ -209,7 +210,7 @@ function parseLinearExponent(rawValue) {
   const text = stripOuterParentheses(rawValue);
 
   if (!text) {
-    throw new Error("Exposant manquant.");
+    throw new InputError("Exposant manquant.", "Missing exponent.");
   }
 
   const normalized = /^[+-]/.test(text) ? text : `+${text}`;
@@ -225,7 +226,7 @@ function parseLinearExponent(rawValue) {
 
     if (variableMatch) {
       if (variable && variable !== variableMatch[2]) {
-        throw new Error("Une seule variable est attendue dans l’exposant.");
+        throw new InputError("Une seule variable est attendue dans l’exposant.", "Use only one variable in the exponent.");
       }
       variable = variableMatch[2];
       variableCoefficient += sign * Number(variableMatch[1] || 1);
@@ -233,7 +234,7 @@ function parseLinearExponent(rawValue) {
     }
 
     if (!/^\d+$/.test(body)) {
-      throw new Error("Exposant non reconnu.");
+      throw new InputError("Exposant non reconnu.", "Unrecognised exponent.");
     }
 
     constant += sign * Number(body);
@@ -272,7 +273,7 @@ function parseSinglePower(rawValue) {
 
   const match = text.match(/^([a-z][a-z0-9_]*|\d+)\^(.+)$/);
   if (!match) {
-    throw new Error("Écris une seule puissance, par exemple 3^(n+2).");
+    throw new InputError("Écris une seule puissance, par exemple 3^(n+2).", "Write a single power, for example 3^(n+2).");
   }
 
   let exponent = parseLinearExponent(match[2]);

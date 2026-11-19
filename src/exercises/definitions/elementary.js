@@ -1,3 +1,4 @@
+import { inputErrorMessage } from "../../utils/inputError";
 import { pickRandom, randomInteger, weightedPick } from "../core/random";
 import { validateAnswer } from "../core/validators";
 import {
@@ -57,7 +58,7 @@ const elementaryPromptUi = {
     mobileLayout: "stack",
   },
   factorIdentity: {
-    label: translated("Factoriser", "Factor"),
+    label: translated("Factoriser", "Factorise"),
     detail: false,
     tone: "transform",
     icon: "pencil",
@@ -247,7 +248,9 @@ function polynomialFormValidator(rawValue, { expected, question, lang }) {
         formOk: false,
         status: "equivalent",
         message: lang === "en"
-          ? `The value is right, but a ${question.answerForm} form is required.`
+          ? question.answerForm === "factorized"
+            ? "Your expression is equivalent, but it must be factorised."
+            : "Your expression is equivalent, but it must be expanded."
           : question.answerForm === "factorized"
             ? "L'expression est la même, mais la forme factorisée est demandée."
             : "L'expression est la même, mais la forme développée est demandée.",
@@ -265,7 +268,9 @@ function polynomialFormValidator(rawValue, { expected, question, lang }) {
     return {
       correct: false,
       status: "invalid",
-      message: error.message,
+      message: inputErrorMessage(error, lang, lang === "en"
+        ? "This answer could not be interpreted."
+        : "Cette réponse n’a pas pu être interprétée."),
     };
   }
 }
@@ -302,7 +307,9 @@ function squareRootValidator(rawValue, { expected, question, lang }) {
       message: lang === "en" ? "Correct answer." : "Bonne réponse.",
     };
   } catch (error) {
-    return { correct: false, status: "invalid", message: error.message };
+    return { correct: false, status: "invalid", message: inputErrorMessage(error, lang, lang === "en"
+        ? "This answer could not be interpreted."
+        : "Cette réponse n’a pas pu être interprétée.") };
   }
 }
 
@@ -340,7 +347,9 @@ function powerValidator(rawValue, { expected, lang }) {
       message: lang === "en" ? "Correct answer." : "Bonne réponse.",
     };
   } catch (error) {
-    return { correct: false, status: "invalid", message: error.message };
+    return { correct: false, status: "invalid", message: inputErrorMessage(error, lang, lang === "en"
+        ? "This answer could not be interpreted."
+        : "Cette réponse n’a pas pu être interprétée.") };
   }
 }
 
@@ -378,8 +387,8 @@ const additionsTool = {
       description: translated("Somme de nombres entre 1 et 99.", "Sum of integers from 1 to 99."),
       promptUi: elementaryPromptUi.calculate,
     },
-    { id: "subtraction", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Soustraction d'entiers", "Subtraction of integers"), description: translated("Somme de deux entiers entre -99 et 99.", "Sum of two integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
-    { id: "sum-three-terms", color: "emerald", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme de trois termes", "Sum of three terms"), description: translated("Somme de trois entiers entre -99 et 99.", "Sum of three numbers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
+    { id: "subtraction", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Soustraction d'entiers", "Subtraction of integers"), description: translated("Différence de deux entiers entre -99 et 99.", "Difference of two integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
+    { id: "sum-three-terms", color: "emerald", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Somme de trois termes", "Sum of three terms"), description: translated("Somme de trois entiers entre -99 et 99.", "Sum of three integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
     { id: "difficult", color: "gold", timer: true, label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal.", "All exercises at maximum difficulty."), promptUi: elementaryPromptUi.calculate },
   ],
   defaultDifficulty: "addition",
@@ -515,8 +524,8 @@ const multiplicationsTool = {
     "Build your mental arithmetic skills by solving quick multiplication problems against the clock.",
   ),
   exercises: [
-    { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of signed integers from $-10$ to $10$ in absolute value."), promptUi: elementaryPromptUi.calculate },
-    { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Produit d'un entier relatif à deux chiffres par un autre entier relatif.", "Product of a signed two-digit integer times another signed integer."), promptUi: elementaryPromptUi.calculate },
+    { id: "tables", color: "sky", timer: true, label: translated("Tables de multiplications", "Times tables"), description: translated("Produits d'entiers relatifs de $-10$ à $10$.", "Products of integers from $-10$ to $10$."), promptUi: elementaryPromptUi.calculate },
+    { id: "simple", color: "violet", timer: true, levels: [1, 2, 3], defaultLevel: 1, label: translated("Produits simples", "Simple products"), description: translated("Produit d'un entier relatif à deux chiffres par un autre entier relatif.", "Multiply a signed two-digit integer by another signed integer."), promptUi: elementaryPromptUi.calculate },
     { id: "mixed", color: "red", timer: true, label: translated("Défi", "Challenge"), description: translated("Multiplications d'entiers entre -99 et 99.", "Multiplication of integers from -99 to 99."), promptUi: elementaryPromptUi.calculate },
   ],
   defaultDifficulty: "tables",
@@ -1675,8 +1684,8 @@ const identitiesTool = {
       description: translated("Reconnaître si l'expression peut être développée ou factorisée avec une identité remarquable.", "Decide whether the expression can be expanded or factorised using a standard identity."),
       promptUi: elementaryPromptUi.identifyIdentity,
     },
-    { id: "recognize", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Factoriser", "Factor"), description: translated("Factoriser une expression littérale en utilisant une identité remarquable.", "Factor a literal expression using a standard identity."), promptUi: elementaryPromptUi.factorIdentity },
-    { id: "use", color: "emerald", levels: [1, 2, 3], defaultLevel: 1, label: translated("Développer et utiliser", "Expand and apply"), description: translated("Développer une expression littérale en utilisant une identité remarquable.", "Expand a literal expression using a standard identity."), promptUi: elementaryPromptUi.developIdentity },
+    { id: "recognize", color: "violet", levels: [1, 2, 3], defaultLevel: 1, label: translated("Factoriser", "Factorise"), description: translated("Factoriser une expression littérale en utilisant une identité remarquable.", "Factorise an algebraic expression using a standard identity."), promptUi: elementaryPromptUi.factorIdentity },
+    { id: "use", color: "emerald", levels: [1, 2, 3], defaultLevel: 1, label: translated("Développer et utiliser", "Expand and apply"), description: translated("Développer une expression littérale en utilisant une identité remarquable.", "Expand an algebraic expression using a standard identity."), promptUi: elementaryPromptUi.developIdentity },
     { id: "mixed", color: "gold", label: translated("Bilan", "Review"), description: translated("Tous les exercices au niveau maximal.", "All exercises at maximum difficulty."), promptUi: elementaryPromptUi.identityReview },
   ],
   defaultExercise: "identify",
@@ -2390,7 +2399,7 @@ const linearEquationsTool = {
     type: "fraction",
     allowDecimal: false,
     requireReduced: true,
-    placeholder: translated("valeur de x", "value of x"),
+    placeholder: translated("ex. -2", "e.g. -2"),
   },
   feedback: standardFeedback,
 };
