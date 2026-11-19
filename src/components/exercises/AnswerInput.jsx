@@ -2,8 +2,11 @@ import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import MathRenderer from "./MathRenderer";
 import AugmentedSystemInput, { emptyAugmentedAnswer } from "./AugmentedSystemInput";
 import { localize } from "../../exercises/core/localize";
+import { emptySpectralAnswer } from "../../exercises/definitions/diagonalisation";
 import { systemToLatex } from "../../utils/gauss";
 import "./matrix-inversion.css";
+import DiagonalisationInput from "./DiagonalisationInput";
+import { ChoiceInput, MatrixInput, NegativeSignButton, FractionSeparatorButton, SystemBrace } from "./AnswerFields";
 
 export function emptyAnswerValue(spec = {}, question = {}) {
   const type = spec.type ?? "text";
@@ -25,6 +28,7 @@ export function emptyAnswerValue(spec = {}, question = {}) {
       ? { stage: "system", system: question.initialMatrix.map((row) => row.map(() => "")) }
       : { stage: "determinant", determinant: "", invertibility: "" };
   }
+  if (type === "matrix-diagonalisation") return emptySpectralAnswer(question);
 
   if (type === "matrix") {
     const dimensions = question.inputDimensions ?? spec.dimensions ?? [2, 2];
@@ -44,105 +48,6 @@ export function emptyAnswerValue(spec = {}, question = {}) {
   }
 
   return "";
-}
-
-function ChoiceInput({ options, value, onChange, onChoose = onChange, onCommit, disabled, lang, firstInputRef, labelledBy }) {
-  return (
-    <div className="exercise-choice-grid" role="radiogroup" aria-labelledby={labelledBy}>
-      {options.map((option, index) => (
-        <button
-          key={option.id}
-          ref={index === 0 ? firstInputRef : undefined}
-          type="button"
-          role="radio"
-          aria-checked={String(value) === String(option.id)}
-          className={String(value) === String(option.id)
-            ? "exercise-choice exercise-choice-selected"
-            : "exercise-choice"}
-          onClick={() => onChoose(option.id)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && String(value) === String(option.id)) {
-              event.preventDefault();
-              onCommit?.();
-              return;
-            }
-
-            const direction = ["ArrowRight", "ArrowDown"].includes(event.key)
-              ? 1
-              : ["ArrowLeft", "ArrowUp"].includes(event.key)
-                ? -1
-                : 0;
-
-            if (direction !== 0) {
-              event.preventDefault();
-              const nextIndex = (index + direction + options.length) % options.length;
-              onChange(options[nextIndex].id);
-              event.currentTarget.parentElement?.querySelectorAll("button")[nextIndex]?.focus();
-            }
-          }}
-          disabled={disabled}
-        >
-          <MathRenderer as="span" content={localize(option.label, lang)} />
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function MatrixInput({ value, onChange, disabled, labels, firstInputRef, allowFractions, allowExpressions = false, prefix }) {
-  const [activeCell, setActiveCell] = useState([0, 0]);
-  const update = (rowIndex, columnIndex, nextValue) => {
-    const next = value.map((row) => [...row]);
-    next[rowIndex][columnIndex] = nextValue;
-    onChange(next);
-  };
-
-  const [activeRow, activeColumn] = activeCell;
-  const activeValue = value[activeRow]?.[activeColumn] ?? "";
-
-  return (
-    <div className={`exercise-matrix-entry${allowExpressions ? " exercise-matrix-entry-symbolic" : ""}`} role="group" aria-label={labels.answer}>
-      {prefix && <MathRenderer as="span" className="exercise-matrix-prefix" content={`$${prefix}=$`} responsiveMath={false} />}
-      <div className="exercise-matrix-input">
-        <div
-          className="exercise-matrix-table"
-          style={{ "--exercise-matrix-columns": value[0]?.length ?? 1 }}
-        >
-          {value.map((row, rowIndex) => row.map((cell, columnIndex) => (
-            <input
-              key={`${rowIndex}-${columnIndex}`}
-              ref={rowIndex === 0 && columnIndex === 0 ? firstInputRef : undefined}
-              className="exercise-matrix-cell"
-              value={cell}
-              onFocus={() => setActiveCell([rowIndex, columnIndex])}
-              onChange={(event) => update(rowIndex, columnIndex, event.target.value)}
-              disabled={disabled}
-              inputMode={allowExpressions ? "text" : "numeric"}
-              autoComplete="off"
-              spellCheck="false"
-              aria-label={`${labels.matrixRow} ${rowIndex + 1}, ${labels.matrixColumn} ${columnIndex + 1}`}
-            />
-          )))}
-        </div>
-      </div>
-      <div className="exercise-numeric-symbols">
-        <NegativeSignButton
-          value={activeValue}
-          onChange={(nextValue) => update(activeRow, activeColumn, nextValue)}
-          disabled={disabled}
-          labels={labels}
-        />
-        {allowFractions && (
-          <FractionSeparatorButton
-            value={activeValue}
-            onChange={(nextValue) => update(activeRow, activeColumn, nextValue)}
-            disabled={disabled}
-            labels={labels}
-          />
-        )}
-      </div>
-    </div>
-  );
 }
 
 function MatrixProductInput({ value, onChange, onCheck, disabled, labels, lang, question, firstInputRef }) {
@@ -176,46 +81,6 @@ function MatrixProductInput({ value, onChange, onCheck, disabled, labels, lang, 
   </div>;
 }
 
-function toggleNegativeSign(value) {
-  const current = String(value ?? "");
-  return current.startsWith("-") ? current.slice(1) : `-${current}`;
-}
-
-function NegativeSignButton({ value, onChange, disabled, labels }) {
-  return (
-    <button
-      type="button"
-      className="exercise-negative-sign"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={() => onChange(toggleNegativeSign(value))}
-      disabled={disabled}
-      aria-label={labels.toggleNegative}
-      title={labels.toggleNegative}
-    >
-      −
-    </button>
-  );
-}
-
-function FractionSeparatorButton({ value, onChange, disabled, labels }) {
-  return (
-    <button
-      type="button"
-      className="exercise-negative-sign"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={() => {
-        const current = String(value ?? "");
-        if (!current.includes("/")) onChange(`${current}/`);
-      }}
-      disabled={disabled}
-      aria-label={labels.insertFractionBar}
-      title={labels.insertFractionBar}
-    >
-      /
-    </button>
-  );
-}
-
 function AssociatedSystemInput({ system, question, onChange, disabled, labels, firstInputRef }) {
   const [active, setActive] = useState([0, 0]);
   const [activeRow, activeColumn] = active;
@@ -226,10 +91,7 @@ function AssociatedSystemInput({ system, question, onChange, disabled, labels, f
     <fieldset className="exercise-inversion-system-fields">
       <legend>{labels.matrixCompleteSystem}</legend>
       <div className="exercise-inversion-equations">
-        <svg className="exercise-inversion-brace" viewBox="0 0 18 100" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M17 1C8 1 9 11 9 26V37C9 45 6 50 1 50C6 50 9 55 9 63V74C9 89 8 99 17 99"
-            fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-        </svg>
+        <SystemBrace />
         {system.map((row, i) => <Fragment key={i}>
           {row.map((entry, j) => <div key={j} className="exercise-inversion-term">
             {j > 0 && <span aria-hidden="true">+</span>}
@@ -494,6 +356,11 @@ export default function AnswerInput({
           disabled={disabled} labels={labels} lang={lang} focusKey={focusKey} firstInputRef={firstInputRef} />
       </div>
     );
+  }
+
+  if (type === "matrix-diagonalisation") {
+    return <DiagonalisationInput key={focusKey} question={question} value={value} onChange={onChange} onCheck={onCheck}
+      disabled={disabled} lang={lang} labels={labels} firstInputRef={firstInputRef} />;
   }
 
   if (type === "choice") {

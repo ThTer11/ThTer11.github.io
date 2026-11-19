@@ -2,14 +2,18 @@ import { odeAnswerToLatex } from "../math/differentialEquations";
 import { calculusExpressionToLatex } from "../math/calculus";
 import { augmentedLatex, parameterConditionLatex } from "../math/augmentedSystems";
 import { toFractionMatrix } from "../math/linearAlgebra";
+import { characteristicPolynomialLatex } from "../math/spectral";
 import { systemToLatex } from "../../utils/gauss";
 import { getExerciseUiText } from "../content/uiText";
 import { localize } from "./localize";
+import { splitSet } from "./validators";
 
 const LABELS = {
   fr: { noAnswer: "Aucune réponse", true: "Vrai", false: "Faux" },
   en: { noAnswer: "No answer", true: "True", false: "False" },
 };
+
+const POWER_DISPLAY_OPTIONS = { additionalSymbols: ["n"], multiplicationSymbol: "\\times " };
 
 function plain(value) {
   if (Array.isArray(value)) return value.map(plain).join(" ; ");
@@ -30,6 +34,54 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
   if (value === undefined || value === null || String(value).trim() === "") return text(labels.noAnswer);
   if (typeof value === "boolean") return text(value ? labels.true : labels.false);
   const type = spec.type;
+  if (type === "matrix-diagonalisation") {
+    const format = (raw, type) => formatAnswerDisplay(raw, { type }, {}, lang);
+    const math = (content) => ({ kind: "math", content });
+    if (value.stage === "recognition") {
+      if (!value.decision) return text(labels.noAnswer);
+      return text(value.decision === "yes" ? (lang === "en" ? "Yes" : "Oui") : (lang === "en" ? "No" : "Non"));
+    }
+    if (value.stage === "eigenvalue") return format(value.eigenvalue, "fraction");
+    if (value.stage === "polynomial") {
+      try {
+        return math(`$$${characteristicPolynomialLatex(value.polynomialCoefficients)}$$`);
+      } catch {
+        return text(plain(value.polynomialCoefficients ?? value.polynomial) || labels.noAnswer);
+      }
+    }
+    if (value.stage === "eigenvalues") return format(splitSet(value.eigenvalues), "solution-set");
+    if (value.stage === "recurrence-matrix") return format(value.A, "matrix");
+    if (value.stage === "diagonalization" || value.stage === "power-decomposition") return {
+      kind: "fields", fields: ["P", "D"].map((name) => ({ label: `$${name}$`, display: format(value[name], "matrix") })),
+    };
+    if (value.stage === "matrix-power") {
+      return formatAnswerDisplay(value.power, { type: "matrix" }, POWER_DISPLAY_OPTIONS, lang);
+    }
+    if (value.stage === "recurrence-sequences") {
+      return {
+        kind: "fields",
+        fields: ["u_n", "v_n"].map((name, index) => ({
+          label: `$${name}$`,
+          display: formatAnswerDisplay(value.sequences[index], { type: "expression" }, POWER_DISPLAY_OPTIONS, lang),
+        })),
+      };
+    }
+    if (value.stage === "eigenpairs") return {
+      kind: "fields",
+      fields: value.orderedEigenvalues.flatMap((root, index) => {
+        const label = `$\\lambda=${root}$`;
+        const vector = format(value.vectors[index], "matrix");
+        if (!value.systems) return [{ label, display: vector }];
+        let system;
+        try {
+          system = math(systemToLatex(toFractionMatrix(value.systems[index]), ["x", "y"]));
+        } catch {
+          system = text(plain(value.systems[index]));
+        }
+        return [{ label, display: system }, { label: lang === "en" ? "Eigenvector" : "Vecteur propre", display: vector }];
+      }),
+    };
+  }
   if (type === "matrix-inversion") {
     const ui = getExerciseUiText(lang);
     if (value.stage === "inverse") {
@@ -83,8 +135,9 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
     if (question.validationMode === "ode") {
       latex = odeAnswerToLatex(value);
     } else if (type === "matrix" || (Array.isArray(value) && Array.isArray(value[0]))) {
+      const additionalSymbols = question.additionalSymbols ?? (question.symbolic ? ["y", "z"] : []);
       latex = `\\begin{pmatrix}${value.map((row) => row.map((cell) => expression(cell,
-        question.symbolic ? { additionalSymbols: ["y", "z"] } : undefined)).join(" & ")).join(" \\\\ ")}\\end{pmatrix}`;
+        { additionalSymbols, multiplicationSymbol: question.multiplicationSymbol })).join(" & ")).join(" \\\\ ")}\\end{pmatrix}`;
     } else if (["vector", "coordinates", "solution-set"].includes(type) || Array.isArray(value)) {
       const entries = value.map((cell) => expression(cell)).join(";\\,");
       latex = type === "solution-set" ? `\\left\\{${entries}\\right\\}` : `\\left(${entries}\\right)`;
@@ -98,7 +151,7 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
       };
     } else if (["integer", "number", "decimal", "fraction", "expression"].includes(type)
       || question.validationMode || !type) {
-      latex = expression(value);
+      latex = expression(value, question);
     } else {
       return text(plain(value));
     }

@@ -153,7 +153,7 @@ function RowWorkspace({value,onChange,onCheck,question,disabled,lang,spec}) {
           </div>}
           <button type="button" className="system-apply" disabled={disabled} onClick={apply}>{t.apply}</button>
         </div>
-        {error&&<p className="exercise-inline-error" role="alert">{error}</p>}
+        {error&&<p className="exercise-inline-error" role="alert"><MathRenderer as="span" content={error}/></p>}
       </>}
     </div>
     {spec.type==='parameter-system'&&<label className="exercise-field-label system-condition"><MathRenderer as="span" content={question.expected.kind==='roots'?t.values:t.condition}/><input className="exercise-text-input" value={value.condition} onChange={e=>onChange({...value,condition:e.target.value})} disabled={disabled} inputMode="text" autoComplete="off" spellCheck={false} placeholder={localize(spec.placeholder,lang)}/></label>}

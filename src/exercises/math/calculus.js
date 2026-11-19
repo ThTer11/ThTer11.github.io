@@ -280,8 +280,8 @@ export function parseCalculusExpression(rawValue, { additionalSymbols = [] } = {
 
 
 /** Render the parsed expression, without simplifying a potentially wrong answer. */
-export function calculusExpressionToLatex(expression, options) {
-  const ast = typeof expression === "string" ? parseCalculusExpression(expression, options) : expression;
+export function calculusExpressionToLatex(expression, { additionalSymbols, multiplicationSymbol = "\\cdot " } = {}) {
+  const ast = typeof expression === "string" ? parseCalculusExpression(expression, { additionalSymbols }) : expression;
   const precedence = (node) => node.type === "binary"
     ? ({ "+": 1, "-": 1, "*": 2, "/": 2, "^": 4 }[node.operator])
     : node.type === "unary" ? 3 : 5;
@@ -316,7 +316,7 @@ export function calculusExpressionToLatex(expression, options) {
     const rhs = precedence(node.right) < p
       || (node.operator === "-" && precedence(node.right) === p)
       ? group(right) : right;
-    return `${lhs}${node.operator === "*" ? "\\cdot " : node.operator}${rhs}`;
+    return `${lhs}${node.operator === "*" ? multiplicationSymbol : node.operator}${rhs}`;
   };
   return render(ast);
 }

@@ -251,7 +251,9 @@ function SetupPanel({
                       </span>
                     )}
                     <MathRenderer as="strong" content={localize(variant.label, lang)} />
-                    {variant.description && <MathRenderer as="span" content={localize(variant.description, lang)} />}
+                    {variant.description && (
+                      <MathRenderer as="span" content={localize(variant.description, lang)} trustedHtml={Boolean(variant.descriptionTrustedHtml)} />
+                    )}
                   </button>
 
                   {levels.length > 0 && (
@@ -614,14 +616,16 @@ export default function ExerciseEngine({
 
   const commitOutcome = useCallback((nextOutcome, submittedAnswer = answer) => {
     const elapsed = questionStartedAt ? Date.now() - questionStartedAt : 0;
-    setOutcome(nextOutcome);
+    const review = question?.reviewAnswer?.(submittedAnswer);
+    setOutcome(review ? { ...nextOutcome, review } : nextOutcome);
     setSession((current) => recordAttempt(current, nextOutcome, elapsed, {
       prompt: question?.prompt,
       trustedHtml: Boolean(question?.trustedHtml),
       submittedAnswer,
       submittedAnswerDisplay: formatAnswerDisplay(submittedAnswer, answerSpec, question, lang),
       promptUi: resolveQuestionPromptUi(question?.promptUi ?? selectedExerciseVariant?.promptUi ?? tool.promptUi, lang),
-      expectedAnswer: question?.summaryAnswerDisplay ?? formatExpectedAnswer(question?.expected, answerSpec, question, lang),
+      expectedAnswer: review?.answerDisplay ?? question?.summaryAnswerDisplay
+        ?? formatExpectedAnswer(question?.expected, answerSpec, question, lang),
     }));
     setPhase("feedback");
     submittingRef.current = true;
@@ -798,6 +802,7 @@ export default function ExerciseEngine({
 
   const autoCheckReduction = answerSpec.type === "row-reduction";
   const waitingForGaussInversionChoice = answerSpec.type === "matrix-inversion" && question.rowWorkspace && answer.stage === "invertibility";
+  const waitingForEigenvectorChoice = answerSpec.type === "matrix-diagonalisation" && answer.stage === "recognition";
   const progress = Math.min(questionCount, session.completed + (phase === "active" ? 1 : 0));
   const currentQuestionNumber = phase === "feedback"
     ? session.completed
@@ -899,7 +904,11 @@ export default function ExerciseEngine({
               </p>
             )}
 
-            {inputError && <p className="exercise-inline-error" role="alert">{inputError}</p>}
+            {inputError && (
+              <p className="exercise-inline-error" role="alert">
+                <MathRenderer as="span" content={inputError} />
+              </p>
+            )}
 
             {phase === "active" && tool.feedback?.showHints !== false && hintCount < (question.hints ?? []).length && (
               <button type="button" className="exercise-hint-button" onClick={() => setHintCount((count) => count + 1)}>
@@ -907,7 +916,7 @@ export default function ExerciseEngine({
               </button>
             )}
 
-            {!autoCheckReduction && !waitingForGaussInversionChoice && (phase === "active" || (phase === "feedback" && ["matrix-product", "matrix-writing", "parameter-system", "matrix-inversion"].includes(answerSpec.type))) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
+            {!autoCheckReduction && !waitingForGaussInversionChoice && !waitingForEigenvectorChoice && (phase === "active" || (phase === "feedback" && ["matrix-product", "matrix-writing", "parameter-system", "matrix-inversion", "matrix-diagonalisation"].includes(answerSpec.type))) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
               <button type="submit"
                 className={`showcase-action showcase-action-primary exercise-primary-action${phase === "feedback" ? " exercise-action-reserved" : ""}`}
                 disabled={phase !== "active"} aria-hidden={phase !== "active" || undefined}>
@@ -926,7 +935,7 @@ export default function ExerciseEngine({
             <ResponsiveFeedback labels={labels} lang={lang} nestedModalOpen={Boolean(openHint)}>
             <FeedbackPanel
               outcome={outcome}
-              question={question}
+              question={outcome.review ? { ...question, ...outcome.review } : question}
               answerSpec={answerSpec}
               lang={lang}
               labels={labels}

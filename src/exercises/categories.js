@@ -42,7 +42,7 @@ export const exerciseCategories = [
   {
     id: "matrices",
     title: { fr: "Matrices", en: "Matrices" },
-    description: { fr: "Produits matriciels, systèmes linéaires et inversion.", en: "Matrix products, linear systems and inversion." },
+    description: { fr: "Produits matriciels, systèmes linéaires, inversion et diagonalisation.", en: "Matrix products, linear systems, inversion and diagonalisation." },
     audience: "L1",
     accent: "violet",
   },

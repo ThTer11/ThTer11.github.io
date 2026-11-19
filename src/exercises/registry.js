@@ -8,6 +8,7 @@ import { matrixTools } from "./definitions/matrices";
 import { augmentedSystemsTool } from "./definitions/augmentedSystems";
 import { matrixProductTool } from "./definitions/matrixProducts";
 import { matrixInversionTool } from "./definitions/matrixInversion";
+import { diagonalisationTool } from "./definitions/diagonalisation";
 import { systemTools } from "./definitions/systems";
 import { elementaryCourseHints } from "./content/elementaryHints";
 import { calculusCourseHints } from "./content/calculusHints";
@@ -23,6 +24,7 @@ export const exerciseTools = [
   matrixProductTool,
   augmentedSystemsTool,
   matrixInversionTool,
+  diagonalisationTool,
   ...matrixTools.map((tool) => ({ ...tool, enabled: false })),
   ...systemTools,
 ];

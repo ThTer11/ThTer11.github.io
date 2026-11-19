@@ -118,7 +118,7 @@ function normalizeText(value, spec) {
   return normalized;
 }
 
-function splitSet(rawValue) {
+export function splitSet(rawValue) {
   if (Array.isArray(rawValue)) {
     return rawValue;
   }

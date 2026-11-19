@@ -143,8 +143,8 @@ function generateGaussInversion(level, rng) {
     prompt: `$$${augmentedLatex(initialMatrix, size)}$$`,
     promptUi: {
       label: tr(
-        `Obtenir l’échelonnée réduite de $(A\\mid I_{${size}})$ en utilisant le pivot de Gauss`,
-        `Find the reduced row echelon form of $(A\\mid I_{${size}})$ using Gaussian elimination`,
+        "Déterminer si $A$ est inversible et son inverse en utilisant le pivot de Gauss",
+        "Use Gaussian elimination to determine whether $A$ is invertible and find its inverse if it exists",
       ),
       icon: false,
     },

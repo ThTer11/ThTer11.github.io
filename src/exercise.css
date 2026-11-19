@@ -439,6 +439,10 @@
   font-size:.92rem;
 }
 
+.exercise-level .exercise-nowrap{
+  white-space:nowrap;
+}
+
 .exercise-level span{
   color:#64748b;
   font-size:.77rem;
