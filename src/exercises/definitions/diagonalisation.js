@@ -10,6 +10,9 @@ import { characteristicPolynomialLatex, eigenSystem, isEigenvector, signedTermLa
 import {
   matchesMatrixPower, matchesPowerExpression, matrixPowerTerms, matrixPowerVectorTerms, powerTermsToLatex,
 } from "../math/spectralPower";
+import {
+  differentialSystemLatex, matchesSpectralOdeExpression, spectralOdeModes, spectralOdeSolution, spectralOdeTermsToLatex,
+} from "../math/spectralOde";
 
 const tr = (fr, en) => ({ fr, en });
 const matrixLatex = (matrix) => matrixToLatex(matrix).slice(2, -2);
@@ -69,7 +72,7 @@ function generateRecognition(rng) {
 }
 
 function generateSpectrum(rng, repeated, task) {
-  const coupled = task === "recurrence";
+  const coupled = task === "recurrence" || task === "ode-system";
   const smallCoefficients = task === "power" || coupled;
   const roots = smallCoefficients ? [-2, -1, 1, 2, 3] : [-4, -3, -2, -1, 0, 1, 2, 3, 4];
   const first = pickRandom(roots, rng);
@@ -90,8 +93,8 @@ function generateSpectrum(rng, repeated, task) {
   };
 }
 
-function recurrenceInitial(basis, rng) {
-  // Both eigenspaces contribute, and the initial values and powers keep small coefficients.
+function simpleInitialVector(basis, rng) {
+  // Both eigenspaces contribute with small coefficients.
   const coefficients = [-2, -1, 1, 2];
   const choices = coefficients.flatMap((a) => coefficients.map((b) => matrixVectorProduct(basis, [a, b])))
     .filter((vector) => vector.every((value) => value.abs().numerator <= 2n));
@@ -104,6 +107,12 @@ function recurrencePrompt(matrix, initial) {
     return `${index === 0 ? "u" : "v"}_{n+1}=${expression}`;
   });
   return `$$\\begin{cases}${equations.join("\\\\")}\\end{cases}$$\n$$u_0=${initial[0].toLatex()},\\qquad v_0=${initial[1].toLatex()}$$`;
+}
+
+function odePrompt(matrix, initial) {
+  const system = differentialSystemLatex(matrix, "x");
+  if (!initial) return system;
+  return `${system}\n$$x_1(0)=${initial[0].toLatex()},\\qquad x_2(0)=${initial[1].toLatex()}$$`;
 }
 
 function characteristicExplanation(matrix, polynomial, eigenvalues) {
@@ -154,8 +163,59 @@ function recurrenceCorrection(basis, ordered, initial) {
   };
 }
 
+function odeCorrection(basis, ordered, diagonal, initial) {
+  const system = differentialSystemLatex(diagonal, "y");
+  const modeFactors = spectralOdeModes(ordered).map((term) => spectralOdeTermsToLatex([term]));
+  const { coordinates, terms } = spectralOdeSolution(basis, ordered, initial);
+  const pair = (variable, entries, connector) => {
+    const equations = entries.map((entry, i) => `<span>$$${variable}_${i + 1}(t)=${entry}$$</span>`);
+    return `<div class="exercise-paired-calculations">${equations.join(`<span>${connector}</span>`)}</div>`;
+  };
+  const solutionLatex = (entries) =>
+    `$$\\begin{aligned}${entries.map((row, i) => `x_${i + 1}(t)&=${spectralOdeTermsToLatex(row)}`).join("\\\\")}\\end{aligned}$$`;
+  const solutionDisplay = solutionLatex(terms);
+  const explain = (intro, modesIntro, connector, conclusion) => {
+    const generalModes = pair("y", modeFactors.map((factor, i) => `C_${i + 1}${factor}`), connector);
+    return `\n${intro}\n${system}\n${modesIntro}${generalModes}${conclusion}`;
+  };
+  let conclusion;
+  if (coordinates) {
+    const general = solutionLatex(spectralOdeSolution(basis, ordered).terms);
+    const given = `$X(0)=${columnLatex(initial)}$`;
+    const constants = systemToLatex(basis.map((row, i) => [...row, initial[i]]), ["C_1", "C_2"]);
+    const first = `$C_1=${coordinates[0].toLatex()}$`;
+    const second = `$C_2=${coordinates[1].toLatex()}$`;
+    conclusion = tr(
+      `Comme $X(t)=PY(t)$, on a\n${general}\nComme ${given}, on en déduit que\n${constants}\nD’où ${first} et ${second}.\nOn en déduit donc que\n${solutionDisplay}`,
+      `Since $X(t)=PY(t)$, we have\n${general}\nSince ${given}, it follows that\n${constants}\nThus ${first} and ${second}.\nThis gives\n${solutionDisplay}`,
+    );
+  } else {
+    const general = terms.map(spectralOdeTermsToLatex);
+    conclusion = tr(
+      `Comme $X(t)=PY(t)$, on obtient la famille de solutions${pair("x", general, "et")}`,
+      `Since $X(t)=PY(t)$, we obtain the family of solutions${pair("x", general, "and")}`,
+    );
+  }
+  return {
+    system,
+    modeDisplay: `$$\\begin{aligned}y_1(t)&=C_1${modeFactors[0]}\\\\y_2(t)&=C_2${modeFactors[1]}\\end{aligned}$$`,
+    solutionDisplay,
+    explanation: tr(
+      explain(
+        "On pose $Y(t)=P^{-1}X(t)$, de sorte que le système devient $Y'(t)=DY(t)$. Les fonctions $y_1$ et $y_2$ vérifient",
+        "Pour tout $t\\in\\mathbb R$, on obtient, avec $C_1,C_2\\in\\mathbb R$",
+        "et", conclusion.fr),
+      explain(
+        "Set $Y(t)=P^{-1}X(t)$ so that the system becomes $Y'(t)=DY(t)$. The functions $y_1$ and $y_2$ satisfy",
+        "For every $t\\in\\mathbb R$, with $C_1,C_2\\in\\mathbb R$, this gives",
+        "and", conclusion.en),
+    ),
+  };
+}
+
 function spectralCorrection(task, expected, submitted = {}) {
   const { matrix, polynomial, eigenvalues, vectors } = expected;
+  const ode = task === "ode-system";
   const ordered = submitted.orderedEigenvalues ?? eigenvalues;
   const characteristicText = characteristicExplanation(matrix, polynomial, ordered);
   const rootDisplay = `$$\\left\\{${ordered.join(",\\;")}\\right\\}$$`;
@@ -166,7 +226,8 @@ function spectralCorrection(task, expected, submitted = {}) {
     };
   }
 
-  const orderedVectors = ordered.map((root) => vectors[eigenvalues.indexOf(root)]);
+  const orderedVectors = ode && submitted.orderedEigenvalues
+    ? transposeMatrix(submitted.P) : ordered.map((root) => vectors[eigenvalues.indexOf(root)]);
   const details = ordered.map((root, i) => {
     const system = systemToLatex(eigenSystem(matrix, root), ["x", "y"]);
     const vector = `$$${columnLatex(orderedVectors[i])}$$`;
@@ -183,15 +244,17 @@ function spectralCorrection(task, expected, submitted = {}) {
   let answerDisplay = `${rootDisplay}\n$$${vectorPair.join(",\\qquad ")}.$$`;
   let finalStep = tr("", "");
   const recurrence = task === "recurrence";
-  const initialMatrix = recurrence ? namedMatrix("A", matrix) : "";
-  const intro = recurrence ? tr(
-    `On écrit le système sous la forme $X_{n+1}=AX_n$ avec\n${initialMatrix}\nDiagonalisons $A$.\n`,
-    `Write the system as $X_{n+1}=AX_n$ with\n${initialMatrix}\nNow diagonalise $A$.\n`,
+  const initialMatrix = recurrence || ode ? namedMatrix("A", matrix) : "";
+  const equation = ode ? "X'(t)=AX(t)" : "X_{n+1}=AX_n";
+  const intro = initialMatrix ? tr(
+    `On écrit le système sous la forme $${equation}$ avec\n${initialMatrix}\nDiagonalisons $A$.\n`,
+    `Write the system as $${equation}$ with\n${initialMatrix}\nNow diagonalise $A$.\n`,
   ) : tr("", "");
-  if (task === "diagonalize" || task === "power" || recurrence) {
+  if (task === "diagonalize" || task === "power" || recurrence || ode) {
     const basis = transposeMatrix(orderedVectors);
     const p = namedMatrix("P", basis);
-    const d = namedMatrix("D", toFractionMatrix([[ordered[0], 0], [0, ordered[1]]]));
+    const diagonal = toFractionMatrix([[ordered[0], 0], [0, ordered[1]]]);
+    const d = namedMatrix("D", diagonal);
     finalStep = tr(
       `\nLes colonnes de $P$ sont les vecteurs propres de $A$ :\n${p}\nLa matrice $D$ contient les valeurs propres dans l’ordre des vecteurs propres :\n${d}`,
       `\nThe columns of $P$ are eigenvectors of $A$:\n${p}\nThe diagonal entries of $D$ are the eigenvalues in the order of the corresponding eigenvectors:\n${d}`,
@@ -208,22 +271,36 @@ function spectralCorrection(task, expected, submitted = {}) {
       if (submitted.stage === "recurrence-matrix") answerDisplay = initialMatrix;
       if (!submitted.stage || submitted.stage === "recurrence-sequences") answerDisplay = solution.answerDisplay;
     }
+    if (ode) {
+      const solution = odeCorrection(basis, ordered, diagonal, expected.initial);
+      finalStep = tr(finalStep.fr + solution.explanation.fr, finalStep.en + solution.explanation.en);
+      const displays = {
+        "ode-matrix": initialMatrix,
+        "ode-diagonal-system": solution.system,
+        "ode-modes": solution.modeDisplay,
+        "ode-solutions": solution.solutionDisplay,
+      };
+      answerDisplay = displays[submitted.stage] ?? (submitted.stage ? answerDisplay : solution.solutionDisplay);
+    }
   }
+  const explanation = (lang) => {
+    const content = `${intro[lang]}${characteristicText[lang]}\n${details.map((part) => part[lang]).join("\n")}\n${conclusion[lang]}${finalStep[lang]}`;
+    return ode ? content.replaceAll("\n", "<br />") : content;
+  };
   return {
     answerDisplay,
-    explanation: tr(
-      `${intro.fr}${characteristicText.fr}\n${details.map((part) => part.fr).join("\n")}\n${conclusion.fr}${finalStep.fr}`,
-      `${intro.en}${characteristicText.en}\n${details.map((part) => part.en).join("\n")}\n${conclusion.en}${finalStep.en}`,
-    ),
+    explanation: tr(explanation("fr"), explanation("en")),
+    ...(ode ? { explanationTrustedHtml: true } : {}),
   };
 }
 
-export function generateDiagonalisation({ difficulty = "recognition", rng = Math.random } = {}) {
+export function generateDiagonalisation({ difficulty = "recognition", level, rng = Math.random } = {}) {
   if (difficulty === "recognition") return generateRecognition(rng);
   const recurrence = difficulty === "recurrence";
+  const ode = difficulty === "ode-system";
   const expected = generateSpectrum(rng, difficulty === "eigenvalues" && rng() < .2, difficulty);
   const { matrix } = expected;
-  if (recurrence) expected.initial = recurrenceInitial(transposeMatrix(expected.vectors), rng);
+  if (recurrence || (ode && Number(level) === 2)) expected.initial = simpleInitialVector(transposeMatrix(expected.vectors), rng);
   expected.polynomialCoefficients = [matrix[0][0].add(matrix[1][1]).neg(), determinant2(matrix)];
   expected.polynomial = characteristicPolynomialLatex(expected.polynomialCoefficients);
   const promptLabel = {
@@ -232,15 +309,18 @@ export function generateDiagonalisation({ difficulty = "recognition", rng = Math
     diagonalize: tr("Déterminer $P$ inversible et $D$ diagonale telles que $A=PDP^{-1}$", "Find an invertible $P$ and a diagonal $D$ such that $A=PDP^{-1}$"),
     power: tr("Diagonaliser $A$ puis en déduire $A^n$ pour tout $n\\in\\mathbb N$", "Diagonalise $A$ and hence find $A^n$ for every $n\\in\\mathbb N$"),
     recurrence: tr("Exprimer $u_n$ et $v_n$ en fonction de $n\\in\\mathbb N$", "Express $u_n$ and $v_n$ in terms of $n\\in\\mathbb N$"),
+    "ode-system": tr("Résoudre le système en diagonalisant la matrice du système.", "Solve the system by diagonalising its matrix."),
   };
   return {
     spectralTask: difficulty,
-    prompt: recurrence ? recurrencePrompt(matrix, expected.initial) : namedMatrix("A", matrix),
+    ...(ode && expected.initial ? { initialVectorLatex: columnLatex(expected.initial) } : {}),
+    prompt: recurrence ? recurrencePrompt(matrix, expected.initial)
+      : ode ? odePrompt(matrix, expected.initial) : namedMatrix("A", matrix),
     promptUi: { label: promptLabel[difficulty], icon: false },
     expected,
     ...spectralCorrection(difficulty, expected),
     reviewAnswer: (submitted) => spectralCorrection(difficulty, expected, submitted),
-    dedupeKey: recurrence ? { matrix, initial: expected.initial } : matrix,
+    dedupeKey: expected.initial ? { matrix, initial: expected.initial } : matrix,
   };
 }
 
@@ -256,6 +336,7 @@ export function emptySpectralAnswer(question) {
   }
   if (question.spectralTask === "power") return { stage: "power-decomposition", P: blank(2, 2), D: blank(2, 2) };
   if (question.spectralTask === "recurrence") return { stage: "recurrence-matrix", A: blank(2, 2) };
+  if (question.spectralTask === "ode-system") return { stage: "ode-matrix", A: blank(2, 2) };
   return { stage: "eigenvalues", eigenvalues: "" };
 }
 
@@ -304,12 +385,12 @@ export function validateSpectralAnswer(value, { expected, question, lang }) {
     if (!correct || task === "eigenvectors") return correct;
     return continueWith(value, "diagonalization", { P: blank(2, 2), D: blank(2, 2) });
   }
-  if (value.stage === "recurrence-matrix") {
+  if (value.stage === "recurrence-matrix" || value.stage === "ode-matrix") {
     if (incomplete(value.A)) return invalid(lang, "Compléter la matrice $A$.", "Complete the matrix $A$.");
     if (!matricesEqual(toFractionMatrix(value.A), expected.matrix)) return false;
-    return continueWith(value, "power-decomposition", { P: blank(2, 2), D: blank(2, 2) });
+    return continueWith(value, task === "ode-system" ? "ode-decomposition" : "power-decomposition", { P: blank(2, 2), D: blank(2, 2) });
   }
-  if (value.stage === "diagonalization" || value.stage === "power-decomposition") {
+  if (["diagonalization", "power-decomposition", "ode-decomposition"].includes(value.stage)) {
     if (incomplete([value.P, value.D])) {
       return invalid(lang, "Compléter les matrices $P$ et $D$.", "Complete matrices $P$ and $D$.");
     }
@@ -318,8 +399,12 @@ export function validateSpectralAnswer(value, { expected, question, lang }) {
     const correct = d[0][1].isZero() && d[1][0].isZero() && !determinant2(p).isZero()
       && matricesEqual(multiplyMatrices(expected.matrix, p), multiplyMatrices(p, d));
     if (!correct || value.stage === "diagonalization") return correct;
+    const orderedEigenvalues = [String(d[0][0]), String(d[1][1])];
+    if (task === "ode-system") {
+      return continueWith(value, "ode-diagonal-system", { orderedEigenvalues, diagonalSystem: blank(2, 2) });
+    }
     return continueWith(value, "matrix-power", {
-      orderedEigenvalues: [String(d[0][0]), String(d[1][1])],
+      orderedEigenvalues,
       power: blank(2, 2),
     });
   }
@@ -338,6 +423,22 @@ export function validateSpectralAnswer(value, { expected, question, lang }) {
     }
     const terms = matrixPowerVectorTerms(transposeMatrix(expected.vectors), expected.eigenvalues, expected.initial);
     return terms.map((entries, index) => matchesPowerExpression(value.sequences[index], entries)).every(Boolean);
+  }
+  if (value.stage === "ode-diagonal-system") {
+    if (incomplete(value.diagonalSystem)) return invalid(lang, "Compléter le système en $y_1$ et $y_2$.", "Complete the system for $y_1$ and $y_2$.");
+    return matricesEqual(toFractionMatrix(value.diagonalSystem), toFractionMatrix(value.D))
+      && continueWith(value, "ode-modes", { modes: ["", ""] });
+  }
+  if (value.stage === "ode-modes") {
+    if (incomplete(value.modes)) return invalid(lang, "Compléter les deux exponentielles.", "Enter both exponential factors.");
+    const modes = spectralOdeModes(value.orderedEigenvalues);
+    const correct = modes.map((mode, i) => matchesSpectralOdeExpression(value.modes[i], [mode])).every(Boolean);
+    return correct && continueWith(value, "ode-solutions", { solutions: ["", ""] });
+  }
+  if (value.stage === "ode-solutions") {
+    if (incomplete(value.solutions)) return invalid(lang, "Compléter $x_1(t)$ et $x_2(t)$.", "Enter $x_1(t)$ and $x_2(t)$.");
+    const { terms } = spectralOdeSolution(toFractionMatrix(value.P), value.orderedEigenvalues, expected.initial);
+    return terms.map((row, i) => matchesSpectralOdeExpression(value.solutions[i], row)).every(Boolean);
   }
   return false;
 }
@@ -380,15 +481,24 @@ export const diagonalisationTool = {
     },
     {
       id: "recurrence", color: "violet",
-      label: tr("Résoudre un système de récurrences linéaires", "Solve a system of linear recurrences"),
+      label: tr("Système de récurrences linéaires", "System of linear recurrences"),
       description: tr(
         "Résoudre un système de récurrences linéaires couplées portant sur deux suites réelles, en diagonalisant la matrice associée.",
         "Solve a system of coupled linear recurrences for two real sequences by diagonalising the associated matrix.",
       ),
     },
+    {
+      id: "ode-system", color: "emerald", levels: [1, 2],
+      label: tr("Système d’équations différentielles d’ordre 1", "System of first-order differential equations"),
+      description: tr(
+        "Résoudre un système d’équations différentielles d’ordre 1 en diagonalisant la matrice du système.",
+        "Solve a system of first-order differential equations by diagonalising its matrix.",
+      ),
+    },
   ],
   defaultExercise: "recognition",
   fullHeightExerciseCards: true,
+  exerciseColumns: 4,
   timer: false,
   score: true,
   series: { questionCount: 2, choices: [1, 2, 5, 10], allowQuestionCount: true, allowRestart: true, showSummary: true },

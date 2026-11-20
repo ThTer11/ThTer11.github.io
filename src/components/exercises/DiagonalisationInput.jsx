@@ -19,6 +19,14 @@ const SPECTRAL_LABELS = {
     recurrenceDecomposition: "On sait que pour tout $n\\in\\mathbb N$, $X_n=A^nX_0$. Déterminons $A^n$ en diagonalisant $A$. Les matrices $P$ inversible et $D$ diagonale telles que $A=PDP^{-1}$ sont",
     recurrencePower: "La matrice $A^n$ est donc :",
     recurrenceSequences: "Les suites $(u_n)_{n\\in\\mathbb N}$ et $(v_n)_{n\\in\\mathbb N}$ sont donc :",
+    odeMatrix: "Donner la matrice $A$ telle que",
+    odeWith: "avec",
+    odeDecomposition: "La matrice $A$ est diagonalisable et s’écrit $A=PDP^{-1}$ avec",
+    odeDiagonal: "On pose $Y(t)=P^{-1}X(t)$.\nLe système devient $Y'(t)=DY(t)$.\nCompléter les équations différentielles que vérifient $y_1$ et $y_2$.",
+    odeModes: "Pour tout $t\\in\\mathbb R$, on a donc",
+    odeSolution: "Comme $X(t)=PY(t)$, on obtient la famille de solutions",
+    odeInitialSolution: (initial) => `La condition initiale est\n$$X(0)=${initial}$$\nComme $X(t)=PY(t)$, on en déduit l’unique solution.`,
+    odeExample: "ex. exp(2t)", odeConstantExample: "ex. C_1*exp(t)",
   },
   en: {
     decision: "Is $v$ an eigenvector of $A$?", yes: "Yes", no: "No",
@@ -35,6 +43,14 @@ const SPECTRAL_LABELS = {
     recurrenceDecomposition: "We know that for every $n\\in\\mathbb N$, $X_n=A^nX_0$. Find $A^n$ by diagonalising $A$. The invertible matrix $P$ and the diagonal matrix $D$ such that $A=PDP^{-1}$ are",
     recurrencePower: "The matrix $A^n$ is therefore:",
     recurrenceSequences: "The sequences $(u_n)_{n\\in\\mathbb N}$ and $(v_n)_{n\\in\\mathbb N}$ are therefore:",
+    odeMatrix: "Find the matrix $A$ such that",
+    odeWith: "with",
+    odeDecomposition: "The matrix $A$ is diagonalisable and can be written as $A=PDP^{-1}$ with",
+    odeDiagonal: "Set $Y(t)=P^{-1}X(t)$.\nThe system becomes $Y'(t)=DY(t)$.\nComplete the differential equations that $y_1$ and $y_2$ satisfy.",
+    odeModes: "For every $t\\in\\mathbb R$, this gives",
+    odeSolution: "Since $X(t)=PY(t)$, we obtain the family of solutions",
+    odeInitialSolution: (initial) => `The initial condition is\n$$X(0)=${initial}$$\nSince $X(t)=PY(t)$, we obtain the unique solution.`,
+    odeExample: "e.g. exp(2t)", odeConstantExample: "e.g. C_1*exp(t)",
   },
 };
 
@@ -180,6 +196,54 @@ function DecompositionFields({ value, change, text, labels, disabled, firstInput
   );
 }
 
+function OdeSystemFields({ value, onChange, disabled, labels, firstInputRef, groupRef }) {
+  const [[row, column], setActive] = useState([0, 0]);
+  return (
+    <div className="exercise-spectral-ode-system" ref={groupRef}>
+      <div className="exercise-spectral-ode-equations">
+        <SystemBrace />
+        {value.map((entries, i) => (
+          <Fragment key={i}>
+            <MathRenderer as="span" content={`$y_${i + 1}'(t)=$`} responsiveMath={false} />
+            {entries.map((entry, j) => (
+              <Fragment key={j}>
+                <input ref={i === 0 && j === 0 ? firstInputRef : undefined} className="exercise-matrix-cell"
+                  value={entry} disabled={disabled} inputMode="numeric" autoComplete="off"
+                  aria-label={`${labels.matrixRow} ${i + 1}, ${labels.matrixColumn} ${j + 1}`}
+                  onFocus={() => setActive([i, j])}
+                  onChange={(event) => onChange(replaceCell(value, i, j, event.target.value))} />
+                <MathRenderer as="span" content={j === 0 ? "$y_1(t)+$" : "$y_2(t)$"} responsiveMath={false} />
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+      </div>
+      {!disabled && <div className="exercise-numeric-symbols">
+        <NegativeSignButton value={value[row][column]} labels={labels}
+          onChange={(entry) => onChange(replaceCell(value, row, column, entry))} />
+      </div>}
+    </div>
+  );
+}
+
+function SpectralExpressionFields({ names, values, onChange, disabled, firstInputRef, groupRef, example, constants = false, connector }) {
+  return (
+    <div className={`exercise-spectral-sequence-fields${connector ? " exercise-spectral-expression-pair" : ""}`} ref={groupRef}>
+      {names.map((name, i) => (
+        <Fragment key={name}>
+          {i > 0 && connector && <span className="exercise-spectral-expression-and">{connector}</span>}
+          <label>
+            <MathRenderer as="span" content={`$${name}=${constants ? `C_${i + 1}` : ""}$`} responsiveMath={false} />
+            <input ref={i === 0 ? firstInputRef : undefined} className="exercise-text-input"
+              aria-label={name} value={values[i]} onChange={(event) => onChange(i, event.target.value)}
+              disabled={disabled} placeholder={example} autoComplete="off" spellCheck={false} />
+          </label>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
 export default function DiagonalisationInput({ question, value, onChange, onCheck, disabled, lang, labels, firstInputRef }) {
   const text = SPECTRAL_LABELS[lang] ?? SPECTRAL_LABELS.fr;
   const choiceLabelId = useId();
@@ -188,7 +252,7 @@ export default function DiagonalisationInput({ question, value, onChange, onChec
   const stage = value.stage;
   const sequenceFieldsRef = useRef(null);
   useEffect(() => {
-    if (stage === "recurrence-sequences") {
+    if (["recurrence-sequences", "ode-diagonal-system", "ode-modes", "ode-solutions"].includes(stage)) {
       sequenceFieldsRef.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
     }
   }, [stage]);
@@ -197,15 +261,30 @@ export default function DiagonalisationInput({ question, value, onChange, onChec
   const lockedVectors = stage === "diagonalization";
   const fieldProps = { disabled, text, labels };
   const recurrence = question.spectralTask === "recurrence";
-  if (question.spectralTask === "power" || recurrence) {
-    const matrixStage = stage === "recurrence-matrix";
-    const decompositionStage = stage === "power-decomposition";
+  const ode = question.spectralTask === "ode-system";
+  if (question.spectralTask === "power" || recurrence || ode) {
+    const matrixStage = stage === "recurrence-matrix" || stage === "ode-matrix";
+    const decompositionStage = stage === "power-decomposition" || stage === "ode-decomposition";
     const powerStage = stage === "matrix-power";
+    const diagonalStage = stage === "ode-diagonal-system";
+    const modesStage = stage === "ode-modes";
+    const solutionsStage = stage === "ode-solutions";
     return (
-      <div className={`exercise-spectral-answer exercise-spectral-power${recurrence ? " exercise-spectral-recurrence" : ""}`}>
-        {recurrence && (
+      <div className={`exercise-spectral-answer exercise-spectral-power${recurrence ? " exercise-spectral-recurrence" : ""}${ode ? " exercise-spectral-ode" : ""}`}>
+        {(recurrence || ode) && (
           <>
-            <MathRenderer as="p" content={text.recurrenceMatrix} />
+            {ode ? (
+              <div className="exercise-spectral-ode-instruction">
+                <MathRenderer as="span" content={text.odeMatrix} />
+                <div className="exercise-spectral-ode-matrix-formula">
+                  <MathRenderer as="span" content="$X'(t)=AX(t)$" responsiveMath={false} />
+                  <span className="exercise-spectral-ode-matrix-definition">
+                    {text.odeWith}
+                    <MathRenderer as="span" content="$X(t)=\begin{pmatrix}x_1(t)\\x_2(t)\end{pmatrix}$" responsiveMath={false} />
+                  </span>
+                </div>
+              </div>
+            ) : <MathRenderer as="p" content={text.recurrenceMatrix} />}
             <MatrixInput prefix="A" value={value.A} onChange={(matrix) => change("A", matrix)}
               labels={labels} allowFractions disabled={disabled || !matrixStage}
               firstInputRef={matrixStage ? firstInputRef : undefined} showNumericSymbols={matrixStage && !disabled} />
@@ -213,7 +292,7 @@ export default function DiagonalisationInput({ question, value, onChange, onChec
         )}
         {!matrixStage && (
           <>
-            <MathRenderer as="p" content={recurrence ? text.recurrenceDecomposition : text.powerDecomposition} />
+            <MathRenderer as="p" content={ode ? text.odeDecomposition : recurrence ? text.recurrenceDecomposition : text.powerDecomposition} />
             <DecompositionFields value={value} change={change} text={text} labels={labels}
               disabled={disabled || !decompositionStage} firstInputRef={decompositionStage ? firstInputRef : undefined} />
           </>
@@ -230,17 +309,36 @@ export default function DiagonalisationInput({ question, value, onChange, onChec
         {stage === "recurrence-sequences" && (
           <>
             <MathRenderer as="p" content={text.recurrenceSequences} />
-            <div className="exercise-spectral-sequence-fields" ref={sequenceFieldsRef}>
-              {["u_n", "v_n"].map((sequence, index) => (
-                <label key={sequence}>
-                  <MathRenderer as="span" content={`$${sequence}=$`} />
-                  <input ref={index === 0 ? firstInputRef : undefined} className="exercise-text-input"
-                    aria-label={index === 0 ? "uₙ" : "vₙ"} value={value.sequences[index]}
-                    onChange={(event) => changeAt("sequences", index, event.target.value)} disabled={disabled}
-                    placeholder={text.powerExample} autoComplete="off" spellCheck={false} />
-                </label>
-              ))}
-            </div>
+            <SpectralExpressionFields names={["u_n", "v_n"]} values={value.sequences}
+              onChange={(i, entry) => changeAt("sequences", i, entry)} disabled={disabled}
+              firstInputRef={firstInputRef} groupRef={sequenceFieldsRef} example={text.powerExample} />
+          </>
+        )}
+        {value.diagonalSystem && (
+          <>
+            <MathRenderer className="exercise-spectral-ode-instruction" content={text.odeDiagonal} />
+            <OdeSystemFields value={value.diagonalSystem} onChange={(system) => change("diagonalSystem", system)}
+              disabled={disabled || !diagonalStage} labels={labels}
+              firstInputRef={diagonalStage ? firstInputRef : undefined} groupRef={diagonalStage ? sequenceFieldsRef : undefined} />
+          </>
+        )}
+        {value.modes && (
+          <>
+            <MathRenderer as="p" content={text.odeModes} />
+            <SpectralExpressionFields names={["y_1(t)", "y_2(t)"]} values={value.modes} constants connector={text.and}
+              onChange={(i, entry) => changeAt("modes", i, entry)} disabled={disabled || !modesStage}
+              firstInputRef={modesStage ? firstInputRef : undefined} groupRef={modesStage ? sequenceFieldsRef : undefined}
+              example={text.odeExample} />
+          </>
+        )}
+        {solutionsStage && (
+          <>
+            <MathRenderer className="exercise-spectral-ode-instruction" content={question.initialVectorLatex
+              ? text.odeInitialSolution(question.initialVectorLatex) : text.odeSolution} />
+            <SpectralExpressionFields names={["x_1(t)", "x_2(t)"]} values={value.solutions} connector={text.and}
+              onChange={(i, entry) => changeAt("solutions", i, entry)} disabled={disabled}
+              firstInputRef={firstInputRef} groupRef={sequenceFieldsRef}
+              example={question.initialVectorLatex ? text.odeExample : text.odeConstantExample} />
           </>
         )}
       </div>

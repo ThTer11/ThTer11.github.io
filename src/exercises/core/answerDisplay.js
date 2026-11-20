@@ -3,6 +3,7 @@ import { calculusExpressionToLatex } from "../math/calculus";
 import { augmentedLatex, parameterConditionLatex } from "../math/augmentedSystems";
 import { toFractionMatrix } from "../math/linearAlgebra";
 import { characteristicPolynomialLatex } from "../math/spectral";
+import { differentialSystemLatex, spectralOdeExpressionToLatex } from "../math/spectralOde";
 import { getQuadraticRootChoices } from "../definitions/quadraticDiscriminant";
 import { systemToLatex } from "../../utils/gauss";
 import { getExerciseUiText } from "../content/uiText";
@@ -66,8 +67,8 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
       }
     }
     if (value.stage === "eigenvalues") return format(splitSet(value.eigenvalues), "solution-set");
-    if (value.stage === "recurrence-matrix") return format(value.A, "matrix");
-    if (value.stage === "diagonalization" || value.stage === "power-decomposition") return {
+    if (value.stage === "recurrence-matrix" || value.stage === "ode-matrix") return format(value.A, "matrix");
+    if (["diagonalization", "power-decomposition", "ode-decomposition"].includes(value.stage)) return {
       kind: "fields", fields: ["P", "D"].map((name) => ({ label: `$${name}$`, display: format(value[name], "matrix") })),
     };
     if (value.stage === "matrix-power") {
@@ -81,6 +82,26 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
           display: formatAnswerDisplay(value.sequences[index], { type: "expression" }, POWER_DISPLAY_OPTIONS, lang),
         })),
       };
+    }
+    if (value.stage === "ode-diagonal-system") {
+      try {
+        return math(differentialSystemLatex(toFractionMatrix(value.diagonalSystem), "y"));
+      } catch {
+        return text(plain(value.diagonalSystem));
+      }
+    }
+    if (value.stage === "ode-modes" || value.stage === "ode-solutions") {
+      const modes = value.stage === "ode-modes";
+      const entries = modes ? value.modes : value.solutions;
+      try {
+        const lines = entries.map((entry, i) => {
+          const expression = spectralOdeExpressionToLatex(entry);
+          return `${modes ? "y" : "x"}_${i + 1}(t)&=${modes ? `C_${i + 1}\\left(${expression}\\right)` : expression}`;
+        });
+        return math(`$$\\begin{aligned}${lines.join("\\\\")}\\end{aligned}$$`);
+      } catch {
+        return text(plain(entries));
+      }
     }
     if (value.stage === "eigenpairs") return {
       kind: "fields",

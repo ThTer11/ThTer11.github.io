@@ -107,7 +107,7 @@ export function generateQuadraticDiscriminant({ level = 1, rng = Math.random } =
     if (!computations.length) return `${discriminant}<p>${conclusion[lang]}</p>`;
     const roots = computations.join(`<span>${connector}</span>`);
     return `${discriminant}<p>${conclusion[lang]}${colon}</p>`
-      + `<div class="exercise-quadratic-calculations">${roots}</div>`;
+      + `<div class="exercise-paired-calculations">${roots}</div>`;
   };
 
   return {

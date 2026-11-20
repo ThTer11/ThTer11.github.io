@@ -246,17 +246,17 @@
   font-size: .8em;
 }
 
-.exercise-spectral-recurrence > .exercise-matrix-entry:not(.exercise-matrix-entry-symbolic) {
+:is(.exercise-spectral-recurrence, .exercise-spectral-ode) > .exercise-matrix-entry:not(.exercise-matrix-entry-symbolic) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
 }
 
-.exercise-spectral-recurrence > .exercise-matrix-entry > .exercise-numeric-symbols {
+:is(.exercise-spectral-recurrence, .exercise-spectral-ode) > .exercise-matrix-entry > .exercise-numeric-symbols {
   grid-column: 2;
   justify-self: center;
 }
 
-.exercise-spectral-recurrence .exercise-matrix-entry .exercise-matrix-cell:disabled {
+:is(.exercise-spectral-recurrence, .exercise-spectral-ode) .exercise-matrix-entry .exercise-matrix-cell:disabled {
   min-height: 2rem;
   padding-block: .25rem;
 }
@@ -285,9 +285,88 @@
   font-size: .8em;
 }
 
+.exercise-spectral-expression-pair {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.exercise-spectral-expression-pair label .responsive-math {
+  white-space: nowrap;
+}
+
+.exercise-spectral-ode > :is(p, .exercise-spectral-ode-instruction) {
+  max-width: min(100%, 34rem);
+  text-align: center;
+  text-wrap: pretty;
+  line-height: 1.55;
+}
+
+.exercise-spectral-ode > .exercise-spectral-ode-instruction:first-child {
+  width: 100%;
+}
+
+.exercise-spectral-ode-matrix-formula,
+.exercise-spectral-ode-matrix-definition {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: var(--ode-matrix-formula-gap);
+}
+
+.exercise-spectral-ode-matrix-formula {
+  --ode-matrix-formula-gap: clamp(.5rem, 3vw, 2rem);
+  flex-wrap: wrap;
+  row-gap: .2rem;
+  margin-block: .3rem .1rem;
+}
+
+.exercise-spectral-ode-instruction .rich-content-math-display {
+  margin-block: .3rem;
+  padding-block: .08rem;
+}
+
+.exercise-spectral-ode-instruction br:has(+ .rich-content-math-display) {
+  display: none;
+}
+
+.exercise-spectral-ode-system {
+  display: grid;
+  justify-items: center;
+  gap: .45rem;
+  min-width: 0;
+  max-width: 100%;
+  scroll-margin-block-end: 4rem;
+}
+
+.exercise-spectral-ode-equations {
+  display: grid;
+  grid-template-columns: .6rem max-content repeat(2, minmax(0, 2.75rem) max-content);
+  align-items: center;
+  gap: .3rem .25rem;
+  max-width: 100%;
+  font-size: clamp(.75rem, 3vw, 1rem);
+}
+
+.exercise-spectral-ode-equations .exercise-inversion-brace {
+  grid-row: 1 / span 2;
+}
+
+.exercise-spectral-ode-equations .exercise-matrix-cell {
+  min-width: 0;
+  min-height: 2.55rem;
+  width: 100%;
+  padding: .25rem .1rem;
+  border-radius: .45rem;
+  text-align: center;
+}
+
 @media (max-width: 480px) {
   .exercise-spectral-sequence-fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exercise-spectral-expression-and {
+    display: none;
   }
 }
 

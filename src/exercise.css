@@ -4074,7 +4074,7 @@
   font-size:.8em;
 }
 
-.exercise-quadratic-calculations{
+.exercise-paired-calculations{
   display:flex;
   flex-wrap:wrap;
   align-items:center;
@@ -4082,7 +4082,7 @@
   gap:.35rem 1rem;
 }
 
-.exercise-quadratic-calculations > span{
+.exercise-paired-calculations > span{
   max-width:100%;
 }
 
@@ -4093,7 +4093,7 @@
 }
 
 @media(max-width:860px){
-  .exercise-quadratic-calculations{
+  .exercise-paired-calculations{
     flex-direction:column;
   }
 }
