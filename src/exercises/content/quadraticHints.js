@@ -1,5 +1,59 @@
 export const quadraticCourseHints = [
   {
+    id: "quadratic-discriminant-formulas",
+    title: {
+      fr: "Racines d’un polynôme de degré 2",
+      en: "Roots of a quadratic polynomial",
+    },
+    blocks: [
+      {
+        type: "text",
+        content: {
+          fr: "Soient $a\\neq0$, $b$ et $c$ trois réels et $P(X)=aX^2+bX+c$ un polynôme de degré 2.",
+          en: "Let $a\\neq0$, $b$ and $c$ be real numbers, and let $P(X)=aX^2+bX+c$ be a quadratic polynomial.",
+        },
+      },
+      {
+        type: "note",
+        title: { fr: "Définition", en: "Definition" },
+        content: {
+          fr: "Une racine de $P$ est un complexe $x$ tel que $P(x)=0$.",
+          en: "A root of $P$ is a complex number $x$ such that $P(x)=0$.",
+        },
+      },
+      {
+        type: "note",
+        title: { fr: "Définition", en: "Definition" },
+        content: {
+          fr: "Le discriminant de $P$ est $\\Delta=b^2-4ac$.",
+          en: "The discriminant of $P$ is $\\Delta=b^2-4ac$.",
+        },
+      },
+      {
+        type: "formula",
+        title: { fr: "Racines selon le signe du discriminant", en: "Roots according to the sign of the discriminant" },
+        content: {
+          fr: [
+            "Si $\\Delta>0$, $P$ admet deux racines réelles :",
+            "$$\\frac{-b-\\sqrt{\\Delta}}{2a}\\qquad\\text{et}\\qquad\\frac{-b+\\sqrt{\\Delta}}{2a}.$$",
+            "Si $\\Delta=0$, $P$ admet une unique racine réelle, qui est double :",
+            "$$-\\frac{b}{2a}.$$",
+            "Si $\\Delta<0$, $P$ n’admet pas de racine réelle. Ses deux racines complexes conjuguées sont :",
+            "$$\\frac{-b-i\\sqrt{-\\Delta}}{2a}\\qquad\\text{et}\\qquad\\frac{-b+i\\sqrt{-\\Delta}}{2a}.$$",
+          ].join("\n"),
+          en: [
+            "If $\\Delta>0$, $P$ has two real roots:",
+            "$$\\frac{-b-\\sqrt{\\Delta}}{2a}\\qquad\\text{and}\\qquad\\frac{-b+\\sqrt{\\Delta}}{2a}.$$",
+            "If $\\Delta=0$, $P$ has exactly one real root, of multiplicity two:",
+            "$$-\\frac{b}{2a}.$$",
+            "If $\\Delta<0$, $P$ has no real roots. Its two complex conjugate roots are:",
+            "$$\\frac{-b-i\\sqrt{-\\Delta}}{2a}\\qquad\\text{and}\\qquad\\frac{-b+i\\sqrt{-\\Delta}}{2a}.$$",
+          ].join("\n"),
+        },
+      },
+    ],
+  },
+  {
     id: "quadratic-discriminant",
     title: {
       fr: "Discriminant et nombre de racines",

@@ -3,6 +3,7 @@ import { calculusExpressionToLatex } from "../math/calculus";
 import { augmentedLatex, parameterConditionLatex } from "../math/augmentedSystems";
 import { toFractionMatrix } from "../math/linearAlgebra";
 import { characteristicPolynomialLatex } from "../math/spectral";
+import { getQuadraticRootChoices } from "../definitions/quadraticDiscriminant";
 import { systemToLatex } from "../../utils/gauss";
 import { getExerciseUiText } from "../content/uiText";
 import { localize } from "./localize";
@@ -34,6 +35,21 @@ export function formatAnswerDisplay(value, spec = {}, question = {}, lang = "fr"
   if (value === undefined || value === null || String(value).trim() === "") return text(labels.noAnswer);
   if (typeof value === "boolean") return text(value ? labels.true : labels.false);
   const type = spec.type;
+  if (type === "quadratic-discriminant") {
+    if (value.stage === "discriminant") {
+      return formatAnswerDisplay(value.discriminant, { type: "integer" }, {}, lang);
+    }
+    if (value.stage === "root-count") {
+      const choice = getQuadraticRootChoices(question.allowComplexRoots).find(({ id }) => id === value.count);
+      return text(localize(choice?.label, lang) || labels.noAnswer);
+    }
+    try {
+      const roots = value.roots.map((root) => expression(root, { additionalSymbols: ["i"] }));
+      return { kind: "math", content: `$$\\left\\{${roots.join(",\\;")}\\right\\}$$` };
+    } catch {
+      return text(plain(value.roots));
+    }
+  }
   if (type === "matrix-diagonalisation") {
     const format = (raw, type) => formatAnswerDisplay(raw, { type }, {}, lang);
     const math = (content) => ({ kind: "math", content });

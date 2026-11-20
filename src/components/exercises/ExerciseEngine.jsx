@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { BookOpenIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon, ClockIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import AnswerInput, { emptyAnswerValue } from "./AnswerInput";
 import CourseHintModal from "./CourseHintModal";
 import ExerciseQuestionPrompt from "./ExerciseQuestionPrompt";
@@ -222,11 +222,13 @@ function SetupPanel({
             {exerciseVariants.map((variant) => {
               const selected = difficulty === variant.id;
               const levels = normalizeExerciseLevels(variant);
+              const levelsWithNotes = levels.filter((level) => level.note);
               const timed = exerciseHasTimer(tool, variant);
               const cardClassName = [
                 "exercise-option-card",
                 selected ? "exercise-option-card-active" : "",
                 levels.length > 0 ? "exercise-option-card-with-levels" : "exercise-option-card-no-levels",
+                levelsWithNotes.length > 0 ? "exercise-option-card-with-note" : "",
               ].filter(Boolean).join(" ");
 
               return (
@@ -255,6 +257,18 @@ function SetupPanel({
                       <MathRenderer as="span" content={localize(variant.description, lang)} trustedHtml={Boolean(variant.descriptionTrustedHtml)} />
                     )}
                   </button>
+
+                  {levelsWithNotes.length > 0 && (
+                    <div className="exercise-level-note" role="status">
+                      {levelsWithNotes.map((level) => (
+                        <div key={level.id} className="exercise-level-note-item"
+                          aria-hidden={!(selected && level.id === String(exerciseLevel))}>
+                          <InformationCircleIcon aria-hidden="true" />
+                          <MathRenderer as="span" content={localize(level.note, lang)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {levels.length > 0 && (
                     <div className="exercise-option-levels" role="group" aria-label={`${labels.level} — ${localize(variant.label, lang)}`}>
@@ -803,6 +817,7 @@ export default function ExerciseEngine({
   const autoCheckReduction = answerSpec.type === "row-reduction";
   const waitingForGaussInversionChoice = answerSpec.type === "matrix-inversion" && question.rowWorkspace && answer.stage === "invertibility";
   const waitingForEigenvectorChoice = answerSpec.type === "matrix-diagonalisation" && answer.stage === "recognition";
+  const waitingForRootCount = answerSpec.type === "quadratic-discriminant" && answer.stage === "root-count";
   const progress = Math.min(questionCount, session.completed + (phase === "active" ? 1 : 0));
   const currentQuestionNumber = phase === "feedback"
     ? session.completed
@@ -916,7 +931,7 @@ export default function ExerciseEngine({
               </button>
             )}
 
-            {!autoCheckReduction && !waitingForGaussInversionChoice && !waitingForEigenvectorChoice && (phase === "active" || (phase === "feedback" && ["matrix-product", "matrix-writing", "parameter-system", "matrix-inversion", "matrix-diagonalisation"].includes(answerSpec.type))) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
+            {!autoCheckReduction && !waitingForGaussInversionChoice && !waitingForEigenvectorChoice && !waitingForRootCount && (phase === "active" || (phase === "feedback" && ["matrix-product", "matrix-writing", "parameter-system", "matrix-inversion", "matrix-diagonalisation", "quadratic-discriminant"].includes(answerSpec.type))) && !(answerSpec.type === "matrix-product" && answer.stage === "compatibility") && (
               <button type="submit"
                 className={`showcase-action showcase-action-primary exercise-primary-action${phase === "feedback" ? " exercise-action-reserved" : ""}`}
                 disabled={phase !== "active"} aria-hidden={phase !== "active" || undefined}>

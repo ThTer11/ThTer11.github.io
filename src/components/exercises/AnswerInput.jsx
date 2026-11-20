@@ -6,6 +6,7 @@ import { emptySpectralAnswer } from "../../exercises/definitions/diagonalisation
 import { systemToLatex } from "../../utils/gauss";
 import "./matrix-inversion.css";
 import DiagonalisationInput from "./DiagonalisationInput";
+import QuadraticDiscriminantInput from "./QuadraticDiscriminantInput";
 import { ChoiceInput, MatrixInput, NegativeSignButton, FractionSeparatorButton, SystemBrace } from "./AnswerFields";
 
 export function emptyAnswerValue(spec = {}, question = {}) {
@@ -29,6 +30,7 @@ export function emptyAnswerValue(spec = {}, question = {}) {
       : { stage: "determinant", determinant: "", invertibility: "" };
   }
   if (type === "matrix-diagonalisation") return emptySpectralAnswer(question);
+  if (type === "quadratic-discriminant") return { stage: "discriminant", discriminant: "", count: "", roots: [] };
 
   if (type === "matrix") {
     const dimensions = question.inputDimensions ?? spec.dimensions ?? [2, 2];
@@ -360,6 +362,11 @@ export default function AnswerInput({
 
   if (type === "matrix-diagonalisation") {
     return <DiagonalisationInput key={focusKey} question={question} value={value} onChange={onChange} onCheck={onCheck}
+      disabled={disabled} lang={lang} labels={labels} firstInputRef={firstInputRef} />;
+  }
+
+  if (type === "quadratic-discriminant") {
+    return <QuadraticDiscriminantInput question={question} value={value} onChange={onChange} onCheck={onCheck}
       disabled={disabled} lang={lang} labels={labels} firstInputRef={firstInputRef} />;
   }
 

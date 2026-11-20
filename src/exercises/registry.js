@@ -4,6 +4,7 @@ import exerciseCategories from "./categories";
 import { elementaryTools } from "./definitions/elementary";
 import { calculusTools } from "./definitions/calculus";
 import { quadraticTools } from "./definitions/quadratic";
+import { quadraticDiscriminantTool } from "./definitions/quadraticDiscriminant";
 import { matrixTools } from "./definitions/matrices";
 import { augmentedSystemsTool } from "./definitions/augmentedSystems";
 import { matrixProductTool } from "./definitions/matrixProducts";
@@ -19,6 +20,7 @@ import { systemCourseHints } from "./content/systemHints";
 export const exerciseTools = [
   ...differentialEquationsTools,
   ...elementaryTools,
+  quadraticDiscriminantTool,
   ...calculusTools,
   ...quadraticTools,
   matrixProductTool,

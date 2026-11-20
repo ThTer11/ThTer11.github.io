@@ -63,7 +63,7 @@ function fractionSign(value) {
   return value.numerator < 0n ? -1 : value.numerator > 0n ? 1 : 0;
 }
 
-function factorSquarePart(value) {
+export function factorSquarePart(value) {
   let remaining = BigInt(value);
   let outside = 1n;
   let factor = 2n;
@@ -231,6 +231,14 @@ export function solveQuadraticExact(a, b, c) {
 
 export const solveQuadratic = solveQuadraticExact;
 
+export function complexQuadraticRoots(a, b, delta) {
+  const { outside, inside } = factorSquarePart(BigInt(-delta));
+  return [-outside, outside].map((coefficient) => ({
+    ...normalizeSurd(-b, coefficient, inside, 2 * a),
+    imaginary: true,
+  }));
+}
+
 /** Transforme deux racines rationnelles en un trinôme entier primitif. */
 export function quadraticFromRoots(firstRoot, secondRoot, multiplier = 1) {
   const first = Fraction.from(firstRoot);
@@ -265,7 +273,8 @@ export function exactValueToLatex(value) {
 
   const radicalNegative = value.radicalCoefficient < 0n;
   const radicalMagnitude = absBigInt(value.radicalCoefficient);
-  const radical = `${radicalMagnitude === 1n ? "" : radicalMagnitude.toString()}\\sqrt{${value.radicand}}`;
+  const squareRoot = value.imaginary && value.radicand === 1n ? "" : `\\sqrt{${value.radicand}}`;
+  const radical = `${radicalMagnitude === 1n ? "" : radicalMagnitude.toString()}${value.imaginary ? "i" : ""}${squareRoot}`;
   let numerator;
 
   if (value.constant === 0n) {

@@ -8,3 +8,5 @@ README.deploy.local.md
 *.test.jsx
 *.spec.js
 *.spec.jsx
+.agents
+AGENTS.md

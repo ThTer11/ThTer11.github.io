@@ -3946,3 +3946,154 @@
 .exercise-level-grid-full-height .exercise-option-card-no-levels{
   min-height:calc(6.5rem + 3.25rem);
 }
+
+.exercise-option-card-with-note{
+  grid-template-rows:1fr auto auto;
+}
+
+.exercise-option-card-with-note .exercise-level{
+  padding-bottom:.35rem;
+}
+
+.exercise-option-card-with-note .exercise-option-levels{
+  grid-row:3;
+}
+
+.exercise-level-note{
+  grid-row:2;
+  display:grid;
+  padding:.1rem .8rem .55rem;
+  font-size:.8rem;
+  color:#475569;
+}
+
+.exercise-option-card-active .exercise-level-note{
+  background:color-mix(in srgb,var(--exercise-option-accent) 10%,transparent);
+}
+
+.dark .exercise-level-note{
+  color:#cbd5e1;
+}
+
+.dark .exercise-option-card-active .exercise-level-note{
+  background:color-mix(in srgb,var(--exercise-option-accent) 18%,transparent);
+}
+
+.exercise-level-note-item{
+  grid-area:1 / 1;
+  display:flex;
+  align-items:flex-start;
+  gap:.35rem;
+}
+
+.exercise-level-note-item[aria-hidden="true"]{
+  visibility:hidden;
+}
+
+.exercise-level-note svg{
+  width:1.1rem;
+  height:1.1rem;
+  flex-shrink:0;
+}
+
+@media(max-width:759px){
+  .exercise-setup .exercise-level-grid{
+    grid-template-columns:minmax(0,min(24rem,calc(100% - .75rem)));
+    justify-content:center;
+  }
+
+  .exercise-setup:has(.exercise-level-grid-fixed-columns > .exercise-option-card:only-child) .exercise-setup-actions{
+    justify-content:center;
+  }
+
+  .exercise-setup:has(.exercise-level-grid-fixed-columns > .exercise-option-card:only-child) .exercise-setup-actions .showcase-action{
+    width:fit-content;
+    max-width:calc(100% - 1.25rem);
+    margin-inline:0;
+  }
+}
+
+.exercise-quadratic-answer{
+  display:grid;
+  gap:.85rem;
+  width:100%;
+  min-width:0;
+  text-align:center;
+}
+
+.exercise-quadratic-answer p{
+  margin:0 0 .45rem;
+}
+
+.exercise-quadratic-delta{
+  display:grid;
+  justify-items:center;
+  gap:.4rem;
+}
+
+.exercise-quadratic-delta .exercise-signed-input{
+  width:min(100%, 12rem);
+}
+
+.exercise-quadratic-answer .exercise-choice-grid{
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:.35rem;
+}
+
+.exercise-quadratic-answer .exercise-choice{
+  padding:.45rem .25rem;
+  font-size:.86rem;
+  line-height:1.25;
+}
+
+.exercise-quadratic-root-fields{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:.55rem;
+}
+
+.exercise-quadratic-root-fields:has(> :only-child){
+  grid-template-columns:minmax(0, 14rem);
+  justify-content:center;
+}
+
+.exercise-quadratic-root-fields label{
+  display:grid;
+  grid-template-columns:auto minmax(0, 1fr);
+  align-items:center;
+  gap:.4rem;
+}
+
+.exercise-quadratic-answer .exercise-text-input{
+  min-width:0;
+  width:100%;
+  padding:.55rem .6rem;
+}
+
+.exercise-quadratic-answer .exercise-text-input::placeholder{
+  font-size:.8em;
+}
+
+.exercise-quadratic-calculations{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:.35rem 1rem;
+}
+
+.exercise-quadratic-calculations > span{
+  max-width:100%;
+}
+
+@media(max-width:480px){
+  .exercise-quadratic-root-fields{
+    grid-template-columns:minmax(0, 1fr);
+  }
+}
+
+@media(max-width:860px){
+  .exercise-quadratic-calculations{
+    flex-direction:column;
+  }
+}
